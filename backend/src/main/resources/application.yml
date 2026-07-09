@@ -1,0 +1,21 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: campuslink-api
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/campuslink?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
+    username: campuslink
+    password: campuslink123
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  sql:
+    init:
+      mode: always
+      encoding: UTF-8
+      schema-locations: classpath:schema.sql
+      data-locations: classpath:data.sql
+
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true

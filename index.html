@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CampusLink Demo</title>
+    <script>
+      if (location.search !== "?v=20260708-user-moderation-scroll-v2") {
+        history.replaceState(null, "", location.pathname + "?v=20260708-user-moderation-scroll-v2");
+      }
+    </script>
+    <link rel="stylesheet" href="styles.css?v=20260708-user-moderation-scroll-v2" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="login-view" id="loginView" aria-labelledby="loginTitle">
+        <div class="login-panel">
+          <div class="product-mark">
+            <span class="mark-grid" aria-hidden="true"></span>
+            <div>
+              <p>CampusLink</p>
+              <h1 id="loginTitle">校园社交桌面端</h1>
+            </div>
+          </div>
+
+          <form class="login-form" id="loginForm">
+            <p class="placeholder-copy">
+              使用演示手机号获取验证码；未启动 Java API 时会自动使用 Mock 验证码。
+            </p>
+            <label for="phoneInput">
+              手机号
+              <input id="phoneInput" type="tel" value="13800000001" autocomplete="tel" />
+            </label>
+            <label for="codeInput">
+              验证码
+              <div class="code-row">
+                <input id="codeInput" type="text" inputmode="numeric" placeholder="输入 6 位验证码" />
+                <button class="ghost-button" id="sendCodeButton" type="button">获取验证码</button>
+              </div>
+            </label>
+            <p class="inline-status" id="loginStatus">当前使用演示账号：林一 / 学生。</p>
+            <div class="login-actions">
+              <button class="primary-button" id="loginButton" type="submit">登录</button>
+              <button class="ghost-button" id="demoLoginButton" type="button">快速进入</button>
+            </div>
+          </form>
+        </div>
+        <aside class="login-brief">
+          <div>
+            <p class="section-kicker">CampusLink</p>
+            <h2>简洁的校园沟通空间</h2>
+            <p>会话、动态和管理视图集中在一个安静的桌面窗口里。</p>
+          </div>
+          <div class="insight-grid">
+            <div class="insight-card">
+              <span>身份</span>
+              <strong>学生</strong>
+            </div>
+            <div class="insight-card">
+              <span>状态</span>
+              <strong>在线</strong>
+            </div>
+            <div class="insight-card">
+              <span>模式</span>
+              <strong>Mock</strong>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="workspace-view" id="workspaceView" hidden>
+        <aside class="rail" aria-label="主导航">
+          <div class="rail-logo">CL</div>
+          <button class="rail-button is-active" type="button" data-tab="chat" aria-label="聊天">C</button>
+          <button class="rail-button" type="button" data-tab="feed" aria-label="动态">F</button>
+          <button class="rail-button" type="button" data-tab="admin" aria-label="后台">A</button>
+        </aside>
+
+        <section class="sidebar">
+          <header class="user-card">
+            <div>
+              <p id="currentRole">学生账号</p>
+              <h2 id="currentUser">林一</h2>
+            </div>
+            <div class="status-stack">
+              <span class="presence is-online" id="presenceBadge">在线</span>
+              <span class="api-mode" id="apiMode">Mock</span>
+              <span class="realtime-mode" id="realtimeMode">离线</span>
+            </div>
+          </header>
+
+          <div class="account-tools">
+            <label class="account-switch" for="accountSelect">
+              切换账号
+              <select id="accountSelect"></select>
+            </label>
+            <button class="ghost-button" id="logoutButton" type="button">退出登录</button>
+          </div>
+
+          <div class="search-block">
+            <label for="searchInput">搜索用户</label>
+            <div class="search-row">
+              <input id="searchInput" type="search" placeholder="输入姓名或手机号" />
+              <button class="icon-action search-action" id="searchButton" type="button" aria-label="搜索"></button>
+            </div>
+          </div>
+
+          <div class="result-list" id="resultList"></div>
+
+          <div class="friend-request-panel">
+            <div class="panel-title">
+              <span>好友申请</span>
+              <strong id="friendRequestCount">0</strong>
+            </div>
+            <div class="friend-request-list" id="friendRequestList"></div>
+          </div>
+
+          <div class="contact-panel">
+            <div class="panel-title">
+              <span>联系人</span>
+              <strong id="friendCount">0</strong>
+            </div>
+            <div class="conversation-list" id="conversationList" aria-label="联系人列表"></div>
+          </div>
+        </section>
+
+        <section class="main-stage" id="chatPanel">
+          <header class="stage-header">
+            <div>
+              <p class="section-kicker">Direct Message</p>
+              <h2 id="chatTitle">陈老师</h2>
+            </div>
+            <div class="header-actions">
+              <button class="ghost-button" id="togglePresence" type="button">切换隐身</button>
+              <button class="ghost-button" id="withdrawLast" type="button">撤回上一条</button>
+            </div>
+          </header>
+          <div class="message-stream" id="messageStream"></div>
+          <form class="composer" id="composerForm">
+            <input id="attachmentInput" type="file" multiple hidden />
+            <button class="icon-action add-action" id="attachmentButton" type="button" aria-label="添加文件"></button>
+            <input id="messageInput" type="text" placeholder="输入消息，回车发送" />
+            <button class="primary-button" type="submit">发送</button>
+            <div class="attachment-tray" id="attachmentTray" aria-live="polite"></div>
+          </form>
+        </section>
+
+        <section class="main-stage is-feed" id="feedPanel" hidden>
+          <header class="stage-header">
+            <div>
+              <p class="section-kicker">Campus Feed</p>
+              <h2>校园动态</h2>
+            </div>
+            <div class="header-actions">
+              <button class="ghost-button" id="managePersonalPosts" type="button">管理我的动态</button>
+              <button class="primary-button" id="publishPost" type="button">发布动态</button>
+            </div>
+          </header>
+          <div class="post-composer">
+            <textarea id="postInput">今天的企业级项目 demo 已经跑通第一条链路。</textarea>
+            <select id="visibilitySelect" aria-label="可见范围">
+              <option>好友可见</option>
+              <option>全校可见</option>
+              <option>仅老师可见</option>
+            </select>
+          </div>
+          <div class="personal-post-panel" id="personalPostPanel" hidden></div>
+          <div class="feed-list" id="feedList"></div>
+        </section>
+
+        <section class="main-stage is-admin" id="adminPanel" hidden>
+          <header class="stage-header">
+            <div>
+              <p class="section-kicker">Admin Console</p>
+              <h2>管理后台</h2>
+            </div>
+            <div class="admin-report-tools" aria-label="报表工具">
+              <div class="range-segment" id="reportRange" role="group" aria-label="报表范围">
+                <button class="is-active" type="button" data-report-range="today">今日</button>
+                <button type="button" data-report-range="week">本周</button>
+                <button type="button" data-report-range="all">全部</button>
+              </div>
+              <button class="ghost-button" id="exportReportButton" type="button">打印报表</button>
+            </div>
+          </header>
+          <div class="export-panel" id="exportPanel" hidden></div>
+          <div class="metric-grid" id="metricGrid"></div>
+          <div class="moderation-panel" id="moderationPanel">
+            <div class="admin-section-title">
+              <div>
+                <p class="section-kicker">Content Review</p>
+                <h3>待审核内容</h3>
+              </div>
+              <strong>--</strong>
+            </div>
+            <p class="empty-copy">正在加载待审核内容。</p>
+          </div>
+          <div class="audit-table" id="auditTable"></div>
+        </section>
+      </section>
+    </main>
+
+    <script type="module" src="app.js?v=20260708-user-moderation-scroll-v2"></script>
+  </body>
+</html>

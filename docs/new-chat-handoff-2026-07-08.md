@@ -1,0 +1,227 @@
+# CampusLink 新对话交接说明（2026-07-08）
+
+本文用于在新 Codex 对话中恢复 CampusLink 当前开发上下文。当前状态已经
+回退到 **普通用户审核状态反馈** 完成之后，并额外修复了窄窗口下周同学
+聊天记录不能上下滚动的问题。
+
+## 当前基线
+
+当前前端基线保留管理员审核工作台和普通用户审核状态反馈，不保留后来
+试做的聊天图片消息、图片预览、图片缓存、搜索好友直接聊天、动态页强制
+刷新、Java API 空态文案、以及 portal 风格登录页。
+
+当前静态资源版本是：
+
+```text
+20260708-user-moderation-scroll-v2
+```
+
+当前本地验证地址是：
+
+```text
+http://127.0.0.1:5179/?v=20260708-user-moderation-scroll-v2
+```
+
+## 已完成内容
+
+当前基线包含以下已完成工作。
+
+- 管理员后台不再只显示 **待审内容** 数量。
+- 管理员后台在指标卡片下方、审计记录上方展示 **待审核内容** 工作台。
+- **待审核内容** 列表展示标题、提交人、提交时间、内容类型、当前状态
+  和操作。
+- 管理员可执行 **同意**、**拒绝**、**查看**。
+- **待审核内容** 和 **审计记录** 都支持多选后的 **删除所选**。
+- 未勾选时 **删除所选** 禁用，勾选后启用。
+- 普通用户发布动态后会自动打开 **我的动态**，并看到该动态处于
+  **待审核**。
+- 待审核动态提示 **通过前不会出现在公共动态流**。
+- 普通用户发布评论后会显示 **评论已提交审核，通过后会显示在动态下**。
+- 个人动态管理展示 **待审核**、**已发布**、**已拒绝** 状态和审核说明。
+- 公共动态和评论只展示 `approved` 内容。
+- 登录页保持黑色右侧信息面板版本：**简洁的校园沟通空间**，右侧展示
+  **身份**、**状态**、**模式** 三个信息块。
+- 聊天附件保持普通文件卡片展示，不做图片气泡或大图预览。
+- 修复窄窗口下林一与周同学聊天内容不能上下滑动的问题。
+
+## 最近一次修复
+
+最近一次修复只改了聊天滚动布局。问题原因是窄窗口下触发移动端布局，
+`.workspace-view` 变成自适应高度，长聊天会把 `.message-stream` 撑高，
+导致消息区自身没有滚动空间。
+
+修复点在 `styles.css`：
+
+- `.message-stream` 使用 `align-content: start`，避免长消息列表被贴底裁切。
+- `.message-stream` 保持 `overflow: auto`，并增加 `overscroll-behavior:
+  contain`。
+- 窄窗口媒体查询中给 `.main-stage` 设置固定视口高度：
+
+  ```css
+  .main-stage {
+    height: calc(100vh - 66px);
+    min-height: 520px;
+  }
+  ```
+
+浏览器验证中，进入林一与周同学聊天后，消息流数据为：
+
+```text
+clientHeight = 300
+scrollHeight = 1842
+overflowY = auto
+scrollTop 从 1541.5 变到 1181.5
+```
+
+这确认消息区可以内部滚动。
+
+## 明确回退掉的内容
+
+不要把下面这些后续试做内容当作当前基线的一部分。
+
+- `20260707-chat-image-preview-v1` 到
+  `20260707-chat-image-preview-v5` 的图片消息版本。
+- `20260707-login-refresh-v1`、`20260707-login-minimal-v1`、
+  `20260707-login-symbol-v1`、`20260707-login-portal-v1` 的后续登录页
+  迭代。
+- 聊天图片缩略图、点击大图预览、`imagePreviewOverlay`。
+- `state.attachmentPreviewUrls` 和 `state.imagePreview`。
+- `isImageAttachment()`、`previewUrl`、`releaseAttachmentPreview()`。
+- 搜索结果里已是好友时显示 **聊天** 的改动。
+- 点击 **动态** tab 时强制 `loadFeed()` 的改动。
+- **当前 Java API 数据库暂无已通过动态** 的 live 空态文案。
+
+当前仓库里可能还存在 `frontend/js/chat/attachments.js`，它是图片消息试做
+期间创建的兼容空模块。当前主代码不引用它。不要重新接入它，除非用户
+明确要求重新做图片消息。
+
+## 关键文件
+
+后续继续开发时，优先阅读这些文件。
+
+- `AGENTS.md`
+- `frontend/AGENTS.md`
+- `backend/AGENTS.md`
+- `docs/admin-review-workbench-handoff.md`
+- `docs/admin-moderation-content-module-fix.md`
+- `docs/new-chat-handoff-2026-07-08.md`
+- `index.html`
+- `app.js`
+- `styles.css`
+- `frontend/js/app-events.js`
+- `frontend/js/loaders.js`
+- `frontend/js/state.js`
+- `frontend/js/chat/renderers.js`
+- `frontend/js/posts/renderers.js`
+- `frontend/js/admin/renderers.js`
+- `frontend/js/admin/audit-events.js`
+- `frontend/js/api/client.js`
+- `frontend/js/api/mock-api.js`
+- `tests/frontend-smoke.test.js`
+
+## 当前验证记录
+
+已完成以下验证。
+
+1. 运行前端检查：
+
+   ```bash
+   ./script/run_frontend_check.sh
+   ```
+
+   结果：通过。
+
+2. 使用浏览器打开当前版本：
+
+   ```text
+   http://127.0.0.1:5179/?v=20260708-user-moderation-scroll-v2
+   ```
+
+   结果：页面无当前版本模块错误。
+
+3. 点击 **快速进入** 后进入工作台。
+
+   结果：可以进入工作台。
+
+4. 打开林一与周同学聊天。
+
+   结果：消息流 `scrollHeight > clientHeight`，实际滚轮上滑后
+   `scrollTop` 变小，确认可上下滑动。
+
+## 重要注意事项
+
+继续工作前必须遵守以下约束。
+
+- 当前仓库 `git status --short` 显示大量未跟踪文件。这是已知状态。
+  不要运行 `git reset --hard`、`git clean`，也不要删除未跟踪文件。
+- 不要给 `frontend/js/state.js` 的导入添加版本查询参数。多个模块必须
+  共享同一个状态单例。
+- 修改前端后至少运行：
+
+  ```bash
+  ./script/run_frontend_check.sh
+  ```
+
+- 修改前端 UI 后，用浏览器或渲染级 smoke 确认管理员后台、动态发布
+  审核反馈和聊天页仍可用。
+- Java API 连上时，页面显示的是本地数据库历史数据，不是 Mock 固定
+  演示数据。不要误把数据库历史消息当作前端渲染错误。
+- 如果用户要求恢复干净演示数据，先确认是否允许重置或重种后端数据库。
+  不要擅自清数据库。
+
+## 建议下一步
+
+如果用户没有指定新任务，建议先做小而稳的任务。
+
+- 给当前回退点创建更明确的文档快照，并更新过期的旧交接文档版本号。
+- 为聊天滚动修复补一条更明确的 smoke 断言，检查 `.message-stream` 的
+  CSS 约束。
+- 讨论是否需要一个明确的 **Mock / Java API** 切换开关，避免用户误把
+  本地数据库历史数据当成前端回归。
+- 如果用户仍想做图片发送，先设计清楚是 **前端临时预览**、**后端真实
+  上传**，还是 **Mock-only Demo**，不要直接把临时 `blob:` 当成持久数据。
+
+## 可直接复制到下个对话的提示词
+
+复制下面这段到新对话即可。
+
+```text
+请先阅读并遵循仓库中的 AGENTS.md：根目录 AGENTS.md、frontend/AGENTS.md、
+backend/AGENTS.md。项目路径是 /Users/linus_k/Documents/test。不要重置或
+清理未跟踪文件，当前仓库可能整体显示为未跟踪状态。
+
+请优先阅读：
+- docs/new-chat-handoff-2026-07-08.md
+- docs/admin-review-workbench-handoff.md
+- docs/admin-moderation-content-module-fix.md
+
+当前基线已经回退到“普通用户审核状态反馈完成”之后，并额外修复了窄窗口
+下林一与周同学聊天内容不能上下滑动的问题。当前静态资源版本是
+20260708-user-moderation-scroll-v2，本地验证地址是：
+http://127.0.0.1:5179/?v=20260708-user-moderation-scroll-v2
+
+当前保留的功能：
+- 管理员后台有“待审核内容”工作台，位于指标卡片下方、审计记录上方。
+- 管理员可对待审核内容执行“同意”“拒绝”“查看”。
+- “待审核内容”和“审计记录”支持多选后的“删除所选”。
+- 普通用户发布动态后自动打开“我的动态”，看到待审核状态。
+- 普通用户发布评论后看到“评论已提交审核，通过后会显示在动态下”。
+- 个人动态管理展示待审核、已发布、已拒绝状态和审核原因。
+- 公共动态和评论只展示 approved 内容。
+- 聊天附件保持普通文件卡片展示，不保留图片气泡或大图预览。
+- 登录页是黑色右侧信息面板版本，文案为“简洁的校园沟通空间”。
+
+明确不要把这些后续试做内容当作当前基线：
+- chat-image-preview v1-v5 图片消息版本。
+- 后续 login-refresh/login-minimal/login-symbol/login-portal 登录页迭代。
+- imagePreviewOverlay、state.imagePreview、state.attachmentPreviewUrls。
+- 搜索好友按钮改成“聊天”的改动。
+- 点击动态 tab 强制 loadFeed() 的改动。
+- Java API 空态文案“当前 Java API 数据库暂无已通过动态”。
+
+注意：
+- 不要给 state.js 加版本查询参数，否则可能破坏共享状态单例。
+- 修改前端后至少运行 ./script/run_frontend_check.sh。
+- 修改 UI 后用浏览器或渲染级 smoke 检查管理员后台、动态审核反馈和聊天页。
+- Java API 连上时显示本地数据库历史数据，不是 Mock 固定演示数据。
+```

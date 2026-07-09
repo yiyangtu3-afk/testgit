@@ -1,0 +1,212 @@
+package com.campuslink.mapper;
+
+import com.campuslink.entity.DemoEntities.CommentEntity;
+import com.campuslink.entity.DemoEntities.PostEntity;
+import java.util.List;
+import org.apache.ibatis.annotations.Delete;
+import org.apache.ibatis.annotations.Insert;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
+
+@Mapper
+public interface FeedMapper {
+
+  @Select("""
+      select cast(p.id as signed) as id,
+             u.name as author,
+             p.body,
+             '全校可见' as visibility,
+             p.likes,
+             (
+               select count(*)
+               from comments c
+               where c.post_id = p.id and c.moderation_status = 'approved'
+             ) as comments,
+             p.moderation_status as moderationStatus,
+             (
+               select m.reason
+               from moderation_items m
+               where m.content_type = 'post'
+                 and m.content_id = p.id
+                 and m.status = p.moderation_status
+               order by m.created_at desc, m.id desc
+               limit 1
+             ) as moderationReason
+      from posts p
+      join users u on u.id = p.author_id
+      where p.moderation_status = 'approved'
+        and p.id regexp '^[0-9]+$'
+      order by p.created_at desc, cast(p.id as signed) desc
+      """)
+  List<PostEntity> findVisiblePosts();
+
+  @Select("""
+      select cast(p.id as signed) as id,
+             u.name as author,
+             p.body,
+             '全校可见' as visibility,
+             p.likes,
+             (
+               select count(*)
+               from comments c
+               where c.post_id = p.id and c.moderation_status = 'approved'
+             ) as comments,
+             p.moderation_status as moderationStatus,
+             (
+               select m.reason
+               from moderation_items m
+               where m.content_type = 'post'
+                 and m.content_id = p.id
+                 and m.status = p.moderation_status
+               order by m.created_at desc, m.id desc
+               limit 1
+             ) as moderationReason
+      from posts p
+      join users u on u.id = p.author_id
+      where p.author_id = #{authorId}
+        and p.id regexp '^[0-9]+$'
+      order by p.created_at desc, cast(p.id as signed) desc
+      """)
+  List<PostEntity> findPostsByAuthor(@Param("authorId") String authorId);
+
+  @Select("""
+      select cast(p.id as signed) as id,
+             u.name as author,
+             p.body,
+             '全校可见' as visibility,
+             p.likes,
+             (
+               select count(*)
+               from comments c
+               where c.post_id = p.id and c.moderation_status = 'approved'
+             ) as comments,
+             p.moderation_status as moderationStatus,
+             (
+               select m.reason
+               from moderation_items m
+               where m.content_type = 'post'
+                 and m.content_id = p.id
+                 and m.status = p.moderation_status
+               order by m.created_at desc, m.id desc
+               limit 1
+             ) as moderationReason
+      from posts p
+      join users u on u.id = p.author_id
+      where p.id = #{postId}
+      """)
+  PostEntity findPost(@Param("postId") String postId);
+
+  @Select("""
+      select cast(p.id as signed) as id,
+             u.name as author,
+             p.body,
+             '全校可见' as visibility,
+             p.likes,
+             (
+               select count(*)
+               from comments c
+               where c.post_id = p.id and c.moderation_status = 'approved'
+             ) as comments,
+             p.moderation_status as moderationStatus,
+             (
+               select m.reason
+               from moderation_items m
+               where m.content_type = 'post'
+                 and m.content_id = p.id
+                 and m.status = p.moderation_status
+               order by m.created_at desc, m.id desc
+               limit 1
+             ) as moderationReason
+      from posts p
+      join users u on u.id = p.author_id
+      where p.author_id = #{authorId} and p.id = #{postId}
+      """)
+  PostEntity findPostByAuthor(@Param("authorId") String authorId, @Param("postId") String postId);
+
+  @Insert("""
+      insert into posts (id, author_id, body, likes, moderation_status)
+      values (#{id}, #{authorId}, #{body}, 0, 'pending')
+      """)
+  void insertPost(@Param("id") String id, @Param("authorId") String authorId, @Param("body") String body);
+
+  @Update("""
+      update posts
+      set body = #{body}, moderation_status = 'pending'
+      where author_id = #{authorId} and id = #{postId}
+      """)
+  int updatePostOwnedBy(
+      @Param("authorId") String authorId,
+      @Param("postId") String postId,
+      @Param("body") String body);
+
+  @Delete("""
+      delete from moderation_items
+      where content_type = 'comment'
+        and content_id in (select id from comments where post_id = #{postId})
+      """)
+  int deleteModerationItemsForPostComments(@Param("postId") String postId);
+
+  @Delete("delete from moderation_items where content_type = 'post' and content_id = #{postId}")
+  int deleteModerationItemForPost(@Param("postId") String postId);
+
+  @Delete("delete from comments where post_id = #{postId}")
+  int deleteCommentsForPost(@Param("postId") String postId);
+
+  @Delete("delete from posts where author_id = #{authorId} and id = #{postId}")
+  int deletePostOwnedBy(@Param("authorId") String authorId, @Param("postId") String postId);
+
+  @Update("update posts set likes = likes + 1 where id = #{postId}")
+  void incrementLikes(@Param("postId") String postId);
+
+  @Select("""
+      select cast(c.id as signed) as id,
+             u.name as author,
+             c.body,
+             date_format(c.created_at, '%H:%i') as time,
+             c.moderation_status as moderationStatus
+      from comments c
+      join users u on u.id = c.author_id
+      where c.post_id = #{postId}
+        and c.moderation_status = 'approved'
+        and c.id regexp '^[0-9]+$'
+      order by c.created_at, cast(c.id as signed)
+      """)
+  List<CommentEntity> findVisibleComments(@Param("postId") String postId);
+
+  @Select("""
+      select cast(c.id as signed) as id,
+             u.name as author,
+             c.body,
+             date_format(c.created_at, '%H:%i') as time,
+             c.moderation_status as moderationStatus
+      from comments c
+      join users u on u.id = c.author_id
+      where c.post_id = #{postId} and c.id = #{commentId}
+      """)
+  CommentEntity findComment(@Param("postId") String postId, @Param("commentId") String commentId);
+
+  @Insert("""
+      insert into comments (id, post_id, author_id, body, moderation_status)
+      values (#{id}, #{postId}, #{authorId}, #{body}, 'pending')
+      """)
+  void insertComment(
+      @Param("id") String id,
+      @Param("postId") String postId,
+      @Param("authorId") String authorId,
+      @Param("body") String body);
+
+  @Update("update posts set moderation_status = #{status} where id = #{postId}")
+  void updatePostModeration(@Param("postId") String postId, @Param("status") String status);
+
+  @Update("""
+      update comments
+      set moderation_status = #{status}
+      where post_id = #{postId} and id = #{commentId}
+      """)
+  void updateCommentModeration(
+      @Param("postId") String postId,
+      @Param("commentId") String commentId,
+      @Param("status") String status);
+}
