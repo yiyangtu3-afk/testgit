@@ -40,6 +40,12 @@ function canViewPost(post) {
   return post.visibility === "仅老师可见" && state.currentUser.role.includes("教师");
 }
 
+function requireFriendship(peerId) {
+  if (!areFriends(state.currentUser.id, peerId)) {
+    throw new Error("仅能与已建立好友关系的用户聊天。");
+  }
+}
+
 function addFriendship(firstUserId, secondUserId) {
   if (!areFriends(firstUserId, secondUserId)) {
     mockStore.friendships.push([firstUserId, secondUserId]);
@@ -171,9 +177,11 @@ export const mockApi = {
       .filter(Boolean);
   },
   async messages(peerId) {
+    requireFriendship(peerId);
     return mockStore.conversations[peerId] || [];
   },
   async sendMessage(peerId, text, attachments = []) {
+    requireFriendship(peerId);
     const message = {
       id: Date.now(),
       from: state.currentUser.id,
@@ -189,6 +197,7 @@ export const mockApi = {
     return message;
   },
   async withdrawMessage(peerId, messageId) {
+    requireFriendship(peerId);
     const message = (mockStore.conversations[peerId] || []).find((item) => item.id === messageId);
     if (message) {
       message.deleted = true;

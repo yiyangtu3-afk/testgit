@@ -1,10 +1,10 @@
 import { mockStore, state } from "../state.js";
-import { api } from "../api/client.js?v=20260709-feed-visibility-v1";
-import { accountById, pushMockAudit } from "../api/mock-api.js?v=20260709-feed-visibility-v1";
+import { api } from "../api/client.js?v=20260709-chat-access-v1";
+import { accountById, pushMockAudit } from "../api/mock-api.js?v=20260709-chat-access-v1";
 import { $ } from "../utils/dom.js";
 import { setApiMode, setRealtimeMode, setStatus } from "../ui/status.js";
 import { renderAccountSwitch, renderAttachmentTray, renderExportPanel, renderIdentity, renderMessages } from "../ui/renderers.js";
-import { loadAdminData, loadFeed, loadFriendRequests, loadFriends, loadMessages, loadUsers } from "../loaders.js?v=20260709-feed-visibility-v1";
+import { loadAdminData, loadFeed, loadFriendRequests, loadFriends, loadMessages, loadUsers } from "../loaders.js?v=20260709-chat-access-v1";
 import { connectChatRealtime, disconnectChatRealtime } from "../chat/realtime.js";
 
 export async function bootstrapWorkspace() {

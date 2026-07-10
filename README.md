@@ -17,7 +17,7 @@ Open the local demo in a browser:
 ./script/run_frontend_demo.sh
 ```
 
-Then visit `http://127.0.0.1:5179/?v=20260709-feed-visibility-v1`.
+Then visit `http://127.0.0.1:5179/?v=20260709-chat-access-v1`.
 
 The demo supports these flows:
 
@@ -206,8 +206,10 @@ current demo stores file name, size, MIME type, and display kind only; it
 doesn't upload or persist the local file bytes.
 
 Conversation reads use the bearer token to resolve the current user, then load
-messages in both directions between that user and the selected peer. This keeps
-two browser windows on different demo accounts in the same conversation.
+messages in both directions between that user and the selected peer. The API
+requires the two accounts to be accepted friends before it reads, sends, or
+withdraws a message. This keeps two browser windows on different demo accounts
+in the same conversation without exposing arbitrary peer IDs.
 
 When the Java API is available, the frontend also opens
 `ws://127.0.0.1:8080/ws/chat?token=...` after login. Chat messages still use

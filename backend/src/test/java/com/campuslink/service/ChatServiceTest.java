@@ -7,9 +7,11 @@ import com.campuslink.dto.DemoDtos.AttachmentRequest;
 import com.campuslink.dto.DemoDtos.MessageView;
 import com.campuslink.dto.DemoDtos.SendMessageRequest;
 import com.campuslink.entity.DemoEntities.AttachmentEntity;
+import com.campuslink.entity.DemoEntities.FriendRequestEntity;
 import com.campuslink.entity.DemoEntities.MessageEntity;
 import com.campuslink.entity.DemoEntities.UserEntity;
 import com.campuslink.repository.ChatRepository;
+import com.campuslink.repository.FriendRepository;
 import com.campuslink.repository.UserRepository;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,6 +26,7 @@ class ChatServiceTest {
   private final RecordingChatRealtimeNotifier chatRealtime = new RecordingChatRealtimeNotifier();
   private final ChatService chatService = new ChatService(
       chat,
+      new InMemoryFriendRepository(List.of(List.of("u-1001", "u-2001"))),
       new InMemoryUserRepository(List.of(
           new UserEntity("u-1001", "林一", "学生账号", "13800000001", "online"),
           new UserEntity("u-2001", "陈老师", "教师", "13800000002", "online"))),
@@ -77,6 +80,28 @@ class ChatServiceTest {
     assertThatThrownBy(() -> chatService.withdrawMessage("u-2001", message.id(), "u-1001"))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("只能撤回自己发送的消息");
+  }
+
+  @Test
+  void messagesRejectsNonFriendPeer() {
+    assertThatThrownBy(() -> chatService.messages("u-2002", "u-1001"))
+        .isInstanceOf(ForbiddenException.class)
+        .hasMessage("仅能与已建立好友关系的用户聊天");
+  }
+
+  @Test
+  void sendMessageRejectsNonFriendPeer() {
+    assertThatThrownBy(() -> chatService.sendMessage("u-2002", "u-1001", new SendMessageRequest("越权消息", List.of())))
+        .isInstanceOf(ForbiddenException.class)
+        .hasMessage("仅能与已建立好友关系的用户聊天");
+    assertThat(chat.findMessages("u-2002", "u-1001")).isEmpty();
+  }
+
+  @Test
+  void withdrawRejectsNonFriendPeer() {
+    assertThatThrownBy(() -> chatService.withdrawMessage("u-2002", 1L, "u-1001"))
+        .isInstanceOf(ForbiddenException.class)
+        .hasMessage("仅能与已建立好友关系的用户聊天");
   }
 
   private static final class RecordingChatRealtimeNotifier implements ChatRealtimeNotifier {
@@ -180,6 +205,47 @@ class ChatServiceTest {
 
     @Override
     public void updatePresence(String userId, String presence) {
+    }
+  }
+
+  private static final class InMemoryFriendRepository implements FriendRepository {
+
+    private final List<List<String>> friendships;
+
+    private InMemoryFriendRepository(List<List<String>> friendships) {
+      this.friendships = friendships;
+    }
+
+    @Override
+    public boolean areFriends(String firstUserId, String secondUserId) {
+      return friendships.stream().anyMatch(pair -> pair.contains(firstUserId) && pair.contains(secondUserId));
+    }
+
+    @Override
+    public List<String> findFriendIdsForUser(String userId) {
+      return List.of();
+    }
+
+    @Override
+    public void addFriendship(String firstUserId, String secondUserId) {
+    }
+
+    @Override
+    public void upsertFriendRequest(String fromUserId, String toUserId, String status) {
+    }
+
+    @Override
+    public List<FriendRequestEntity> findRequestsForUser(String userId) {
+      return List.of();
+    }
+
+    @Override
+    public Optional<FriendRequestEntity> findRequestForRecipient(String requestId, String recipientUserId) {
+      return Optional.empty();
+    }
+
+    @Override
+    public void updateRequestStatus(String requestId, String status) {
     }
   }
 }
