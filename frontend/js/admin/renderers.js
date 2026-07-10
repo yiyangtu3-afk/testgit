@@ -1,6 +1,6 @@
 import { reportRanges, state } from "../state.js";
 import { $ } from "../utils/dom.js";
-import { exportSummary, reportPreviewRows } from "../utils/format.js?v=20260708-user-moderation-scroll-v2";
+import { exportSummary, reportPreviewRows } from "../utils/format.js?v=20260709-feed-visibility-v1";
 
 export function renderMetrics() {
   $("#metricGrid").innerHTML = Object.entries(state.metrics)

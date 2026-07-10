@@ -93,7 +93,7 @@ export const mockStore = {
       authorId: "u-2001",
       author: "陈老师",
       body: "软件工程课程设计进入验收阶段，请各组准备可运行 demo、架构图和数据库设计。",
-      visibility: "全校可见",
+      visibility: "好友可见",
       likes: 12,
       comments: 2,
       moderationStatus: "approved",
@@ -104,9 +104,20 @@ export const mockStore = {
       authorId: "u-1001",
       author: "林一",
       body: "CampusLink 第一条链路：验证码登录、好友搜索、聊天和动态已经串起来。",
-      visibility: "好友可见",
+      visibility: "全校可见",
       likes: 5,
       comments: 1,
+      moderationStatus: "approved",
+      moderationReason: "内容符合校园动态规范"
+    },
+    {
+      id: 3,
+      authorId: "u-2001",
+      author: "陈老师",
+      body: "教师研讨会将在周五下午举行，相关老师可在教研室确认材料。",
+      visibility: "仅老师可见",
+      likes: 3,
+      comments: 0,
       moderationStatus: "approved",
       moderationReason: "内容符合校园动态规范"
     }

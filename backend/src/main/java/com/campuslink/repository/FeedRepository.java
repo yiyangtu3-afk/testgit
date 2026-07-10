@@ -9,6 +9,8 @@ public interface FeedRepository {
 
   List<PostEntity> findVisiblePosts();
 
+  List<PostEntity> findPostsVisibleTo(String viewerId);
+
   List<PostEntity> findPostsByAuthor(String authorId);
 
   Optional<PostEntity> findPost(Long postId);

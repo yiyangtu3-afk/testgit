@@ -225,8 +225,8 @@ if (files.js.indexOf("moderationWorkbenchMarkup()") > files.js.indexOf("Audit Lo
   failures.push("admin layout: expected pending content workbench to render before audit log");
 }
 
-expectIncludes("html", "20260708-user-moderation-scroll-v2", "admin review cache-busting version");
-expectIncludes("appEntry", "20260708-user-moderation-scroll-v2", "root app imports current admin review module version");
+expectIncludes("html", "20260709-feed-visibility-v1", "admin review cache-busting version");
+expectIncludes("appEntry", "20260709-feed-visibility-v1", "root app imports current admin review module version");
 
 expectIncludes("js", "setRealtimeMode", "chat realtime status updater");
 expectIncludes("js", "HEARTBEAT_INTERVAL_MS", "chat realtime heartbeat interval");
@@ -270,6 +270,8 @@ expectMatch("js", /request\(`\/admin\/report\?range=\$\{encodeURIComponent\(rang
 expectMatch("js", /await loadModerationItems\(\);\s*await backfillModerationItemsWhenMetricsDisagree\(\);\s*await loadAuditEvents\(\);/, "admin loads moderation before audit events");
 expectMatch("js", /post\.moderationStatus === "approved"/, "campus feed only renders approved posts");
 expectMatch("js", /comment\.moderationStatus === "approved"/, "campus feed only renders approved comments");
+expectMatch("js", /function canViewPost\(post\)/, "mock feed visibility guard");
+expectMatch("js", /return mockStore\.posts\.filter\(canViewPost\);/, "mock feed applies visibility guard");
 expectMatch("js", /state\.personalPostManagerOpen = true;/, "post publish opens personal post manager");
 expectMatch("js", /state\.feedNotice = successNotice\("评论已提交审核，通过后会显示在动态下。"\);/, "comment publish shows pending feedback");
 expectMatch("js", /moderationItems\(\) \{\s*return mockStore\.moderationItems\.filter\(\(item\) => item\.status === "pending"\);/s, "mock moderation list returns pending queue");
@@ -346,6 +348,10 @@ expectMatch("backend", /findPending\(\)\.stream\(\)\s*\.map\(DemoMapper::toModer
 expectMatch("backend", /as moderationReason/, "backend personal post query returns moderation reason");
 expectMatch("backend", /p\.moderation_status = 'approved'/, "backend campus feed only returns approved posts");
 expectMatch("backend", /c\.moderation_status = 'approved'/, "backend campus feed only returns approved comments");
+expectMatch("backend", /findPostsVisibleTo\(String viewerId\)/, "backend feed repository has viewer-specific visibility query");
+expectMatch("backend", /p\.visibility = '好友可见'/, "backend feed applies friend visibility rule");
+expectMatch("backend", /p\.visibility = '仅老师可见'/, "backend feed applies teacher visibility rule");
+expectMatch("backend", /feed\(authTokenService\.requireUserId\(authorization\)\)/, "backend feed resolves the token user");
 
 [
   ["mybatis-spring-boot-starter", "MyBatis starter dependency"],
@@ -358,6 +364,7 @@ expectMatch("backend", /c\.moderation_status = 'approved'/, "backend campus feed
   ["username: campuslink", "MySQL demo username"],
   ["schema.sql", "schema init configuration"],
   ["create table if not exists users", "MySQL users schema"],
+  ["visibility varchar(20)", "MySQL post visibility schema"],
   ["insert into users", "MySQL demo seed data"],
   ["m-demo-post-9001", "MySQL demo pending moderation seed"],
   ["on duplicate key update", "idempotent MySQL demo seed data"]

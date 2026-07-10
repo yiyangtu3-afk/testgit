@@ -1,6 +1,6 @@
 import { API_BASE, state } from "../state.js";
 import { setApiMode } from "../ui/status.js";
-import { mockApi } from "./mock-api.js?v=20260708-user-moderation-scroll-v2";
+import { mockApi } from "./mock-api.js?v=20260709-feed-visibility-v1";
 
 class ApiUnavailableError extends Error {
   constructor(cause) {

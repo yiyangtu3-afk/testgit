@@ -1,8 +1,7 @@
-# CampusLink 新对话交接说明（2026-07-08）
+# CampusLink 新对话交接说明（2026-07-09 更新）
 
-本文用于在新 Codex 对话中恢复 CampusLink 当前开发上下文。当前状态已经
-回退到 **普通用户审核状态反馈** 完成之后，并额外修复了窄窗口下周同学
-聊天记录不能上下滚动的问题。
+本文用于在新 Codex 对话中恢复 CampusLink 当前开发上下文。当前状态保留
+**普通用户审核状态反馈**、窄窗口聊天滚动修复和动态可见范围真实过滤。
 
 ## 当前基线
 
@@ -13,13 +12,13 @@
 当前静态资源版本是：
 
 ```text
-20260708-user-moderation-scroll-v2
+20260709-feed-visibility-v1
 ```
 
 当前本地验证地址是：
 
 ```text
-http://127.0.0.1:5179/?v=20260708-user-moderation-scroll-v2
+http://127.0.0.1:5179/?v=20260709-feed-visibility-v1
 ```
 
 ## 已完成内容
@@ -39,12 +38,26 @@ http://127.0.0.1:5179/?v=20260708-user-moderation-scroll-v2
 - 普通用户发布评论后会显示 **评论已提交审核，通过后会显示在动态下**。
 - 个人动态管理展示 **待审核**、**已发布**、**已拒绝** 状态和审核说明。
 - 公共动态和评论只展示 `approved` 内容。
+- 动态可见范围持久化到 MySQL：**全校可见** 对所有用户开放，**好友可见**
+  对作者和已建立好友关系的用户开放，**仅老师可见** 对作者和教师开放。
+- `GET /api/feed` 从 bearer token 解析当前用户，并在 MyBatis 查询中执行
+  可见范围过滤；Mock 数据使用同一组规则。
 - 登录页保持黑色右侧信息面板版本：**简洁的校园沟通空间**，右侧展示
   **身份**、**状态**、**模式** 三个信息块。
 - 聊天附件保持普通文件卡片展示，不做图片气泡或大图预览。
 - 修复窄窗口下林一与周同学聊天内容不能上下滑动的问题。
 
-## 最近一次修复
+## 2026-07-09 基线修复
+
+本次基线修复将动态范围从仅在前端展示的字段，调整为真正参与数据库写入
+和读取的访问规则。为兼容已有本地 MySQL 数据，`schema.sql` 会先检查
+`posts.visibility` 是否存在，再按需执行迁移；不会重置历史动态或好友关系。
+
+同一轮还收紧了 API 降级策略：仅在 Java API 完全不可达时使用 Mock。
+Java API 返回 `4xx` 或 `5xx` 时，界面保留失败结果，不会写入浏览器内的
+Mock 数据。
+
+## 最近一次界面修复
 
 最近一次修复只改了聊天滚动布局。问题原因是窄窗口下触发移动端布局，
 `.workspace-view` 变成自适应高度，长聊天会把 `.message-stream` 撑高，
@@ -117,6 +130,10 @@ scrollTop 从 1541.5 变到 1181.5
 - `frontend/js/admin/audit-events.js`
 - `frontend/js/api/client.js`
 - `frontend/js/api/mock-api.js`
+- `backend/src/main/java/com/campuslink/controller/FeedController.java`
+- `backend/src/main/java/com/campuslink/service/FeedService.java`
+- `backend/src/main/java/com/campuslink/mapper/FeedMapper.java`
+- `backend/src/main/resources/schema.sql`
 - `tests/frontend-smoke.test.js`
 
 ## 当前验证记录
@@ -134,7 +151,7 @@ scrollTop 从 1541.5 变到 1181.5
 2. 使用浏览器打开当前版本：
 
    ```text
-   http://127.0.0.1:5179/?v=20260708-user-moderation-scroll-v2
+   http://127.0.0.1:5179/?v=20260709-feed-visibility-v1
    ```
 
    结果：页面无当前版本模块错误。
@@ -147,6 +164,13 @@ scrollTop 从 1541.5 变到 1181.5
 
    结果：消息流 `scrollHeight > clientHeight`，实际滚轮上滑后
    `scrollTop` 变小，确认可上下滑动。
+
+5. 使用修改后的后端副本连接本地 MySQL，分别以学生、好友学生和教师账号
+   读取动态流。
+
+   结果：全校动态对学生可见，好友动态对已有好友可见，仅老师动态不显示
+   给学生且显示给教师。当前本地历史数据中四个演示账号已互为好友，因此
+   非好友拒绝分支由 Mock 行为检查和 SQL 条件检查覆盖，未重置数据库。
 
 ## 重要注意事项
 
@@ -197,8 +221,8 @@ backend/AGENTS.md。项目路径是 /Users/linus_k/Documents/test。不要重置
 
 当前基线已经回退到“普通用户审核状态反馈完成”之后，并额外修复了窄窗口
 下林一与周同学聊天内容不能上下滑动的问题。当前静态资源版本是
-20260708-user-moderation-scroll-v2，本地验证地址是：
-http://127.0.0.1:5179/?v=20260708-user-moderation-scroll-v2
+20260709-feed-visibility-v1，本地验证地址是：
+http://127.0.0.1:5179/?v=20260709-feed-visibility-v1
 
 当前保留的功能：
 - 管理员后台有“待审核内容”工作台，位于指标卡片下方、审计记录上方。

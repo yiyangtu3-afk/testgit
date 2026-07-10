@@ -60,10 +60,27 @@ create table if not exists posts (
   id varchar(32) primary key,
   author_id varchar(32) not null,
   body varchar(2000) not null,
+  visibility varchar(20) not null default '全校可见',
   likes int not null default 0,
   moderation_status varchar(20) not null,
   created_at timestamp not null default current_timestamp
 );
+
+set @post_visibility_exists = (
+  select count(*)
+  from information_schema.columns
+  where table_schema = database()
+    and table_name = 'posts'
+    and column_name = 'visibility'
+);
+set @post_visibility_migration = if(
+  @post_visibility_exists = 0,
+  'alter table posts add column visibility varchar(20) not null default ''全校可见''',
+  'select 1'
+);
+prepare add_post_visibility from @post_visibility_migration;
+execute add_post_visibility;
+deallocate prepare add_post_visibility;
 
 create table if not exists comments (
   id varchar(32) primary key,

@@ -1,7 +1,7 @@
-import { api } from "../api/client.js?v=20260708-user-moderation-scroll-v2";
+import { api } from "../api/client.js?v=20260709-feed-visibility-v1";
 import { API_BASE, state } from "../state.js";
 import { isAdminUser } from "../utils/auth.js";
-import { loadAdminData } from "../loaders.js?v=20260708-user-moderation-scroll-v2";
+import { loadAdminData } from "../loaders.js?v=20260709-feed-visibility-v1";
 
 export async function bindAdminAuditEvents(event) {
   const toggleAll = event.target.closest("[data-toggle-all-audit-events]");

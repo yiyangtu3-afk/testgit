@@ -41,10 +41,11 @@ class FeedControllerTest {
 
   @Test
   void feedReturnsPosts() throws Exception {
-    when(feedService.feed()).thenReturn(List.of(
+    when(authTokenService.requireUserId("Bearer test-token")).thenReturn("u-1001");
+    when(feedService.feed("u-1001")).thenReturn(List.of(
         new PostView(1L, "林一", "动态", "全校可见", 3, 1, "approved", "内容符合校园动态规范")));
 
-    mockMvc.perform(get("/api/feed"))
+    mockMvc.perform(get("/api/feed").header("Authorization", "Bearer test-token"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].body").value("动态"));
   }

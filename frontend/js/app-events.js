@@ -1,14 +1,14 @@
-import { api } from "./api/client.js?v=20260708-user-moderation-scroll-v2";
-import { bindAdminAuditEvents } from "./admin/audit-events.js?v=20260708-user-moderation-scroll-v2";
+import { api } from "./api/client.js?v=20260709-feed-visibility-v1";
+import { bindAdminAuditEvents } from "./admin/audit-events.js?v=20260709-feed-visibility-v1";
 import { bindPersonalPostEvents } from "./posts/personal-post-events.js";
 import { state, reportRanges } from "./state.js";
 import { $ } from "./utils/dom.js";
 import { isAdminUser } from "./utils/auth.js";
 import { filesToAttachments, reportToCsv } from "./utils/format.js";
-import { loadAdminData, loadComments, loadFeed, loadFriendRequests, loadFriends, loadMessages, loadPersonalPosts, loadUsers } from "./loaders.js?v=20260708-user-moderation-scroll-v2";
-import { enterDemoWorkspace, loginWithCode, sendLoginCode } from "./auth/session.js?v=20260708-user-moderation-scroll-v2";
-import { logout, switchAccount } from "./auth/workspace.js?v=20260708-user-moderation-scroll-v2";
-import { currentPeer, renderAttachmentTray, renderExportPanel, renderFeed, renderIdentity, renderMessages, switchTab } from "./ui/renderers.js?v=20260708-user-moderation-scroll-v2";
+import { loadAdminData, loadComments, loadFeed, loadFriendRequests, loadFriends, loadMessages, loadPersonalPosts, loadUsers } from "./loaders.js?v=20260709-feed-visibility-v1";
+import { enterDemoWorkspace, loginWithCode, sendLoginCode } from "./auth/session.js?v=20260709-feed-visibility-v1";
+import { logout, switchAccount } from "./auth/workspace.js?v=20260709-feed-visibility-v1";
+import { currentPeer, renderAttachmentTray, renderExportPanel, renderFeed, renderIdentity, renderMessages, switchTab } from "./ui/renderers.js?v=20260709-feed-visibility-v1";
 
 function successNotice(message) {
   return { kind: "success", message };

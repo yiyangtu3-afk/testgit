@@ -17,7 +17,7 @@ Open the local demo in a browser:
 ./script/run_frontend_demo.sh
 ```
 
-Then visit `http://127.0.0.1:5179/?v=20260708-user-moderation-scroll-v2`.
+Then visit `http://127.0.0.1:5179/?v=20260709-feed-visibility-v1`.
 
 The demo supports these flows:
 
@@ -236,6 +236,12 @@ The campus feed includes personal post management. A signed-in user can open
 token user. Editing a post moves it back to pending moderation. Deleting a
 personal post removes that post, its comments, and related moderation records;
 it doesn't delete friends' posts or other users' content.
+
+The public feed resolves the signed-in user from the bearer token. Approved
+posts marked **全校可见** are visible to all users, **好友可见** posts are visible
+to the author and accepted friends, and **仅老师可见** posts are visible to the
+author and teacher accounts. The same rules apply when the frontend uses Mock
+data while the Java API is unavailable.
 
 The admin report endpoint accepts `range=today`, `range=week`, or `range=all`.
 It returns report metadata, the selected range, metrics, pending moderation

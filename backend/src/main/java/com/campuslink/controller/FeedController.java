@@ -33,8 +33,9 @@ public class FeedController {
   }
 
   @GetMapping
-  public List<PostView> feed() {
-    return feedService.feed();
+  public List<PostView> feed(
+      @RequestHeader(value = "Authorization", required = false) String authorization) {
+    return feedService.feed(authTokenService.requireUserId(authorization));
   }
 
   @PostMapping

@@ -1,4 +1,4 @@
-import { api } from "./api/client.js?v=20260708-user-moderation-scroll-v2";
+import { api } from "./api/client.js?v=20260709-feed-visibility-v1";
 import { state } from "./state.js";
 import { isAdminUser } from "./utils/auth.js";
 import { normalizePost } from "./utils/format.js";
@@ -13,7 +13,7 @@ import {
   renderModerationItems,
   renderPersonalPostManager,
   renderSearchResults
-} from "./ui/renderers.js?v=20260708-user-moderation-scroll-v2";
+} from "./ui/renderers.js?v=20260709-feed-visibility-v1";
 
 export async function loadUsers(keyword = "") {
   state.users = await api.users(keyword);

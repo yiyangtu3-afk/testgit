@@ -29,9 +29,10 @@ class FeedServiceTest {
   void feedReturnsVisiblePostsFromRepository() {
     feedRepository.posts.add(new PostEntity(2L, "周同学", "待审动态", "全校可见", 0, 0, "pending", "校园动态发布审核"));
 
-    List<PostView> posts = feedService.feed();
+    List<PostView> posts = feedService.feed("u-1001");
 
     assertThat(posts).extracting(PostView::body).containsExactly("数据库动态");
+    assertThat(feedRepository.lastViewerId).isEqualTo("u-1001");
   }
 
   @Test
@@ -43,6 +44,13 @@ class FeedServiceTest {
     assertThat(post.moderationStatus()).isEqualTo("pending");
     assertThat(post.moderationReason()).isEqualTo("校园动态发布审核");
     assertThat(moderationRepository.findPending()).hasSize(1);
+  }
+
+  @Test
+  void publishRejectsUnsupportedVisibility() {
+    assertThatThrownBy(() -> feedService.publish("u-1001", "新动态", "陌生人可见"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("动态可见范围不支持");
   }
 
   @Test
@@ -140,10 +148,17 @@ class FeedServiceTest {
     private final List<PostEntity> posts = new ArrayList<>(List.of(
         new PostEntity(1L, "林一", "数据库动态", "全校可见", 0, 0, "approved", "内容符合校园动态规范")));
     private final List<CommentEntity> comments = new ArrayList<>();
+    private String lastViewerId;
 
     @Override
     public List<PostEntity> findVisiblePosts() {
       return posts.stream().filter(post -> "approved".equals(post.moderationStatus())).toList();
+    }
+
+    @Override
+    public List<PostEntity> findPostsVisibleTo(String viewerId) {
+      lastViewerId = viewerId;
+      return findVisiblePosts();
     }
 
     @Override

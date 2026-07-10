@@ -69,13 +69,15 @@ on duplicate key update
 delete from comments where post_id in ('p-campus-run', 'p-library-seat');
 delete from posts where id in ('p-campus-run', 'p-library-seat');
 
-insert into posts (id, author_id, body, likes, moderation_status) values
-  ('1', 'u-2001', '软件工程课程设计进入验收阶段，请各组准备可运行 demo、架构图和数据库设计。', 12, 'approved'),
-  ('2', 'u-1001', 'CampusLink 第一条链路：验证码登录、好友搜索、聊天和动态已经串起来。', 5, 'approved'),
-  ('9001', 'u-2002', '今天社团招新摊位安排在图书馆门口，欢迎大家下午来看看。', 0, 'pending')
+insert into posts (id, author_id, body, visibility, likes, moderation_status) values
+  ('1', 'u-2001', '软件工程课程设计进入验收阶段，请各组准备可运行 demo、架构图和数据库设计。', '好友可见', 12, 'approved'),
+  ('2', 'u-1001', 'CampusLink 第一条链路：验证码登录、好友搜索、聊天和动态已经串起来。', '全校可见', 5, 'approved'),
+  ('3', 'u-2001', '教师研讨会将在周五下午举行，相关老师可在教研室确认材料。', '仅老师可见', 3, 'approved'),
+  ('9001', 'u-2002', '今天社团招新摊位安排在图书馆门口，欢迎大家下午来看看。', '全校可见', 0, 'pending')
 on duplicate key update
   author_id = values(author_id),
   body = values(body),
+  visibility = values(visibility),
   likes = values(likes),
   moderation_status = values(moderation_status);
 

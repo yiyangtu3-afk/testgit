@@ -27,6 +27,19 @@ function areFriends(firstUserId, secondUserId) {
   });
 }
 
+function canViewPost(post) {
+  if (post.moderationStatus !== "approved") {
+    return false;
+  }
+  if (post.visibility === "全校可见" || post.authorId === state.currentUser.id) {
+    return true;
+  }
+  if (post.visibility === "好友可见") {
+    return areFriends(post.authorId, state.currentUser.id);
+  }
+  return post.visibility === "仅老师可见" && state.currentUser.role.includes("教师");
+}
+
 function addFriendship(firstUserId, secondUserId) {
   if (!areFriends(firstUserId, secondUserId)) {
     mockStore.friendships.push([firstUserId, secondUserId]);
@@ -189,7 +202,7 @@ export const mockApi = {
     return { presence };
   },
   async feed() {
-    return mockStore.posts.filter((post) => post.moderationStatus === "approved");
+    return mockStore.posts.filter(canViewPost);
   },
   async publishPost(body, visibility) {
     const post = {

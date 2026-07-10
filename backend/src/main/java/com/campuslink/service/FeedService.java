@@ -8,10 +8,13 @@ import com.campuslink.entity.DemoEntities.PostEntity;
 import com.campuslink.repository.FeedRepository;
 import com.campuslink.repository.ModerationRepository;
 import java.util.List;
+import java.util.Set;
 import org.springframework.stereotype.Service;
 
 @Service
 public class FeedService {
+
+  private static final Set<String> SUPPORTED_VISIBILITIES = Set.of("全校可见", "好友可见", "仅老师可见");
 
   private final FeedRepository feedRepository;
   private final ModerationRepository moderationRepository;
@@ -29,17 +32,18 @@ public class FeedService {
     this.userService = userService;
   }
 
-  public List<PostView> feed() {
-    return feedRepository.findVisiblePosts().stream()
+  public List<PostView> feed(String currentUserId) {
+    return feedRepository.findPostsVisibleTo(currentUserId).stream()
         .map(DemoMapper::toPostView)
         .toList();
   }
 
   public PostView publish(String currentUserId, String body, String visibility) {
-    PostEntity post = feedRepository.savePost(currentUserId, body, visibility);
+    String normalizedVisibility = requireSupportedVisibility(visibility);
+    PostEntity post = feedRepository.savePost(currentUserId, body, normalizedVisibility);
     String reason = "校园动态发布审核";
     moderationRepository.create("post", post.id(), null, reason);
-    auditService.addAudit("动态", userService.userName(currentUserId) + "发布一条" + visibility + "动态");
+    auditService.addAudit("动态", userService.userName(currentUserId) + "发布一条" + normalizedVisibility + "动态");
     return DemoMapper.toPostView(withModerationReason(post, reason));
   }
 
@@ -98,5 +102,12 @@ public class FeedService {
         post.comments(),
         post.moderationStatus(),
         reason);
+  }
+
+  private String requireSupportedVisibility(String visibility) {
+    if (!SUPPORTED_VISIBILITIES.contains(visibility)) {
+      throw new IllegalArgumentException("动态可见范围不支持");
+    }
+    return visibility;
   }
 }

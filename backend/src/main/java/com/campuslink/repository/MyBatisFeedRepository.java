@@ -26,6 +26,11 @@ public class MyBatisFeedRepository implements FeedRepository {
   }
 
   @Override
+  public List<PostEntity> findPostsVisibleTo(String viewerId) {
+    return feedMapper.findPostsVisibleTo(viewerId);
+  }
+
+  @Override
   public List<PostEntity> findPostsByAuthor(String authorId) {
     return feedMapper.findPostsByAuthor(authorId);
   }
@@ -39,17 +44,8 @@ public class MyBatisFeedRepository implements FeedRepository {
   @Transactional
   public PostEntity savePost(String authorId, String body, String visibility) {
     long postId = postIds.incrementAndGet();
-    feedMapper.insertPost(String.valueOf(postId), authorId, body);
-    PostEntity saved = findPost(postId).orElseThrow();
-    return new PostEntity(
-        saved.id(),
-        saved.author(),
-        saved.body(),
-        visibility,
-        saved.likes(),
-        saved.comments(),
-        saved.moderationStatus(),
-        saved.moderationReason());
+    feedMapper.insertPost(String.valueOf(postId), authorId, body, visibility);
+    return findPost(postId).orElseThrow();
   }
 
   @Override

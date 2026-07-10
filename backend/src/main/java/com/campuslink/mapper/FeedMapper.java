@@ -17,7 +17,7 @@ public interface FeedMapper {
       select cast(p.id as signed) as id,
              u.name as author,
              p.body,
-             '全校可见' as visibility,
+             p.visibility,
              p.likes,
              (
                select count(*)
@@ -44,9 +44,53 @@ public interface FeedMapper {
 
   @Select("""
       select cast(p.id as signed) as id,
+             author.name as author,
+             p.body,
+             p.visibility,
+             p.likes,
+             (
+               select count(*)
+               from comments c
+               where c.post_id = p.id and c.moderation_status = 'approved'
+             ) as comments,
+             p.moderation_status as moderationStatus,
+             (
+               select m.reason
+               from moderation_items m
+               where m.content_type = 'post'
+                 and m.content_id = p.id
+                 and m.status = p.moderation_status
+               order by m.created_at desc, m.id desc
+               limit 1
+             ) as moderationReason
+      from posts p
+      join users author on author.id = p.author_id
+      join users viewer on viewer.id = #{viewerId}
+      where p.moderation_status = 'approved'
+        and p.id regexp '^[0-9]+$'
+        and (
+          p.visibility = '全校可见'
+          or p.author_id = #{viewerId}
+          or (
+            p.visibility = '好友可见'
+            and exists (
+              select 1
+              from friendships f
+              where (f.first_user_id = p.author_id and f.second_user_id = #{viewerId})
+                 or (f.second_user_id = p.author_id and f.first_user_id = #{viewerId})
+            )
+          )
+          or (p.visibility = '仅老师可见' and viewer.major like '%教师%')
+        )
+      order by p.created_at desc, cast(p.id as signed) desc
+      """)
+  List<PostEntity> findPostsVisibleTo(@Param("viewerId") String viewerId);
+
+  @Select("""
+      select cast(p.id as signed) as id,
              u.name as author,
              p.body,
-             '全校可见' as visibility,
+             p.visibility,
              p.likes,
              (
                select count(*)
@@ -75,7 +119,7 @@ public interface FeedMapper {
       select cast(p.id as signed) as id,
              u.name as author,
              p.body,
-             '全校可见' as visibility,
+             p.visibility,
              p.likes,
              (
                select count(*)
@@ -102,7 +146,7 @@ public interface FeedMapper {
       select cast(p.id as signed) as id,
              u.name as author,
              p.body,
-             '全校可见' as visibility,
+             p.visibility,
              p.likes,
              (
                select count(*)
@@ -126,10 +170,14 @@ public interface FeedMapper {
   PostEntity findPostByAuthor(@Param("authorId") String authorId, @Param("postId") String postId);
 
   @Insert("""
-      insert into posts (id, author_id, body, likes, moderation_status)
-      values (#{id}, #{authorId}, #{body}, 0, 'pending')
+      insert into posts (id, author_id, body, visibility, likes, moderation_status)
+      values (#{id}, #{authorId}, #{body}, #{visibility}, 0, 'pending')
       """)
-  void insertPost(@Param("id") String id, @Param("authorId") String authorId, @Param("body") String body);
+  void insertPost(
+      @Param("id") String id,
+      @Param("authorId") String authorId,
+      @Param("body") String body,
+      @Param("visibility") String visibility);
 
   @Update("""
       update posts
