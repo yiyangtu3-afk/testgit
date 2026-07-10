@@ -1,9 +1,9 @@
 # CampusLink demo
 
-This repository contains the first verifiable demo for a campus social desktop
-application. The current milestone focuses on a clickable Electron-style
-frontend and a minimal Java backend skeleton that matches the first API
-boundary.
+This repository contains a verifiable full-stack demo for a campus social
+application. It combines a static browser frontend with a Spring Boot and
+MySQL backend for authentication, social interaction, real-time chat, content
+moderation, and administrative workflows.
 
 > **Note:** Spring Boot is free and open source. You can run this backend with
 > Maven and any compatible JDK. IntelliJ IDEA Ultimate is optional; IntelliJ
@@ -17,7 +17,7 @@ Open the local demo in a browser:
 ./script/run_frontend_demo.sh
 ```
 
-Then visit `http://127.0.0.1:5178/?v=20260705-personal-status-badges`.
+Then visit `http://127.0.0.1:5179/?v=20260708-user-moderation-scroll-v2`.
 
 The demo supports these flows:
 
@@ -32,8 +32,9 @@ The demo supports these flows:
 - Open a conversation and send a simulated chat message.
 - Keep open chat conversations refreshed through a lightweight WebSocket
   channel when the Java API is running.
-- Attach one or more local files to a chat message and verify the attachment
-  preview in the sent message bubble.
+- Attach one or more local files to a chat message and verify each attachment
+  as a standard file card. The demo doesn't show image bubbles or large image
+  previews.
 - Withdraw the latest message sent by the current user.
 - Switch online and invisible presence states.
 - Publish a campus feed post.
@@ -47,9 +48,11 @@ The demo supports these flows:
   report card with preview rows, a CSV download, and a print preview action.
 - View admin metrics and live audit records.
 
-The frontend tries `http://127.0.0.1:8080/api` first. If the Java API isn't
-running, it falls back to the built-in mock data and shows **Mock** in the
-sidebar. When the Java API responds, the sidebar shows **Java API**.
+The frontend tries `http://127.0.0.1:8080/api` first. If the Java API can't be
+reached, it falls back to the built-in mock data and shows **Mock** in the
+sidebar. When the Java API responds, the sidebar shows **Java API**. A response
+from the Java API with an error status doesn't fall back to Mock, so rejected
+or failed requests remain visible instead of changing browser-only data.
 
 After login, the Java API returns a demo bearer token. The frontend sends that
 token in the `Authorization` header, and protected live API requests resolve
@@ -245,8 +248,9 @@ Admins can also delete one or more rows from the audit table. This only removes
 the audit event rows from `audit_events`; it doesn't delete users, posts,
 comments, moderation records, or chat messages.
 
-## Next steps
+## Development roadmap
 
-Next, continue with broader integration tests against a disposable MySQL test
-database or harden the WebSocket channel with heartbeat and reconnect status
-UI.
+The project follows the staged plan in
+[`docs/resume-project-roadmap.md`](docs/resume-project-roadmap.md). The next
+milestones focus on a trustworthy baseline, a campus activity registration
+workflow, notifications, production-style security, and repeatable delivery.

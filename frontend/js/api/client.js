@@ -2,14 +2,27 @@ import { API_BASE, state } from "../state.js";
 import { setApiMode } from "../ui/status.js";
 import { mockApi } from "./mock-api.js?v=20260708-user-moderation-scroll-v2";
 
+class ApiUnavailableError extends Error {
+  constructor(cause) {
+    super("Java API 暂不可用。");
+    this.name = "ApiUnavailableError";
+    this.cause = cause;
+  }
+}
+
 async function request(path, options = {}) {
-  const response = await fetch(`${API_BASE}${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(state.token ? { Authorization: `Bearer ${state.token}` } : {})
-    },
-    ...options
-  });
+  let response;
+  try {
+    response = await fetch(`${API_BASE}${path}`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...(state.token ? { Authorization: `Bearer ${state.token}` } : {})
+      },
+      ...options
+    });
+  } catch (error) {
+    throw new ApiUnavailableError(error);
+  }
 
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}`);
@@ -22,7 +35,10 @@ async function withApi(liveCall, fallbackCall) {
     const result = await liveCall();
     setApiMode("live");
     return result;
-  } catch {
+  } catch (error) {
+    if (!(error instanceof ApiUnavailableError)) {
+      throw error;
+    }
     const result = await fallbackCall();
     setApiMode("mock");
     return result;

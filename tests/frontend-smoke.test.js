@@ -256,6 +256,13 @@ expectIncludes("js", "heartbeat.pong", "chat realtime heartbeat pong");
   ["setApiMode(\"mock\")", "default mock mode"]
 ].forEach(([needle, label]) => expectIncludes("js", needle, label));
 
+expectIncludes("apiClient", "class ApiUnavailableError", "live API availability error type");
+expectMatch(
+  "apiClient",
+  /if \(!\(error instanceof ApiUnavailableError\)\) \{\s*throw error;\s*\}/,
+  "live API errors do not mutate mock data"
+);
+
 expectMatch("js", /request\("\/admin\/moderation"\)/, "moderation list endpoint");
 expectMatch("js", /\/admin\/moderation\/\$\{itemId}\/\$\{decision}/, "moderation decision endpoint");
 expectMatch("js", /request\("\/admin\/moderation", \{\s*method: "DELETE"/, "moderation delete endpoint");
