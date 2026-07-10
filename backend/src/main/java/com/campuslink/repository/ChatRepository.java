@@ -7,7 +7,11 @@ import java.util.Optional;
 
 public interface ChatRepository {
 
-  List<MessageEntity> findMessages(String peerId, String currentUserId);
+  List<MessageEntity> findMessagePage(String peerId, String currentUserId, Long beforeId, int limit);
+
+  void markConversationRead(String currentUserId, String peerId, Long lastReadMessageId);
+
+  java.util.Map<String, Integer> unreadCounts(String currentUserId);
 
   MessageEntity saveMessage(String peerId, String fromUserId, String body, List<AttachmentEntity> attachments);
 

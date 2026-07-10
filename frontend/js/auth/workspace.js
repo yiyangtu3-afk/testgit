@@ -1,10 +1,10 @@
 import { mockStore, state } from "../state.js";
-import { api } from "../api/client.js?v=20260709-chat-access-v1";
-import { accountById, pushMockAudit } from "../api/mock-api.js?v=20260709-chat-access-v1";
+import { api } from "../api/client.js?v=20260710-chat-pagination-v1";
+import { accountById, pushMockAudit } from "../api/mock-api.js?v=20260710-chat-pagination-v1";
 import { $ } from "../utils/dom.js";
 import { setApiMode, setRealtimeMode, setStatus } from "../ui/status.js";
 import { renderAccountSwitch, renderAttachmentTray, renderExportPanel, renderIdentity, renderMessages } from "../ui/renderers.js";
-import { loadAdminData, loadFeed, loadFriendRequests, loadFriends, loadMessages, loadUsers } from "../loaders.js?v=20260709-chat-access-v1";
+import { loadAdminData, loadFeed, loadFriendRequests, loadFriends, loadMessages, loadUnreadCounts, loadUsers } from "../loaders.js?v=20260710-chat-pagination-v1";
 import { connectChatRealtime, disconnectChatRealtime } from "../chat/realtime.js";
 
 export async function bootstrapWorkspace() {
@@ -13,7 +13,8 @@ export async function bootstrapWorkspace() {
   await loadUsers();
   await loadFriendRequests();
   await loadFriends();
-  await Promise.all(state.friends.map((user) => loadMessages(user.id)));
+  await loadUnreadCounts();
+  await loadMessages();
   await Promise.all([loadFeed(), loadAdminData()]);
   renderMessages();
 }
@@ -34,6 +35,7 @@ export async function switchAccount(userId) {
   state.currentUser = { ...account, presence: state.currentUser.presence || "online" };
   state.selectedConversation = "";
   state.conversations = {};
+  state.conversationPaging = {};
   state.unread = {};
   state.pendingAttachments = [];
   state.feedNotice = null;
@@ -64,11 +66,8 @@ export function logout() {
   state.users = [];
   state.selectedConversation = "u-2001";
   state.conversations = {};
-  state.unread = {
-    "u-2001": 0,
-    "u-2002": 2,
-    "u-2003": 1
-  };
+  state.conversationPaging = {};
+  state.unread = {};
   state.friendRequests = {};
   state.friendRequestItems = [];
   state.friends = [];

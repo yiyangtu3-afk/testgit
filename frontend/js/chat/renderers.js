@@ -11,12 +11,18 @@ export function currentPeer() {
     state.users[0]
   );
 }
-export function renderMessages() {
+export function renderMessages({ preserveScroll = false } = {}) {
   const peer = currentPeer();
   if (!peer) return;
   $("#chatTitle").textContent = peer.name;
-  state.unread[peer.id] = 0;
-  $("#messageStream").innerHTML = (state.conversations[peer.id] || [])
+  const stream = $("#messageStream");
+  const previousScrollTop = stream.scrollTop;
+  const previousScrollHeight = stream.scrollHeight;
+  const paging = state.conversationPaging[peer.id];
+  const loadOlder = paging?.hasMore
+    ? `<button class="small-button load-older-messages" data-load-older-messages="${peer.id}" type="button">加载更早消息</button>`
+    : "";
+  stream.innerHTML = `${loadOlder}${(state.conversations[peer.id] || [])
     .map((message) => {
       const mine = message.from === state.currentUser.id;
       const attachments = message.deleted ? [] : message.attachments || [];
@@ -40,8 +46,10 @@ export function renderMessages() {
         </article>
       `;
     })
-    .join("");
-  $("#messageStream").scrollTop = $("#messageStream").scrollHeight;
+    .join("")}`;
+  stream.scrollTop = preserveScroll
+    ? previousScrollTop + stream.scrollHeight - previousScrollHeight
+    : stream.scrollHeight;
   renderConversations();
 }
 

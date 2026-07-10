@@ -1,6 +1,8 @@
 package com.campuslink.controller;
 
 import com.campuslink.dto.DemoDtos.MessageView;
+import com.campuslink.dto.DemoDtos.ConversationPageView;
+import com.campuslink.dto.DemoDtos.UnreadCountsView;
 import com.campuslink.dto.DemoDtos.PresenceRequest;
 import com.campuslink.dto.DemoDtos.PresenceResponse;
 import com.campuslink.dto.DemoDtos.SendMessageRequest;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -29,10 +32,18 @@ public class ChatController {
   }
 
   @GetMapping("/conversations/{peerId}/messages")
-  public List<MessageView> messages(
+  public ConversationPageView messages(
       @PathVariable String peerId,
+      @RequestParam(required = false) Long beforeId,
+      @RequestParam(defaultValue = "30") int limit,
       @RequestHeader(value = "Authorization", required = false) String authorization) {
-    return chatService.messages(peerId, authTokenService.requireUserId(authorization));
+    return chatService.messages(peerId, authTokenService.requireUserId(authorization), beforeId, limit);
+  }
+
+  @GetMapping("/conversations/unread-counts")
+  public UnreadCountsView unreadCounts(
+      @RequestHeader(value = "Authorization", required = false) String authorization) {
+    return new UnreadCountsView(chatService.unreadCounts(authTokenService.requireUserId(authorization)));
   }
 
   @PostMapping("/conversations/{peerId}/messages")

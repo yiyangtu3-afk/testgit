@@ -1,6 +1,6 @@
 import { API_BASE, state } from "../state.js";
 import { setApiMode } from "../ui/status.js";
-import { mockApi } from "./mock-api.js?v=20260709-chat-access-v1";
+import { mockApi } from "./mock-api.js?v=20260710-chat-pagination-v1";
 
 class ApiUnavailableError extends Error {
   constructor(cause) {
@@ -97,10 +97,20 @@ export const api = {
       () => mockApi.resolveFriendRequest(requestId, decision)
     );
   },
-  messages(peerId) {
+  messages(peerId, beforeId = null, limit = 30) {
+    const query = new URLSearchParams({ limit: String(limit) });
+    if (beforeId !== null) {
+      query.set("beforeId", String(beforeId));
+    }
     return withApi(
-      () => request(`/conversations/${peerId}/messages`),
-      () => mockApi.messages(peerId)
+      () => request(`/conversations/${peerId}/messages?${query}`),
+      () => mockApi.messages(peerId, beforeId, limit)
+    );
+  },
+  unreadCounts() {
+    return withApi(
+      () => request("/conversations/unread-counts"),
+      () => mockApi.unreadCounts()
     );
   },
   sendMessage(peerId, text, attachments = []) {

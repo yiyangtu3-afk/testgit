@@ -6,6 +6,7 @@ import com.campuslink.mapper.ChatMapper;
 import com.campuslink.mapper.ChatMapper.AttachmentRow;
 import com.campuslink.mapper.ChatMapper.MessageRow;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import org.springframework.stereotype.Repository;
@@ -22,10 +23,23 @@ public class MyBatisChatRepository implements ChatRepository {
   }
 
   @Override
-  public List<MessageEntity> findMessages(String peerId, String currentUserId) {
-    return chatMapper.findMessages(peerId, currentUserId).stream()
+  public List<MessageEntity> findMessagePage(String peerId, String currentUserId, Long beforeId, int limit) {
+    return chatMapper.findMessagePage(peerId, currentUserId, beforeId, limit).stream()
         .map(this::toMessageEntity)
         .toList();
+  }
+
+  @Override
+  public void markConversationRead(String currentUserId, String peerId, Long lastReadMessageId) {
+    chatMapper.upsertConversationRead(currentUserId, peerId, String.valueOf(lastReadMessageId));
+  }
+
+  @Override
+  public Map<String, Integer> unreadCounts(String currentUserId) {
+    return chatMapper.unreadCounts(currentUserId).stream()
+        .collect(java.util.stream.Collectors.toMap(
+            ChatMapper.UnreadCountRow::peerId,
+            ChatMapper.UnreadCountRow::count));
   }
 
   @Override

@@ -1,4 +1,4 @@
-import { api } from "./api/client.js?v=20260709-chat-access-v1";
+import { api } from "./api/client.js?v=20260710-chat-pagination-v1";
 import { state } from "./state.js";
 import { isAdminUser } from "./utils/auth.js";
 import { normalizePost } from "./utils/format.js";
@@ -13,7 +13,7 @@ import {
   renderModerationItems,
   renderPersonalPostManager,
   renderSearchResults
-} from "./ui/renderers.js?v=20260709-chat-access-v1";
+} from "./ui/renderers.js?v=20260710-chat-pagination-v1";
 
 export async function loadUsers(keyword = "") {
   state.users = await api.users(keyword);
@@ -39,9 +39,26 @@ export async function loadFriendRequests() {
   renderFriendRequests();
 }
 
-export async function loadMessages(peerId = state.selectedConversation) {
-  state.conversations[peerId] = await api.messages(peerId);
-  renderMessages();
+export async function loadMessages(peerId = state.selectedConversation, beforeId = null) {
+  if (!peerId) return;
+  const page = await api.messages(peerId, beforeId);
+  state.conversations[peerId] = beforeId === null
+    ? page.messages
+    : [...page.messages, ...(state.conversations[peerId] || [])];
+  state.conversationPaging[peerId] = {
+    hasMore: page.hasMore,
+    nextBeforeId: page.nextBeforeId
+  };
+  if (beforeId === null) {
+    await loadUnreadCounts();
+  }
+  renderMessages({ preserveScroll: beforeId !== null });
+}
+
+export async function loadUnreadCounts() {
+  const response = await api.unreadCounts();
+  state.unread = response.counts || {};
+  renderConversations();
 }
 
 export async function loadFeed() {

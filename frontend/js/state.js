@@ -15,11 +15,8 @@ export const state = {
   users: [],
   selectedConversation: "u-2001",
   conversations: {},
-  unread: {
-    "u-2001": 0,
-    "u-2002": 2,
-    "u-2003": 1
-  },
+  conversationPaging: {},
+  unread: {},
   friendRequests: {},
   friendRequestItems: [],
   friends: [],
@@ -76,6 +73,7 @@ export const mockStore = {
       { id: 4, from: "u-2003", text: "后台需要能看到基础统计和审计记录。", time: "周一", deleted: false, attachments: [] }
     ]
   },
+  conversationReads: {},
   posts: [
     {
       id: 9001,

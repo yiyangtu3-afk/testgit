@@ -225,8 +225,8 @@ if (files.js.indexOf("moderationWorkbenchMarkup()") > files.js.indexOf("Audit Lo
   failures.push("admin layout: expected pending content workbench to render before audit log");
 }
 
-expectIncludes("html", "20260709-chat-access-v1", "admin review cache-busting version");
-expectIncludes("appEntry", "20260709-chat-access-v1", "root app imports current admin review module version");
+expectIncludes("html", "20260710-chat-pagination-v1", "chat pagination cache-busting version");
+expectIncludes("appEntry", "20260710-chat-pagination-v1", "root app imports current chat pagination module version");
 
 expectIncludes("js", "setRealtimeMode", "chat realtime status updater");
 expectIncludes("js", "HEARTBEAT_INTERVAL_MS", "chat realtime heartbeat interval");
@@ -273,8 +273,15 @@ expectMatch("js", /comment\.moderationStatus === "approved"/, "campus feed only 
 expectMatch("js", /function canViewPost\(post\)/, "mock feed visibility guard");
 expectMatch("js", /return mockStore\.posts\.filter\(canViewPost\);/, "mock feed applies visibility guard");
 expectMatch("js", /function requireFriendship\(peerId\)/, "mock chat friendship guard");
-expectMatch("js", /async messages\(peerId\) \{\s*requireFriendship\(peerId\);/s, "mock message reads require friendship");
+expectMatch("js", /async messages\(peerId, beforeId = null, limit = 30\) \{\s*requireFriendship\(peerId\);/s, "mock message reads require friendship");
 expectMatch("js", /async sendMessage\(peerId, text, attachments = \[\]\) \{\s*requireFriendship\(peerId\);/s, "mock sends require friendship");
+expectIncludes("js", "conversationPaging", "conversation page state");
+expectIncludes("js", "unreadCounts", "persisted unread count API");
+expectIncludes("js", "data-load-older-messages", "load earlier messages action");
+expectMatch("js", /await loadMessages\(peerId, paging\.nextBeforeId\);/, "load earlier messages uses cursor");
+expectMatch("js", /await loadUnreadCounts\(\);\s*await loadMessages\(\);/, "workspace only loads the selected conversation");
+expectMatch("backend", /@GetMapping\("\/conversations\/unread-counts"\)/, "backend unread count route");
+expectMatch("backend", /findMessagePage\(peerId, currentUserId, beforeId, pageSize \+ 1\)/, "backend retrieves one extra message for cursor pagination");
 expectMatch("js", /state\.personalPostManagerOpen = true;/, "post publish opens personal post manager");
 expectMatch("js", /state\.feedNotice = successNotice\("评论已提交审核，通过后会显示在动态下。"\);/, "comment publish shows pending feedback");
 expectMatch("js", /moderationItems\(\) \{\s*return mockStore\.moderationItems\.filter\(\(item\) => item\.status === "pending"\);/s, "mock moderation list returns pending queue");

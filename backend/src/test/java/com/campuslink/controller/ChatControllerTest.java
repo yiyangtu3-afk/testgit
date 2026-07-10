@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.campuslink.dto.DemoDtos.AttachmentView;
+import com.campuslink.dto.DemoDtos.ConversationPageView;
 import com.campuslink.dto.DemoDtos.MessageView;
 import com.campuslink.dto.DemoDtos.PresenceResponse;
 import com.campuslink.dto.DemoDtos.SendMessageRequest;
@@ -45,15 +46,16 @@ class ChatControllerTest {
   @Test
   void messagesReturnsConversationByPeerId() throws Exception {
     when(authTokenService.requireUserId("Bearer test-token")).thenReturn("u-1001");
-    when(chatService.messages("u-2001", "u-1001")).thenReturn(List.of(
-        new MessageView(1L, "u-2001", "你好", "09:30", false, List.of())));
+    when(chatService.messages("u-2001", "u-1001", null, 30)).thenReturn(new ConversationPageView(
+        List.of(new MessageView(1L, "u-2001", "你好", "09:30", false, List.of())), false, null));
 
     mockMvc.perform(get("/api/conversations/u-2001/messages")
             .header("Authorization", "Bearer test-token"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[0].id").value(1))
-        .andExpect(jsonPath("$[0].from").value("u-2001"))
-        .andExpect(jsonPath("$[0].text").value("你好"));
+        .andExpect(jsonPath("$.messages[0].id").value(1))
+        .andExpect(jsonPath("$.messages[0].from").value("u-2001"))
+        .andExpect(jsonPath("$.messages[0].text").value("你好"))
+        .andExpect(jsonPath("$.hasMore").value(false));
   }
 
   @Test

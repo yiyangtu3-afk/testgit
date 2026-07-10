@@ -55,11 +55,28 @@ class ChatServiceTest {
     chatService.sendMessage("u-2001", "u-1001", new SendMessageRequest("老师好", List.of()));
     chatService.sendMessage("u-1001", "u-2001", new SendMessageRequest("收到", List.of()));
 
-    List<MessageView> studentView = chatService.messages("u-2001", "u-1001");
-    List<MessageView> teacherView = chatService.messages("u-1001", "u-2001");
+    List<MessageView> studentView = chatService.messages("u-2001", "u-1001", null, 30).messages();
+    List<MessageView> teacherView = chatService.messages("u-1001", "u-2001", null, 30).messages();
 
     assertThat(studentView).extracting(MessageView::text).containsExactly("老师好", "收到");
     assertThat(teacherView).extracting(MessageView::text).containsExactly("老师好", "收到");
+  }
+
+  @Test
+  void messagesPaginatesNewestFirstAndMarksLatestPageRead() {
+    chatService.sendMessage("u-2001", "u-1001", new SendMessageRequest("第一条", List.of()));
+    chatService.sendMessage("u-2001", "u-1001", new SendMessageRequest("第二条", List.of()));
+    chatService.sendMessage("u-2001", "u-1001", new SendMessageRequest("第三条", List.of()));
+
+    var latest = chatService.messages("u-2001", "u-1001", null, 2);
+    var older = chatService.messages("u-2001", "u-1001", latest.nextBeforeId(), 2);
+
+    assertThat(latest.messages()).extracting(MessageView::text).containsExactly("第二条", "第三条");
+    assertThat(latest.hasMore()).isTrue();
+    assertThat(latest.nextBeforeId()).isEqualTo(2L);
+    assertThat(older.messages()).extracting(MessageView::text).containsExactly("第一条");
+    assertThat(older.hasMore()).isFalse();
+    assertThat(chat.lastReadMessageId).isEqualTo(3L);
   }
 
   @Test
@@ -84,7 +101,7 @@ class ChatServiceTest {
 
   @Test
   void messagesRejectsNonFriendPeer() {
-    assertThatThrownBy(() -> chatService.messages("u-2002", "u-1001"))
+    assertThatThrownBy(() -> chatService.messages("u-2002", "u-1001", null, 30))
         .isInstanceOf(ForbiddenException.class)
         .hasMessage("仅能与已建立好友关系的用户聊天");
   }
@@ -126,12 +143,32 @@ class ChatServiceTest {
 
     private final List<MessageEntity> messages = new ArrayList<>();
     private final Map<Long, String> messagePeers = new HashMap<>();
+    private Long lastReadMessageId;
 
     @Override
+    public List<MessageEntity> findMessagePage(String peerId, String currentUserId, Long beforeId, int limit) {
+      return messages.stream()
+          .filter(message -> isConversationMessage(message, peerId, currentUserId))
+          .filter(message -> beforeId == null || message.id() < beforeId)
+          .sorted((first, second) -> Long.compare(second.id(), first.id()))
+          .limit(limit)
+          .toList();
+    }
+
     public List<MessageEntity> findMessages(String peerId, String currentUserId) {
       return messages.stream()
           .filter(message -> isConversationMessage(message, peerId, currentUserId))
           .toList();
+    }
+
+    @Override
+    public void markConversationRead(String currentUserId, String peerId, Long lastReadMessageId) {
+      this.lastReadMessageId = lastReadMessageId;
+    }
+
+    @Override
+    public Map<String, Integer> unreadCounts(String currentUserId) {
+      return Map.of();
     }
 
     @Override

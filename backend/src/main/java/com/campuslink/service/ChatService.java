@@ -1,6 +1,7 @@
 package com.campuslink.service;
 
 import com.campuslink.dto.DemoDtos.MessageView;
+import com.campuslink.dto.DemoDtos.ConversationPageView;
 import com.campuslink.dto.DemoDtos.PresenceResponse;
 import com.campuslink.dto.DemoDtos.SendMessageRequest;
 import com.campuslink.entity.DemoEntities.MessageEntity;
@@ -8,6 +9,7 @@ import com.campuslink.repository.ChatRepository;
 import com.campuslink.repository.FriendRepository;
 import com.campuslink.repository.UserRepository;
 import java.util.List;
+import java.util.Map;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -35,11 +37,22 @@ public class ChatService {
     this.chatRealtimeNotifier = chatRealtimeNotifier;
   }
 
-  public List<MessageView> messages(String peerId, String currentUserId) {
+  public ConversationPageView messages(String peerId, String currentUserId, Long beforeId, int limit) {
     requireFriendship(currentUserId, peerId);
-    return chatRepository.findMessages(peerId, currentUserId).stream()
-        .map(DemoMapper::toMessageView)
-        .toList();
+    int pageSize = Math.max(1, Math.min(limit, 50));
+    List<MessageEntity> newestFirst = chatRepository.findMessagePage(peerId, currentUserId, beforeId, pageSize + 1);
+    boolean hasMore = newestFirst.size() > pageSize;
+    List<MessageEntity> page = newestFirst.stream().limit(pageSize).toList();
+    Long nextBeforeId = hasMore ? page.getLast().id() : null;
+    List<MessageView> messages = page.reversed().stream().map(DemoMapper::toMessageView).toList();
+    if (beforeId == null && !page.isEmpty()) {
+      chatRepository.markConversationRead(currentUserId, peerId, page.getFirst().id());
+    }
+    return new ConversationPageView(messages, hasMore, nextBeforeId);
+  }
+
+  public Map<String, Integer> unreadCounts(String currentUserId) {
+    return chatRepository.unreadCounts(currentUserId);
   }
 
   public MessageView sendMessage(String peerId, String currentUserId, SendMessageRequest request) {

@@ -1,5 +1,5 @@
 import { API_BASE, state } from "../state.js";
-import { loadFriends, loadMessages } from "../loaders.js";
+import { loadFriends, loadMessages, loadUnreadCounts } from "../loaders.js";
 import { renderConversations } from "../ui/contacts-renderers.js";
 import { setRealtimeMode } from "../ui/status.js";
 
@@ -60,11 +60,6 @@ async function handleRealtimeMessage(event) {
     return;
   }
 
-  if (payload.type === "message.created" && payload.peerId !== state.selectedConversation && payload.message?.from !== state.currentUser.id) {
-    state.unread[payload.peerId] = (state.unread[payload.peerId] || 0) + 1;
-    renderConversations();
-  }
-
   await refreshConversation(payload.peerId);
 }
 
@@ -110,7 +105,12 @@ async function refreshConversation(peerId) {
   if (!state.friends.some((friend) => friend.id === peerId)) {
     await loadFriends();
   }
-  await loadMessages(peerId);
+  if (peerId === state.selectedConversation) {
+    await loadMessages(peerId);
+    return;
+  }
+  await loadUnreadCounts();
+  renderConversations();
 }
 
 function chatSocketUrl() {

@@ -56,6 +56,14 @@ create table if not exists message_attachments (
   display_kind varchar(40) not null
 );
 
+create table if not exists conversation_reads (
+  user_id varchar(32) not null,
+  peer_id varchar(32) not null,
+  last_read_message_id varchar(32) not null,
+  updated_at timestamp not null default current_timestamp on update current_timestamp,
+  primary key (user_id, peer_id)
+);
+
 create table if not exists posts (
   id varchar(32) primary key,
   author_id varchar(32) not null,

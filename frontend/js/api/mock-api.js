@@ -46,6 +46,10 @@ function requireFriendship(peerId) {
   }
 }
 
+function conversationReadKey(peerId) {
+  return `${state.currentUser.id}:${peerId}`;
+}
+
 function addFriendship(firstUserId, secondUserId) {
   if (!areFriends(firstUserId, secondUserId)) {
     mockStore.friendships.push([firstUserId, secondUserId]);
@@ -176,9 +180,38 @@ export const mockApi = {
       })
       .filter(Boolean);
   },
-  async messages(peerId) {
+  async messages(peerId, beforeId = null, limit = 30) {
     requireFriendship(peerId);
-    return mockStore.conversations[peerId] || [];
+    const pageSize = Math.max(1, Math.min(limit, 50));
+    const newestFirst = [...(mockStore.conversations[peerId] || [])]
+      .filter((message) => beforeId === null || message.id < beforeId)
+      .sort((first, second) => second.id - first.id);
+    const page = newestFirst.slice(0, pageSize + 1);
+    const hasMore = page.length > pageSize;
+    const messages = page.slice(0, pageSize);
+    const nextBeforeId = hasMore ? messages.at(-1).id : null;
+    if (beforeId === null && messages[0]) {
+      mockStore.conversationReads[conversationReadKey(peerId)] = messages[0].id;
+    }
+    return {
+      messages: messages.reverse(),
+      hasMore,
+      nextBeforeId
+    };
+  },
+  async unreadCounts() {
+    const counts = {};
+    const friends = await this.friends();
+    friends.forEach((friend) => {
+      const lastReadMessageId = mockStore.conversationReads[conversationReadKey(friend.id)] || 0;
+      const count = (mockStore.conversations[friend.id] || []).filter((message) => {
+        return message.from === friend.id && !message.deleted && message.id > lastReadMessageId;
+      }).length;
+      if (count > 0) {
+        counts[friend.id] = count;
+      }
+    });
+    return { counts };
   },
   async sendMessage(peerId, text, attachments = []) {
     requireFriendship(peerId);

@@ -15,6 +15,7 @@ import com.campuslink.repository.UserRepository;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -68,11 +69,30 @@ class FriendServiceTest {
     private final List<StoredMessage> messages = new ArrayList<>();
 
     @Override
+    public List<MessageEntity> findMessagePage(String peerId, String currentUserId, Long beforeId, int limit) {
+      return messages.stream()
+          .filter(message -> isConversationMessage(message, peerId, currentUserId))
+          .map(StoredMessage::message)
+          .filter(message -> beforeId == null || message.id() < beforeId)
+          .sorted((first, second) -> Long.compare(second.id(), first.id()))
+          .limit(limit)
+          .toList();
+    }
+
     public List<MessageEntity> findMessages(String peerId, String currentUserId) {
       return messages.stream()
           .filter(message -> isConversationMessage(message, peerId, currentUserId))
           .map(StoredMessage::message)
           .toList();
+    }
+
+    @Override
+    public void markConversationRead(String currentUserId, String peerId, Long lastReadMessageId) {
+    }
+
+    @Override
+    public Map<String, Integer> unreadCounts(String currentUserId) {
+      return Map.of();
     }
 
     @Override

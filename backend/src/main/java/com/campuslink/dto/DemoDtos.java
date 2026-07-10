@@ -90,6 +90,15 @@ public final class DemoDtos {
       List<AttachmentView> attachments) {
   }
 
+  public record ConversationPageView(
+      List<MessageView> messages,
+      boolean hasMore,
+      Long nextBeforeId) {
+  }
+
+  public record UnreadCountsView(Map<String, Integer> counts) {
+  }
+
   public record PostView(
       Long id,
       String author,

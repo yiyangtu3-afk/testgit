@@ -17,7 +17,7 @@ Open the local demo in a browser:
 ./script/run_frontend_demo.sh
 ```
 
-Then visit `http://127.0.0.1:5179/?v=20260709-chat-access-v1`.
+Then visit `http://127.0.0.1:5179/?v=20260710-chat-pagination-v1`.
 
 The demo supports these flows:
 
@@ -29,7 +29,10 @@ The demo supports these flows:
 - Switch demo accounts to review incoming friend requests and accept or reject
   them from the recipient account.
 - View accepted friends in the contacts list and open chats from that list.
-- Open a conversation and send a simulated chat message.
+- Open a conversation and load its most recent message page. When history is
+  available, load earlier messages without losing the current scroll position.
+- Keep unread counts in the API database so they survive a page refresh and
+  account switch.
 - Keep open chat conversations refreshed through a lightweight WebSocket
   channel when the Java API is running.
 - Attach one or more local files to a chat message and verify each attachment
