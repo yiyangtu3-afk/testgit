@@ -1,7 +1,7 @@
-import { api } from "./api/client.js?v=20260710-chat-pagination-v1";
+import { api } from "./api/client.js?v=20260710-conversation-previews-v1";
 import { state } from "./state.js";
-import { isAdminUser } from "./utils/auth.js";
-import { normalizePost } from "./utils/format.js";
+import { isAdminUser } from "./utils/auth.js?v=20260710-conversation-previews-v1";
+import { normalizePost } from "./utils/format.js?v=20260710-conversation-previews-v1";
 import {
   renderAdminAccessDenied,
   renderAuditEvents,
@@ -13,7 +13,7 @@ import {
   renderModerationItems,
   renderPersonalPostManager,
   renderSearchResults
-} from "./ui/renderers.js?v=20260710-chat-pagination-v1";
+} from "./ui/renderers.js?v=20260710-conversation-previews-v1";
 
 export async function loadUsers(keyword = "") {
   state.users = await api.users(keyword);
@@ -26,6 +26,12 @@ export async function loadFriends() {
     state.selectedConversation = state.friends[0] ? state.friends[0].id : "";
   }
   renderSearchResults();
+  renderConversations();
+}
+
+export async function loadConversationPreviews() {
+  const response = await api.conversationPreviews();
+  state.conversationPreviews = response.previews || {};
   renderConversations();
 }
 
@@ -49,6 +55,9 @@ export async function loadMessages(peerId = state.selectedConversation, beforeId
     hasMore: page.hasMore,
     nextBeforeId: page.nextBeforeId
   };
+  if (beforeId === null && page.messages.length > 0) {
+    state.conversationPreviews[peerId] = page.messages.at(-1);
+  }
   if (beforeId === null) {
     await loadUnreadCounts();
   }

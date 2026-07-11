@@ -1,6 +1,6 @@
 import { API_BASE, state } from "../state.js";
-import { setApiMode } from "../ui/status.js";
-import { mockApi } from "./mock-api.js?v=20260710-chat-pagination-v1";
+import { setApiMode } from "../ui/status.js?v=20260710-conversation-previews-v1";
+import { mockApi } from "./mock-api.js?v=20260710-conversation-previews-v1";
 
 class ApiUnavailableError extends Error {
   constructor(cause) {
@@ -111,6 +111,12 @@ export const api = {
     return withApi(
       () => request("/conversations/unread-counts"),
       () => mockApi.unreadCounts()
+    );
+  },
+  conversationPreviews() {
+    return withApi(
+      () => request("/conversations/previews"),
+      () => mockApi.conversationPreviews()
     );
   },
   sendMessage(peerId, text, attachments = []) {

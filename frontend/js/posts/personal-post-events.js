@@ -1,7 +1,7 @@
-import { api } from "../api/client.js";
+import { api } from "../api/client.js?v=20260710-conversation-previews-v1";
 import { state } from "../state.js";
-import { loadAdminData, loadFeed, loadPersonalPosts } from "../loaders.js";
-import { renderPersonalPostManager } from "./renderers.js";
+import { loadAdminData, loadFeed, loadPersonalPosts } from "../loaders.js?v=20260710-conversation-previews-v1";
+import { renderPersonalPostManager } from "./renderers.js?v=20260710-conversation-previews-v1";
 
 export async function bindPersonalPostEvents(event) {
   const openManager = event.target.closest("#managePersonalPosts");

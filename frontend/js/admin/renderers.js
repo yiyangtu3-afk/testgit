@@ -1,10 +1,10 @@
 import { reportRanges, state } from "../state.js";
-import { $ } from "../utils/dom.js";
-import { exportSummary, reportPreviewRows } from "../utils/format.js?v=20260710-chat-pagination-v1";
+import { $ } from "../utils/dom.js?v=20260710-conversation-previews-v1";
+import { escapeHtml, exportSummary, reportPreviewRows } from "../utils/format.js?v=20260710-conversation-previews-v1";
 
 export function renderMetrics() {
   $("#metricGrid").innerHTML = Object.entries(state.metrics)
-    .map(([label, value]) => `<article class="metric-card"><p>${label}</p><strong>${value}</strong></article>`)
+    .map(([label, value]) => `<article class="metric-card"><p>${escapeHtml(label)}</p><strong>${escapeHtml(value)}</strong></article>`)
     .join("");
 }
 
@@ -16,12 +16,12 @@ export function renderAuditEvents() {
       (item) => `
         <div class="table-row">
           <label class="audit-check" aria-label="选择审计记录">
-            <input type="checkbox" data-select-audit-event="${item.id}" ${state.selectedAuditEventIds.has(item.id) ? "checked" : ""} />
+            <input type="checkbox" data-select-audit-event="${escapeHtml(item.id)}" ${state.selectedAuditEventIds.has(item.id) ? "checked" : ""} />
           </label>
-          <span>${item.time}</span>
-          <span>${item.module}</span>
-          <span>${item.event}</span>
-          <button class="small-button" data-delete-audit-event="${item.id}" type="button">删除</button>
+          <span>${escapeHtml(item.time)}</span>
+          <span>${escapeHtml(item.module)}</span>
+          <span>${escapeHtml(item.event)}</span>
+          <button class="small-button" data-delete-audit-event="${escapeHtml(item.id)}" type="button">删除</button>
         </div>
       `
     )
@@ -82,7 +82,7 @@ export function renderExportPanel() {
       <div>
         <p class="section-kicker">Export Failed</p>
         <h3>报表生成失败</h3>
-        <p>${state.reportExport.message}</p>
+        <p>${escapeHtml(state.reportExport.message)}</p>
       </div>
       <span class="export-state">失败</span>
     `;
@@ -94,9 +94,9 @@ export function renderExportPanel() {
   const previewRows = reportPreviewRows(report)
     .map((row) => `
       <div class="report-preview-row">
-        <span>${row.label}</span>
-        <strong>${row.value}</strong>
-        <small>${row.meta}</small>
+        <span>${escapeHtml(row.label)}</span>
+        <strong>${escapeHtml(row.value)}</strong>
+        <small>${escapeHtml(row.meta)}</small>
       </div>
     `)
     .join("");
@@ -107,22 +107,22 @@ export function renderExportPanel() {
         <div>
           <p class="section-kicker">Report Ready</p>
           <h3>后台运营报表</h3>
-          <p>${report.generatedAt} 生成，范围：${rangeLabel}，已整理为可下载 CSV。</p>
+          <p>${escapeHtml(report.generatedAt)} 生成，范围：${escapeHtml(rangeLabel)}，已整理为可下载 CSV。</p>
         </div>
         <span class="export-state">已生成</span>
       </div>
       <div class="report-chip-grid">
-        <span><strong>${rangeLabel}</strong> 报表范围</span>
-        <span><strong>${summary.metricCount}</strong> 项指标</span>
-        <span><strong>${summary.moderationCount}</strong> 条待审</span>
-        <span><strong>${summary.auditCount}</strong> 条审计</span>
+        <span><strong>${escapeHtml(rangeLabel)}</strong> 报表范围</span>
+        <span><strong>${escapeHtml(summary.metricCount)}</strong> 项指标</span>
+        <span><strong>${escapeHtml(summary.moderationCount)}</strong> 条待审</span>
+        <span><strong>${escapeHtml(summary.auditCount)}</strong> 条审计</span>
       </div>
       <div class="report-preview">
         ${previewRows || `<p class="empty-copy">暂无报表明细。</p>`}
       </div>
     </div>
     <div class="report-actions">
-      <a class="download-link" href="${url}" download="${report.fileName}">下载 CSV</a>
+      <a class="download-link" href="${escapeHtml(url)}" download="${escapeHtml(report.fileName)}">下载 CSV</a>
       <button class="print-link" data-print-report type="button">打印预览</button>
     </div>
   `;
@@ -150,28 +150,28 @@ function moderationWorkbenchMarkup() {
           <article class="review-card ${state.reviewingModerationId === String(item.id) ? "is-open" : ""}">
             <div class="review-card-main">
               <label class="moderation-check" aria-label="选择审核记录">
-                <input type="checkbox" data-select-moderation="${item.id}" ${state.selectedModerationIds.has(String(item.id)) ? "checked" : ""} />
+                <input type="checkbox" data-select-moderation="${escapeHtml(item.id)}" ${state.selectedModerationIds.has(String(item.id)) ? "checked" : ""} />
               </label>
               <div class="review-content">
                 <div class="review-card-head">
                   <span class="moderation-type">${item.type === "post" ? "动态" : "评论"}</span>
-                  <span class="moderation-status moderation-status--${item.status}">
-                    ${statusLabels[item.status] || item.status}
+                  <span class="moderation-status moderation-status--${escapeHtml(item.status)}">
+                    ${escapeHtml(statusLabels[item.status] || item.status)}
                   </span>
                 </div>
-                <h3>${item.title || item.body || "待审核内容"}</h3>
-                <p>${item.body || item.reason || "暂无内容摘要"}</p>
+                <h3>${escapeHtml(item.title || item.body || "待审核内容")}</h3>
+                <p>${escapeHtml(item.body || item.reason || "暂无内容摘要")}</p>
                 <div class="review-meta">
-                  <span>提交人：${item.author || "演示用户"}</span>
-                  <span>提交时间：${item.submittedAt || item.time || "--"}</span>
-                  <span>原因：${item.reason || "内容待审核"}</span>
+                  <span>提交人：${escapeHtml(item.author || "演示用户")}</span>
+                  <span>提交时间：${escapeHtml(item.submittedAt || item.time || "--")}</span>
+                  <span>原因：${escapeHtml(item.reason || "内容待审核")}</span>
                 </div>
               </div>
             </div>
             <div class="moderation-actions">
-              <button class="small-button" data-moderation="${item.id}" data-decision="approve" type="button">同意</button>
-              <button class="small-button" data-moderation="${item.id}" data-decision="reject" type="button">拒绝</button>
-              <button class="small-button" data-review-moderation="${item.id}" type="button">
+              <button class="small-button" data-moderation="${escapeHtml(item.id)}" data-decision="approve" type="button">同意</button>
+              <button class="small-button" data-moderation="${escapeHtml(item.id)}" data-decision="reject" type="button">拒绝</button>
+              <button class="small-button" data-review-moderation="${escapeHtml(item.id)}" type="button">
                 ${state.reviewingModerationId === String(item.id) ? "收起" : "查看"}
               </button>
             </div>
@@ -248,7 +248,7 @@ function adminNoticeMarkup() {
   }
   return `
     <div class="admin-feedback admin-feedback--${state.adminNotice.kind}" role="status">
-      ${state.adminNotice.message}
+      ${escapeHtml(state.adminNotice.message)}
     </div>
   `;
 }
@@ -269,26 +269,26 @@ function moderationDetailMarkup(item, statusLabel) {
         </div>
         <div>
           <dt>当前状态</dt>
-          <dd>${statusLabel}</dd>
+          <dd>${escapeHtml(statusLabel)}</dd>
         </div>
         <div>
           <dt>提交人</dt>
-          <dd>${item.author || "演示用户"}</dd>
+          <dd>${escapeHtml(item.author || "演示用户")}</dd>
         </div>
         <div>
           <dt>提交时间</dt>
-          <dd>${item.submittedAt || item.time || "--"}</dd>
+          <dd>${escapeHtml(item.submittedAt || item.time || "--")}</dd>
         </div>
         <div>
           <dt>审核原因</dt>
-          <dd>${item.reason || "内容待审核"}</dd>
+          <dd>${escapeHtml(item.reason || "内容待审核")}</dd>
         </div>
         <div>
           <dt>来源</dt>
-          <dd>${sourceLabel}</dd>
+          <dd>${escapeHtml(sourceLabel)}</dd>
         </div>
       </dl>
-      <p>${item.body || "暂无内容正文。"}</p>
+      <p>${escapeHtml(item.body || "暂无内容正文。")}</p>
     </div>
   `;
 }

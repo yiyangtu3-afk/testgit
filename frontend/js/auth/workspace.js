@@ -1,11 +1,11 @@
 import { mockStore, state } from "../state.js";
-import { api } from "../api/client.js?v=20260710-chat-pagination-v1";
-import { accountById, pushMockAudit } from "../api/mock-api.js?v=20260710-chat-pagination-v1";
-import { $ } from "../utils/dom.js";
-import { setApiMode, setRealtimeMode, setStatus } from "../ui/status.js";
-import { renderAccountSwitch, renderAttachmentTray, renderExportPanel, renderIdentity, renderMessages } from "../ui/renderers.js";
-import { loadAdminData, loadFeed, loadFriendRequests, loadFriends, loadMessages, loadUnreadCounts, loadUsers } from "../loaders.js?v=20260710-chat-pagination-v1";
-import { connectChatRealtime, disconnectChatRealtime } from "../chat/realtime.js";
+import { api } from "../api/client.js?v=20260710-conversation-previews-v1";
+import { accountById, pushMockAudit } from "../api/mock-api.js?v=20260710-conversation-previews-v1";
+import { $ } from "../utils/dom.js?v=20260710-conversation-previews-v1";
+import { setApiMode, setRealtimeMode, setStatus } from "../ui/status.js?v=20260710-conversation-previews-v1";
+import { renderAccountSwitch, renderAttachmentTray, renderExportPanel, renderIdentity, renderMessages } from "../ui/renderers.js?v=20260710-conversation-previews-v1";
+import { loadAdminData, loadConversationPreviews, loadFeed, loadFriendRequests, loadFriends, loadMessages, loadUnreadCounts, loadUsers } from "../loaders.js?v=20260710-conversation-previews-v1";
+import { connectChatRealtime, disconnectChatRealtime } from "../chat/realtime.js?v=20260710-conversation-previews-v1";
 
 export async function bootstrapWorkspace() {
   renderAccountSwitch();
@@ -13,6 +13,7 @@ export async function bootstrapWorkspace() {
   await loadUsers();
   await loadFriendRequests();
   await loadFriends();
+  await loadConversationPreviews();
   await loadUnreadCounts();
   await loadMessages();
   await Promise.all([loadFeed(), loadAdminData()]);
@@ -35,6 +36,7 @@ export async function switchAccount(userId) {
   state.currentUser = { ...account, presence: state.currentUser.presence || "online" };
   state.selectedConversation = "";
   state.conversations = {};
+  state.conversationPreviews = {};
   state.conversationPaging = {};
   state.unread = {};
   state.pendingAttachments = [];
@@ -66,6 +68,7 @@ export function logout() {
   state.users = [];
   state.selectedConversation = "u-2001";
   state.conversations = {};
+  state.conversationPreviews = {};
   state.conversationPaging = {};
   state.unread = {};
   state.friendRequests = {};

@@ -1,5 +1,6 @@
 import { state } from "../state.js";
-import { $ } from "../utils/dom.js";
+import { $ } from "../utils/dom.js?v=20260710-conversation-previews-v1";
+import { escapeHtml } from "../utils/format.js?v=20260710-conversation-previews-v1";
 
 export function renderFeed() {
   const feedList = $("#feedList");
@@ -21,11 +22,11 @@ export function renderFeed() {
               .map(
                 (comment) => `
                   <article class="comment-row">
-                    <span class="avatar">${comment.author.slice(0, 1)}</span>
+                    <span class="avatar">${escapeHtml((comment.author || "?").slice(0, 1))}</span>
                     <div>
-                      <h4>${comment.author}</h4>
-                      <p>${comment.body}</p>
-                      <time>${comment.time}</time>
+                      <h4>${escapeHtml(comment.author)}</h4>
+                      <p>${escapeHtml(comment.body)}</p>
+                      <time>${escapeHtml(comment.time)}</time>
                     </div>
                   </article>
                 `
@@ -35,23 +36,23 @@ export function renderFeed() {
         return `
         <article class="feed-card">
           <div class="feed-head">
-            <span class="avatar">${post.author.slice(0, 1)}</span>
+            <span class="avatar">${escapeHtml((post.author || "?").slice(0, 1))}</span>
             <div>
-              <h3>${post.author}</h3>
-              <p>${post.visibility}${post.moderationStatus === "pending" ? " / 待审核" : ""}</p>
+              <h3>${escapeHtml(post.author)}</h3>
+              <p>${escapeHtml(post.visibility)}${post.moderationStatus === "pending" ? " / 待审核" : ""}</p>
             </div>
           </div>
-          <p>${post.body}</p>
+          <p>${escapeHtml(post.body)}</p>
           <div class="feed-actions">
-            <button class="small-button" data-like="${post.id}" type="button">赞 ${post.likes}</button>
-            <button class="small-button" data-comments="${post.id}" type="button">评论 ${post.comments}</button>
+            <button class="small-button" data-like="${escapeHtml(post.id)}" type="button">赞 ${escapeHtml(post.likes)}</button>
+            <button class="small-button" data-comments="${escapeHtml(post.id)}" type="button">评论 ${escapeHtml(post.comments)}</button>
           </div>
           ${
             expanded
               ? `
                 <section class="comment-panel">
                   <div class="comment-list">${commentRows}</div>
-                  <form class="comment-form" data-comment-form="${post.id}">
+                  <form class="comment-form" data-comment-form="${escapeHtml(post.id)}">
                     <input type="text" name="comment" placeholder="写一条评论" />
                     <button class="primary-button" type="submit">发送</button>
                   </form>
@@ -109,27 +110,27 @@ function renderPersonalPostRow(post) {
     <article class="personal-post-row">
       <div>
         <span class="moderation-type personal-post-status personal-post-status--${status.key}">${status.label}</span>
-        <small>${post.visibility} / ${post.likes} 赞 / ${post.comments} 评论</small>
+        <small>${escapeHtml(post.visibility)} / ${escapeHtml(post.likes)} 赞 / ${escapeHtml(post.comments)} 评论</small>
       </div>
       <div class="personal-post-review-note personal-post-review-note--${status.key}">
         <strong>${status.heading}</strong>
-        <span>${personalPostReviewCopy(post, status)}</span>
+        <span>${escapeHtml(personalPostReviewCopy(post, status))}</span>
       </div>
       ${
         editing
-          ? `<textarea data-personal-post-editor="${post.id}">${post.body}</textarea>`
-          : `<p>${post.body}</p>`
+          ? `<textarea data-personal-post-editor="${escapeHtml(post.id)}">${escapeHtml(post.body)}</textarea>`
+          : `<p>${escapeHtml(post.body)}</p>`
       }
       <div class="personal-post-actions">
         ${
           editing
             ? `
-              <button class="small-button" data-save-personal-post="${post.id}" type="button">保存</button>
+              <button class="small-button" data-save-personal-post="${escapeHtml(post.id)}" type="button">保存</button>
               <button class="small-button" data-cancel-personal-post-edit type="button">取消</button>
             `
             : `
-              <button class="small-button" data-edit-personal-post="${post.id}" type="button">编辑</button>
-              <button class="small-button" data-delete-personal-post="${post.id}" type="button">删除</button>
+              <button class="small-button" data-edit-personal-post="${escapeHtml(post.id)}" type="button">编辑</button>
+              <button class="small-button" data-delete-personal-post="${escapeHtml(post.id)}" type="button">删除</button>
             `
         }
       </div>
@@ -143,7 +144,7 @@ function feedNoticeMarkup() {
   }
   return `
     <div class="feed-feedback feed-feedback--${state.feedNotice.kind}" role="status">
-      ${state.feedNotice.message}
+      ${escapeHtml(state.feedNotice.message)}
     </div>
   `;
 }

@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.campuslink.dto.DemoDtos.AttachmentView;
 import com.campuslink.dto.DemoDtos.ConversationPageView;
+import com.campuslink.dto.DemoDtos.ConversationPreviewsView;
 import com.campuslink.dto.DemoDtos.MessageView;
 import com.campuslink.dto.DemoDtos.PresenceResponse;
 import com.campuslink.dto.DemoDtos.SendMessageRequest;
@@ -86,6 +87,18 @@ class ChatControllerTest {
         .andExpect(jsonPath("$.attachments[0].name").value("demo.txt"));
 
     verify(chatService).sendMessage(eq("u-2001"), eq("u-1001"), org.mockito.ArgumentMatchers.any(SendMessageRequest.class));
+  }
+
+  @Test
+  void conversationPreviewsReturnsLastMessageForEachFriend() throws Exception {
+    when(authTokenService.requireUserId("Bearer test-token")).thenReturn("u-1001");
+    when(chatService.conversationPreviews("u-1001")).thenReturn(java.util.Map.of(
+        "u-2001", new MessageView(1L, "u-2001", "最后一条", "09:30", false, List.of())));
+
+    mockMvc.perform(get("/api/conversations/previews")
+            .header("Authorization", "Bearer test-token"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.previews.u-2001.text").value("最后一条"));
   }
 
   @Test

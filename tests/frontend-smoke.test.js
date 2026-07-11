@@ -56,6 +56,62 @@ function runSyntaxCheck() {
   });
 }
 
+function runEscapeHtmlCheck() {
+  try {
+    const output = execFileSync(
+      process.execPath,
+      [
+        "--input-type=module",
+        "--eval",
+        'import { escapeHtml } from "./frontend/js/utils/format.js"; process.stdout.write(escapeHtml(\'<img src=x onerror=alert(1)>\\\"&\\\'\'));'
+      ],
+      { cwd: root, encoding: "utf8" }
+    );
+    if (output !== "&lt;img src=x onerror=alert(1)&gt;&quot;&amp;&#39;") {
+      failures.push("HTML escaping: expected user content to be encoded for text and attributes");
+    }
+  } catch (error) {
+    failures.push(`HTML escaping check failed: ${String(error.message || error)}`);
+  }
+}
+
+function runFeedRendererEscapingCheck() {
+  const payload = "<img src=x onerror=alert(1)>";
+  const script = [
+    'globalThis.elements = { "#feedList": { hidden: false, innerHTML: "" } };',
+    'globalThis.document = { querySelector(selector) { return globalThis.elements[selector]; } };',
+    'const { state } = await import("./frontend/js/state.js");',
+    'state.personalPostManagerOpen = false;',
+    'state.expandedPostId = 1;',
+    `state.posts = [{ id: 1, author: "林一", body: ${JSON.stringify(payload)}, visibility: "全校可见", moderationStatus: "approved", likes: 0, comments: 1 }];`,
+    `state.postComments = { 1: [{ author: "陈老师", body: ${JSON.stringify(payload)}, time: "09:30" }] };`,
+    'const { renderFeed } = await import("./frontend/js/posts/renderers.js");',
+    'renderFeed();',
+    'process.stdout.write(globalThis.elements["#feedList"].innerHTML);'
+  ].join("\n");
+  try {
+    const output = execFileSync(
+      process.execPath,
+      ["--input-type=module", "--eval", script],
+      { cwd: root, encoding: "utf8" }
+    );
+    if (output.includes(payload) || !output.includes("&lt;img src=x onerror=alert(1)&gt;")) {
+      failures.push("feed renderer: expected user post and comment content to render as escaped text");
+    }
+  } catch (error) {
+    failures.push(`Feed renderer escaping check failed: ${String(error.message || error)}`);
+  }
+}
+
+function checkVersionedModuleImports() {
+  const bareImports = [...files.js.matchAll(/(?:from|import)\s*["']([^"']+\.js)["']/g)]
+    .map((match) => match[1])
+    .filter((path) => !path.endsWith("state.js"));
+  if (bareImports.length > 0) {
+    failures.push(`module cache versioning: expected only state.js imports without a version, found ${bareImports.join(", ")}`);
+  }
+}
+
 function listFiles(path) {
   const absolutePath = join(root, path);
   return readdirSync(absolutePath).flatMap((entry) => {
@@ -66,6 +122,9 @@ function listFiles(path) {
 }
 
 runSyntaxCheck();
+runEscapeHtmlCheck();
+runFeedRendererEscapingCheck();
+checkVersionedModuleImports();
 
 if (files.appEntry.split("\n").length > 20) {
   failures.push("frontend entry: expected root app.js to stay as a small module entry");
@@ -91,6 +150,8 @@ if (files.appEntry.split("\n").length > 20) {
 ].forEach(([id, label]) => expectIncludes("html", `id="${id}"`, label));
 
 expectIncludes("html", "简洁的校园沟通空间", "login hero copy");
+expectIncludes("html", "Content-Security-Policy", "browser content security policy");
+expectIncludes("html", "script-src 'self'", "content security policy blocks inline scripts");
 expectIncludes("html", "class=\"insight-grid\"", "login insight grid markup");
 expectIncludes("html", "class=\"insight-card\"", "login insight card markup");
 
@@ -225,8 +286,8 @@ if (files.js.indexOf("moderationWorkbenchMarkup()") > files.js.indexOf("Audit Lo
   failures.push("admin layout: expected pending content workbench to render before audit log");
 }
 
-expectIncludes("html", "20260710-chat-pagination-v1", "chat pagination cache-busting version");
-expectIncludes("appEntry", "20260710-chat-pagination-v1", "root app imports current chat pagination module version");
+expectIncludes("html", "20260710-conversation-previews-v1", "HTML escaping cache-busting version");
+expectIncludes("appEntry", "20260710-conversation-previews-v1", "root app imports current HTML escaping module version");
 
 expectIncludes("js", "setRealtimeMode", "chat realtime status updater");
 expectIncludes("js", "HEARTBEAT_INTERVAL_MS", "chat realtime heartbeat interval");
@@ -257,6 +318,11 @@ expectIncludes("js", "heartbeat.pong", "chat realtime heartbeat pong");
 ].forEach(([needle, label]) => expectIncludes("js", needle, label));
 
 expectIncludes("apiClient", "class ApiUnavailableError", "live API availability error type");
+expectIncludes("js", "escapeHtml", "shared HTML escaping helper");
+expectMatch("js", /escapeHtml\(post\.body\)/, "feed post body is escaped");
+expectMatch("js", /escapeHtml\(comment\.body\)/, "feed comment body is escaped");
+expectMatch("js", /escapeHtml\(messageText\)/, "chat message text is escaped");
+expectMatch("js", /escapeHtml\(item\.event\)/, "audit event text is escaped");
 expectMatch(
   "apiClient",
   /if \(!\(error instanceof ApiUnavailableError\)\) \{\s*throw error;\s*\}/,
@@ -277,18 +343,22 @@ expectMatch("js", /async messages\(peerId, beforeId = null, limit = 30\) \{\s*re
 expectMatch("js", /async sendMessage\(peerId, text, attachments = \[\]\) \{\s*requireFriendship\(peerId\);/s, "mock sends require friendship");
 expectIncludes("js", "conversationPaging", "conversation page state");
 expectIncludes("js", "unreadCounts", "persisted unread count API");
+expectIncludes("js", "conversationPreviews", "conversation preview API");
+expectMatch("js", /request\("\/conversations\/previews"\)/, "conversation preview endpoint");
+expectMatch("js", /await loadConversationPreviews\(\);\s*await loadUnreadCounts\(\);/, "workspace loads previews before unread counts");
 expectIncludes("js", "data-load-older-messages", "load earlier messages action");
 expectMatch("js", /await loadMessages\(peerId, paging\.nextBeforeId\);/, "load earlier messages uses cursor");
 expectMatch("js", /await loadUnreadCounts\(\);\s*await loadMessages\(\);/, "workspace only loads the selected conversation");
 expectMatch("backend", /@GetMapping\("\/conversations\/unread-counts"\)/, "backend unread count route");
+expectMatch("backend", /@GetMapping\("\/conversations\/previews"\)/, "backend conversation preview route");
 expectMatch("backend", /findMessagePage\(peerId, currentUserId, beforeId, pageSize \+ 1\)/, "backend retrieves one extra message for cursor pagination");
 expectMatch("js", /state\.personalPostManagerOpen = true;/, "post publish opens personal post manager");
 expectMatch("js", /state\.feedNotice = successNotice\("评论已提交审核，通过后会显示在动态下。"\);/, "comment publish shows pending feedback");
 expectMatch("js", /moderationItems\(\) \{\s*return mockStore\.moderationItems\.filter\(\(item\) => item\.status === "pending"\);/s, "mock moderation list returns pending queue");
-expectMatch("js", /data-comment-form="\$\{post\.id}"/, "comment form binding");
+expectMatch("js", /data-comment-form="\$\{escapeHtml\(post\.id\)\}"/, "comment form binding");
 expectMatch("js", /data-edit-personal-post/, "personal post edit binding");
 expectMatch("js", /data-delete-personal-post/, "personal post delete binding");
-expectMatch("js", /data-remove-attachment="\$\{attachment\.id}"/, "attachment removal binding");
+expectMatch("js", /data-remove-attachment="\$\{escapeHtml\(attachment\.id\)\}"/, "attachment removal binding");
 expectMatch("js", /data-toggle-all-moderation/, "moderation select-all toggle binding");
 expectMatch("js", /state\.moderationFilter === "all" \|\| item\.type === state\.moderationFilter/, "moderation select-all respects active filter");
 expectMatch("js", /state\.reviewingModerationId = state\.reviewingModerationId === itemId \? "" : itemId;/, "moderation detail toggle behavior");

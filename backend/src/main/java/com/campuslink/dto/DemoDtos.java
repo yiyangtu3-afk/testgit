@@ -99,6 +99,9 @@ public final class DemoDtos {
   public record UnreadCountsView(Map<String, Integer> counts) {
   }
 
+  public record ConversationPreviewsView(Map<String, MessageView> previews) {
+  }
+
   public record PostView(
       Long id,
       String author,

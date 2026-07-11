@@ -1,7 +1,7 @@
 import { state } from "../state.js";
-import { $ } from "../utils/dom.js";
-import { formatFileSize } from "../utils/format.js";
-import { renderConversations } from "../ui/contacts-renderers.js";
+import { $ } from "../utils/dom.js?v=20260710-conversation-previews-v1";
+import { escapeHtml, formatFileSize } from "../utils/format.js?v=20260710-conversation-previews-v1";
+import { renderConversations } from "../ui/contacts-renderers.js?v=20260710-conversation-previews-v1";
 
 export function currentPeer() {
   return (
@@ -20,29 +20,30 @@ export function renderMessages({ preserveScroll = false } = {}) {
   const previousScrollHeight = stream.scrollHeight;
   const paging = state.conversationPaging[peer.id];
   const loadOlder = paging?.hasMore
-    ? `<button class="small-button load-older-messages" data-load-older-messages="${peer.id}" type="button">加载更早消息</button>`
+    ? `<button class="small-button load-older-messages" data-load-older-messages="${escapeHtml(peer.id)}" type="button">加载更早消息</button>`
     : "";
   stream.innerHTML = `${loadOlder}${(state.conversations[peer.id] || [])
     .map((message) => {
       const mine = message.from === state.currentUser.id;
+      const messageText = message.deleted ? "消息已撤回" : message.text;
       const attachments = message.deleted ? [] : message.attachments || [];
       const attachmentRows = attachments
         .map((attachment) => `
           <div class="message-attachment">
-            <span class="attachment-icon">${attachment.kind ? attachment.kind.slice(0, 1) : "文"}</span>
+            <span class="attachment-icon">${escapeHtml(attachment.kind ? attachment.kind.slice(0, 1) : "文")}</span>
             <span>
-              <strong>${attachment.name}</strong>
-              <small>${attachment.kind || "文件"} / ${formatFileSize(attachment.size || 0)}</small>
+              <strong>${escapeHtml(attachment.name)}</strong>
+              <small>${escapeHtml(attachment.kind || "文件")} / ${escapeHtml(formatFileSize(attachment.size || 0))}</small>
             </span>
           </div>
         `)
         .join("");
       return `
         <article class="message ${mine ? "is-mine" : ""}">
-          <span>${mine ? state.currentUser.name : peer.name}</span>
-          <p>${message.deleted ? "消息已撤回" : message.text}</p>
+          <span>${escapeHtml(mine ? state.currentUser.name : peer.name)}</span>
+          <p>${escapeHtml(messageText)}</p>
           ${attachmentRows ? `<div class="message-attachments">${attachmentRows}</div>` : ""}
-          <time>${message.time}</time>
+          <time>${escapeHtml(message.time)}</time>
         </article>
       `;
     })
@@ -64,9 +65,9 @@ export function renderAttachmentTray() {
   tray.innerHTML = state.pendingAttachments
     .map((attachment) => `
       <span class="attachment-chip">
-        <strong>${attachment.name}</strong>
-        <small>${formatFileSize(attachment.size)}</small>
-        <button type="button" data-remove-attachment="${attachment.id}" aria-label="移除 ${attachment.name}"></button>
+        <strong>${escapeHtml(attachment.name)}</strong>
+        <small>${escapeHtml(formatFileSize(attachment.size))}</small>
+        <button type="button" data-remove-attachment="${escapeHtml(attachment.id)}" aria-label="移除 ${escapeHtml(attachment.name)}"></button>
       </span>
     `)
     .join("");

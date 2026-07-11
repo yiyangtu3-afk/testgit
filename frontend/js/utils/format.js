@@ -2,6 +2,18 @@ export function validPhone(phone) {
   return /^1\d{10}$/.test(phone);
 }
 
+export function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (character) => {
+    return {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      "\"": "&quot;",
+      "'": "&#39;"
+    }[character];
+  });
+}
+
 export function normalizePost(post) {
   return {
     ...post,

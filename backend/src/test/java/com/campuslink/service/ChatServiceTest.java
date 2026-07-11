@@ -80,6 +80,17 @@ class ChatServiceTest {
   }
 
   @Test
+  void conversationPreviewsReturnsLatestMessageWithoutMarkingItRead() {
+    chatService.sendMessage("u-2001", "u-1001", new SendMessageRequest("第一条", List.of()));
+    chatService.sendMessage("u-2001", "u-1001", new SendMessageRequest("最新消息", List.of()));
+
+    Map<String, MessageView> previews = chatService.conversationPreviews("u-1001");
+
+    assertThat(previews.get("u-2001").text()).isEqualTo("最新消息");
+    assertThat(chat.lastReadMessageId).isNull();
+  }
+
+  @Test
   void withdrawMarksCurrentUsersMessageDeleted() {
     MessageView message = chatService.sendMessage("u-2001", "u-1001", new SendMessageRequest("可撤回", List.of()));
 
@@ -260,7 +271,10 @@ class ChatServiceTest {
 
     @Override
     public List<String> findFriendIdsForUser(String userId) {
-      return List.of();
+      return friendships.stream()
+          .filter(pair -> pair.contains(userId))
+          .map(pair -> pair.stream().filter(friendId -> !friendId.equals(userId)).findFirst().orElseThrow())
+          .toList();
     }
 
     @Override

@@ -2,6 +2,7 @@ package com.campuslink.service;
 
 import com.campuslink.dto.DemoDtos.MessageView;
 import com.campuslink.dto.DemoDtos.ConversationPageView;
+import com.campuslink.dto.DemoDtos.MessageView;
 import com.campuslink.dto.DemoDtos.PresenceResponse;
 import com.campuslink.dto.DemoDtos.SendMessageRequest;
 import com.campuslink.entity.DemoEntities.MessageEntity;
@@ -9,6 +10,7 @@ import com.campuslink.repository.ChatRepository;
 import com.campuslink.repository.FriendRepository;
 import com.campuslink.repository.UserRepository;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.stereotype.Service;
 
@@ -53,6 +55,17 @@ public class ChatService {
 
   public Map<String, Integer> unreadCounts(String currentUserId) {
     return chatRepository.unreadCounts(currentUserId);
+  }
+
+  public Map<String, MessageView> conversationPreviews(String currentUserId) {
+    Map<String, MessageView> previews = new LinkedHashMap<>();
+    for (String peerId : friendRepository.findFriendIdsForUser(currentUserId)) {
+      chatRepository.findMessagePage(peerId, currentUserId, null, 1).stream()
+          .findFirst()
+          .map(DemoMapper::toMessageView)
+          .ifPresent(message -> previews.put(peerId, message));
+    }
+    return previews;
   }
 
   public MessageView sendMessage(String peerId, String currentUserId, SendMessageRequest request) {

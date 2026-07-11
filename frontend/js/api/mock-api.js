@@ -1,5 +1,5 @@
 import { mockStore, reportRanges, state } from "../state.js";
-import { nowTime } from "../utils/dom.js";
+import { nowTime } from "../utils/dom.js?v=20260710-conversation-previews-v1";
 
 let mockAuditId = Date.now();
 
@@ -212,6 +212,17 @@ export const mockApi = {
       }
     });
     return { counts };
+  },
+  async conversationPreviews() {
+    const previews = {};
+    const friends = await this.friends();
+    friends.forEach((friend) => {
+      const messages = mockStore.conversations[friend.id] || [];
+      if (messages.length > 0) {
+        previews[friend.id] = messages.at(-1);
+      }
+    });
+    return { previews };
   },
   async sendMessage(peerId, text, attachments = []) {
     requireFriendship(peerId);

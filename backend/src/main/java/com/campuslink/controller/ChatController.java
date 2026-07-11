@@ -2,6 +2,7 @@ package com.campuslink.controller;
 
 import com.campuslink.dto.DemoDtos.MessageView;
 import com.campuslink.dto.DemoDtos.ConversationPageView;
+import com.campuslink.dto.DemoDtos.ConversationPreviewsView;
 import com.campuslink.dto.DemoDtos.UnreadCountsView;
 import com.campuslink.dto.DemoDtos.PresenceRequest;
 import com.campuslink.dto.DemoDtos.PresenceResponse;
@@ -44,6 +45,12 @@ public class ChatController {
   public UnreadCountsView unreadCounts(
       @RequestHeader(value = "Authorization", required = false) String authorization) {
     return new UnreadCountsView(chatService.unreadCounts(authTokenService.requireUserId(authorization)));
+  }
+
+  @GetMapping("/conversations/previews")
+  public ConversationPreviewsView conversationPreviews(
+      @RequestHeader(value = "Authorization", required = false) String authorization) {
+    return new ConversationPreviewsView(chatService.conversationPreviews(authTokenService.requireUserId(authorization)));
   }
 
   @PostMapping("/conversations/{peerId}/messages")

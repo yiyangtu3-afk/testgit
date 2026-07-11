@@ -15,6 +15,7 @@ export const state = {
   users: [],
   selectedConversation: "u-2001",
   conversations: {},
+  conversationPreviews: {},
   conversationPaging: {},
   unread: {},
   friendRequests: {},

@@ -3,13 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; connect-src 'self' http://127.0.0.1:8080 ws://127.0.0.1:8080 http://localhost:8080 ws://localhost:8080; img-src 'self' data: blob:; style-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'"
+    />
     <title>CampusLink Demo</title>
     <script>
-      if (location.search !== "?v=20260710-chat-pagination-v1") {
-        history.replaceState(null, "", location.pathname + "?v=20260710-chat-pagination-v1");
+      if (location.search !== "?v=20260710-conversation-previews-v1") {
+        history.replaceState(null, "", location.pathname + "?v=20260710-conversation-previews-v1");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=20260710-chat-pagination-v1" />
+    <link rel="stylesheet" href="styles.css?v=20260710-conversation-previews-v1" />
   </head>
   <body>
     <main class="app-shell">
@@ -200,6 +204,6 @@
       </section>
     </main>
 
-    <script type="module" src="app.js?v=20260710-chat-pagination-v1"></script>
+    <script type="module" src="app.js?v=20260710-conversation-previews-v1"></script>
   </body>
 </html>
