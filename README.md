@@ -272,3 +272,9 @@ The project follows the staged plan in
 [`docs/resume-project-roadmap.md`](docs/resume-project-roadmap.md). The next
 milestones focus on a trustworthy baseline, a campus activity registration
 workflow, notifications, production-style security, and repeatable delivery.
+
+Phase-two activity implementation follows the reviewed data model, state
+machine, permission matrix, transaction boundaries, and test scenarios in the
+[`activity domain design`](docs/activity-domain-design.md). The first backend
+slice covers teacher or club-leader submission and administrator review while
+keeping activity rules outside the feed and generic admin services.
