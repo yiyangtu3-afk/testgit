@@ -51,6 +51,10 @@ http://127.0.0.1:5179/?v=20260710-conversation-previews-v1
   加载完整历史或改变已读状态。
 - 动态、评论、聊天消息、附件名、审核内容和审计事件通过统一的 HTML
   转义函数渲染，用户输入不会作为标签或属性执行。
+- 聊天发送与撤回、好友申请通过、动态和评论发布、管理员审核等跨表流程
+  均由服务层事务保护。
+- `ChatRepositoryIntegrationTest` 使用本地 MySQL 验证聊天消息与附件的
+  写入和分页读取；测试禁用种子脚本并在结束后自动回滚，不会改动历史数据。
 - 登录页保持黑色右侧信息面板版本：**简洁的校园沟通空间**，右侧展示
   **身份**、**状态**、**模式** 三个信息块。
 - 聊天附件保持普通文件卡片展示，不做图片气泡或大图预览。
@@ -208,15 +212,10 @@ scrollTop 从 1541.5 变到 1181.5
 
 ## 建议下一步
 
-如果用户没有指定新任务，建议先做小而稳的任务。
-
-- 给当前回退点创建更明确的文档快照，并更新过期的旧交接文档版本号。
-- 为聊天滚动修复补一条更明确的 smoke 断言，检查 `.message-stream` 的
-  CSS 约束。
-- 讨论是否需要一个明确的 **Mock / Java API** 切换开关，避免用户误把
-  本地数据库历史数据当成前端回归。
-- 如果用户仍想做图片发送，先设计清楚是 **前端临时预览**、**后端真实
-  上传**，还是 **Mock-only Demo**，不要直接把临时 `blob:` 当成持久数据。
+可信基线已完成。下一步进入校园活动报名闭环，先完成活动数据模型、状态机、
+权限矩阵和测试用例设计，再实现教师或社团负责人创建活动、管理员审核发布的
+第一条可演示链路。详细边界见
+[`phase-two-activity-handoff.md`](phase-two-activity-handoff.md)。
 
 ## 可直接复制到下个对话的提示词
 
@@ -231,6 +230,14 @@ backend/AGENTS.md。项目路径是 /Users/linus_k/Documents/test。不要重置
 - docs/new-chat-handoff-2026-07-08.md
 - docs/admin-review-workbench-handoff.md
 - docs/admin-moderation-content-module-fix.md
+- docs/phase-two-activity-handoff.md
+- docs/resume-project-roadmap.md
+
+可信基线已完成，当前稳定提交为 f06b09d Add transactional workflow
+safeguards，已推送到 GitHub main。下一阶段是“校园活动报名闭环”；请先完成
+活动数据模型、状态机、权限矩阵和测试用例设计，再实现“创建活动到管理员
+审核发布”的第一条后端垂直切片。活动逻辑必须放在独立领域模块，不能塞进
+FeedService 或 AdminService。
 
 当前基线已经回退到“普通用户审核状态反馈完成”之后，并额外修复了窄窗口
 下林一与周同学聊天内容不能上下滑动的问题。当前静态资源版本是
@@ -261,4 +268,7 @@ http://127.0.0.1:5179/?v=20260710-conversation-previews-v1
 - 修改前端后至少运行 ./script/run_frontend_check.sh。
 - 修改 UI 后用浏览器或渲染级 smoke 检查管理员后台、动态审核反馈和聊天页。
 - Java API 连上时显示本地数据库历史数据，不是 Mock 固定演示数据。
+- 不要使用 git reset --hard、git clean 或任何清理未跟踪文件的命令。
+- 完整 mvn test 在本机 Microsoft JDK 21 下仍受 Mockito/Byte Buddy 动态挂载
+  限制影响；需要报告受影响测试与本次相关测试的实际结果。
 ```

@@ -25,6 +25,10 @@
 
 这一阶段先让现有能力经得起演示和追问，再扩展业务范围。
 
+该阶段已完成，稳定提交为 `f06b09d Add transactional workflow safeguards`。
+下一阶段的具体交接见
+[`phase-two-activity-handoff.md`](phase-two-activity-handoff.md)。
+
 1. [x] 同步 README、运行脚本和当前前端版本。
 2. [x] 仅在 Java API 不可达时回退到 Mock；保留真实 API 的 `4xx` 和 `5xx`
    失败结果。
