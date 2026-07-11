@@ -1,14 +1,14 @@
 # CampusLink 阶段二活动报名交接
 
-本文交接 CampusLink 的稳定基线和下一阶段工作。可信基线已完成并推送到
-GitHub `main`；下一个对话从校园活动报名闭环的设计与第一条后端链路开始，
-不要重做已完成的聊天、动态和审核功能。
+本文交接 CampusLink 的稳定基线和下一阶段工作。活动领域设计与第一条后端
+链路已经完成并通过回归；下一个对话继续活动前端入口或报名与候补切片，不要
+重做已完成的聊天、动态、内容审核和活动审核后端。
 
 ## 稳定基线
 
-当前稳定交接提交为 `7fd10d1 Document phase two activity handoff`。工作区在
-本轮开始时干净，远程仓库是 `https://github.com/yiyangtu3-afk/testgit.git`，
-使用 `main` 分支。
+本轮实现基于 `29ed7ac Design campus activity review workflow`。远程仓库是
+`https://github.com/yiyangtu3-afk/testgit.git`，使用 `main` 分支；最新活动
+实现提交以 `main` 的最新提交为准。
 
 静态前端版本为 `20260710-conversation-previews-v1`，本地地址为：
 
@@ -71,22 +71,41 @@ http://127.0.0.1:8080
 当前状态和追加式审核历史中。这一处理保持了既定活动状态集合，同时让拒绝
 结果可查询、可追溯。
 
-## 下一个任务的边界
+## 第一条后端垂直切片
 
-先完成设计和第一条后端垂直切片，不要一次实现完整报名系统。第一个提交要
-覆盖“创建活动到管理员审核发布”：
+“教师或社团负责人创建活动到管理员审核发布”的后端实现已经完成并通过完整
+回归。活动逻辑使用独立的 `ActivityService`、DTO、Entity、Mapper、Repository
+和 Controller，没有进入 `FeedService` 或 `AdminService`。
 
-- 在 `schema.sql` 中新增活动和活动审核所需的表、索引与兼容迁移。
-- 增加活动领域的 DTO、Entity、Mapper、Repository、Service 和 Controller，
-  不把活动逻辑塞进 `FeedService` 或 `AdminService`。
-- 只有教师或社团负责人可以创建；学生不能伪造组织者身份；管理员才能审核。
-- 创建活动后进入 `pending`，审核同意后变为 `published`，拒绝后保留原因。
-- 写入与现有审核、审计边界保持一致，并以事务保护跨表写入。
-- 为服务规则和 HTTP 边界写测试；涉及 MyBatis 时增加可回滚的数据库集成测试。
+- `activities` 保存当前活动状态，`activity_reviews` 保存追加式审核历史。
+- `POST /api/activities` 从 bearer token 获取组织者，不接受客户端组织者 ID。
+- `GET /api/activities` 只返回本地 MySQL 中的 `published` 活动。
+- `GET /api/admin/activities/pending` 只允许管理员查看待审活动。
+- `POST /api/admin/activities/{activityId}/reviews` 支持 `approve` 和 `reject`。
+- 教师和社团负责人可以创建；学生和仅管理员角色不能创建。
+- 管理员批准后活动变为 `published`；拒绝后返回 `draft`，并保留拒绝原因。
+- 创建和审核都通过服务层事务写入活动与审核历史。
+- 条件更新只允许处理 `pending` 活动，避免重复审核覆盖原结果。
 
-在动手前，先把字段清单、状态迁移、权限矩阵和测试场景写入或更新为可审阅的
-设计文档。建议字段至少包含标题、详情、类别、地点、开始与结束时间、容量、
-组织者、状态、审核原因和创建时间。不要把客户端传来的用户 ID 当作组织者。
+## 当前验证记录
+
+本轮已经完成定向测试、真实数据库回滚验证和完整后端回归。
+
+1. 活动 Service 和 HTTP 定向测试共 15 个通过。
+2. MySQL 集成测试共 2 个通过，覆盖批准、拒绝和审核历史映射。
+3. 集成测试使用 `@Transactional` 与 `@Rollback`，测试后查询确认匹配的测试
+   活动行数为 `0`。
+4. 本轮没有修改前端文件，因此尚未运行前端检查或三个页面的 UI 回归。
+5. 使用 Microsoft JDK 21 运行完整 `mvn test`，79 个测试全部通过，无失败、
+   错误或跳过。
+6. Mockito/Byte Buddy 本次成功动态加载 Java agent，只输出未来 JDK 禁止动态
+   加载的兼容性警告，没有造成测试失败。
+
+## 下一项工作
+
+本次稳定点提交并推送后，下一轮再实现活动创建、待审和审核的前端入口，或
+继续学生报名与候补的后端垂直切片。开始下一轮前先确认产品优先级，不在本次
+后端提交中混入 UI 或报名逻辑。
 
 ## 必读文件
 

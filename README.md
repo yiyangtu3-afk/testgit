@@ -102,12 +102,13 @@ modules, adapter, and Java API skeleton for the selectors and routes that keep
 the demo flows connected. The backend test suite covers the migrated service
 behavior for login, user search, friend requests, accepted friendships, chat
 messages, chat attachments, feed posts, comments, moderation, and audit
-records. It also includes MockMvc controller tests for the auth, users,
-friends, chat, feed, and admin API boundary, plus direct WebSocket handler
-tests for chat heartbeat and broadcast behavior. The chat repository integration
-test connects to the local MySQL database without running `schema.sql` or
-`data.sql`; its transaction rolls back after each test, so existing demo
-history stays unchanged.
+records. Activity tests cover organizer permissions, review transitions, HTTP
+boundaries, MyBatis mapping, and rollback-safe review history. The suite also
+includes MockMvc controller tests for the auth, users, friends, chat, feed, and
+admin API boundary, plus direct WebSocket handler tests for chat heartbeat and
+broadcast behavior. Repository integration tests connect to the local MySQL
+database without running `schema.sql` or `data.sql`; each test transaction
+rolls back, so existing demo history stays unchanged.
 
 ## Frontend structure
 
@@ -131,18 +132,19 @@ The frontend uses this module layout:
 ## Backend structure
 
 The `backend/` directory contains a layered Spring Boot service. It exposes
-demo APIs for authentication, user search, chat messages, feed posts, and admin
-metrics while keeping HTTP, business logic, data access, interface models, and
-configuration in separate packages.
+demo APIs for authentication, user search, chat messages, feed posts, campus
+activities, and admin workflows while keeping HTTP, business logic, data
+access, interface models, and configuration in separate packages.
 
 The backend uses this package layout:
 
 - `controller`: HTTP routes and request validation entrypoints.
-- `service`: Business logic for auth, friends, chat, feed, admin, and audit.
+- `service`: Business logic for auth, friends, chat, feed, activities, admin,
+  and audit.
 - `mapper`: MyBatis mapper interfaces for mapper-based persistence.
 - `repository`: Repository interfaces and MyBatis-backed implementations for
-  users, verification codes, friends, chat, feed, moderation, audit, and health
-  checks.
+  users, verification codes, friends, chat, feed, activities, moderation,
+  audit, and health checks.
 - `entity`: Internal domain/data records.
 - `dto`: Request and response models used by the API.
 - `config`: CORS and global exception handling.
@@ -175,9 +177,9 @@ that Java can reach MySQL.
 The MySQL persistence migration is complete for the current demo. Users,
 verification codes, friend requests, friendships, presence updates, chat
 messages, chat attachment metadata, feed posts, comments, moderation items,
-audit events, demo auth sessions, and the health check all use MyBatis
-mapper-backed data access. The seed data also removes stale pending friend
-requests when the same users are already friends.
+activities, activity review history, audit events, demo auth sessions, and the
+health check all use MyBatis mapper-backed data access. The seed data also
+removes stale pending friend requests when the same users are already friends.
 
 The current backend exposes these API paths:
 
@@ -202,6 +204,10 @@ The current backend exposes these API paths:
 - `POST /api/feed/{postId}/likes`
 - `GET /api/feed/{postId}/comments`
 - `POST /api/feed/{postId}/comments`
+- `GET /api/activities`
+- `POST /api/activities`
+- `GET /api/admin/activities/pending`
+- `POST /api/admin/activities/{activityId}/reviews`
 - `GET /api/admin/metrics`
 - `GET /api/admin/moderation`
 - `POST /api/admin/moderation/{itemId}/{decision}`
@@ -210,6 +216,13 @@ The current backend exposes these API paths:
 - `GET /api/admin/audit-events`
 - `DELETE /api/admin/audit-events`
 - `GET /api/database/health`
+
+Activity creation accepts title, description, category, location, start and
+end times, and capacity. It never accepts an organizer ID. The bearer token
+supplies the organizer, and only a role containing `教师` or `社团负责人` can
+create an activity. New activities enter `pending`. Only an administrator can
+approve them into `published` or reject them back to `draft`; rejection keeps
+the reason in current activity state and append-only review history.
 
 Chat messages accept optional attachment metadata in the message payload. The
 current demo stores file name, size, MIME type, and display kind only; it
