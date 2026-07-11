@@ -8,6 +8,7 @@ import com.campuslink.repository.ChatRepository;
 import com.campuslink.repository.FriendRepository;
 import java.util.List;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class FriendService {
@@ -52,6 +53,7 @@ public class FriendService {
         .toList();
   }
 
+  @Transactional
   public FriendRequestView acceptFriendRequest(String requestId, String currentUserId) {
     String activeUserId = userService.activeUserId(currentUserId);
     FriendRequestEntity request = resolveFriendRequest(requestId, activeUserId, "accepted");

@@ -1,6 +1,5 @@
 package com.campuslink.service;
 
-import com.campuslink.dto.DemoDtos.MessageView;
 import com.campuslink.dto.DemoDtos.ConversationPageView;
 import com.campuslink.dto.DemoDtos.MessageView;
 import com.campuslink.dto.DemoDtos.PresenceResponse;
@@ -13,6 +12,7 @@ import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ChatService {
@@ -68,6 +68,7 @@ public class ChatService {
     return previews;
   }
 
+  @Transactional
   public MessageView sendMessage(String peerId, String currentUserId, SendMessageRequest request) {
     requireFriendship(currentUserId, peerId);
     MessageEntity message = chatRepository.saveMessage(
@@ -82,6 +83,7 @@ public class ChatService {
     return view;
   }
 
+  @Transactional
   public MessageView withdrawMessage(String peerId, Long messageId, String currentUserId) {
     requireFriendship(currentUserId, peerId);
     MessageEntity message = chatRepository.findMessage(peerId, currentUserId, messageId)

@@ -10,6 +10,7 @@ import com.campuslink.repository.ModerationRepository;
 import java.util.List;
 import java.util.Set;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class FeedService {
@@ -38,6 +39,7 @@ public class FeedService {
         .toList();
   }
 
+  @Transactional
   public PostView publish(String currentUserId, String body, String visibility) {
     String normalizedVisibility = requireSupportedVisibility(visibility);
     PostEntity post = feedRepository.savePost(currentUserId, body, normalizedVisibility);
@@ -53,6 +55,7 @@ public class FeedService {
         .toList();
   }
 
+  @Transactional
   public PostView updatePersonalPost(String currentUserId, Long postId, String body) {
     PostEntity updated = feedRepository.updatePostOwnedBy(currentUserId, postId, body)
         .orElseThrow(() -> new IllegalArgumentException("只能编辑自己的动态"));
@@ -83,6 +86,7 @@ public class FeedService {
         .toList();
   }
 
+  @Transactional
   public CommentView publishComment(Long postId, String currentUserId, String body) {
     CommentEntity comment = feedRepository.saveComment(postId, currentUserId, body);
     moderationRepository.create("comment", comment.id(), postId, "动态评论发布审核");

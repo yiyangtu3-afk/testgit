@@ -104,7 +104,10 @@ behavior for login, user search, friend requests, accepted friendships, chat
 messages, chat attachments, feed posts, comments, moderation, and audit
 records. It also includes MockMvc controller tests for the auth, users,
 friends, chat, feed, and admin API boundary, plus direct WebSocket handler
-tests for chat heartbeat and broadcast behavior.
+tests for chat heartbeat and broadcast behavior. The chat repository integration
+test connects to the local MySQL database without running `schema.sql` or
+`data.sql`; its transaction rolls back after each test, so existing demo
+history stays unchanged.
 
 ## Frontend structure
 

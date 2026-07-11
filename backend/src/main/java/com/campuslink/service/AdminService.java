@@ -13,6 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AdminService {
@@ -51,6 +52,7 @@ public class AdminService {
         .toList();
   }
 
+  @Transactional
   public ModerationItemView resolveModeration(String itemId, String decision, String operatorName) {
     String status = switch (decision) {
       case "approve" -> "approved";
