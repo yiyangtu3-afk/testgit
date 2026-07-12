@@ -118,6 +118,14 @@ broadcast behavior. Repository integration tests connect to the local MySQL
 database without running `schema.sql` or `data.sql`; each test transaction
 rolls back, so existing demo history stays unchanged.
 
+## Local live API acceptance
+
+On July 11, 2026, the browser acceptance flow confirmed that a teacher can
+submit an activity through the Java API, an administrator can publish it from
+the pending-activity workspace, and a student can then see it in the published
+list. This check intentionally uses local MySQL history; it doesn't replace
+the database with Mock data or reset existing records.
+
 ## Frontend structure
 
 The browser demo is still served as static files, but the JavaScript is split
