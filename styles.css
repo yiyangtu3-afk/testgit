@@ -949,35 +949,9 @@ select:focus {
 }
 
 .is-admin {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
+  display: block;
   padding-bottom: 24px;
   overflow: auto;
-}
-
-#adminPanel .stage-header {
-  order: 1;
-}
-
-#adminPanel #exportPanel {
-  order: 2;
-}
-
-#adminPanel #metricGrid {
-  order: 3;
-}
-
-#adminPanel #activityReviewPanel {
-  order: 4;
-}
-
-#adminPanel #moderationPanel {
-  order: 5;
-}
-
-#adminPanel #auditTable {
-  order: 6;
 }
 
 .is-activities {

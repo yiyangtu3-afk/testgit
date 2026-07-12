@@ -1,6 +1,6 @@
 import { API_BASE, state } from "../state.js";
-import { setApiMode } from "../ui/status.js?v=20260710-activity-review-ui-v1";
-import { mockApi } from "./mock-api.js?v=20260710-activity-review-ui-v1";
+import { setApiMode } from "../ui/status.js?v=20260711-activity-review-layout-v2";
+import { mockApi } from "./mock-api.js?v=20260711-activity-review-layout-v2";
 
 class ApiUnavailableError extends Error {
   constructor(cause) {

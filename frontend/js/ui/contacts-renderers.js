@@ -1,6 +1,6 @@
 import { mockStore, state } from "../state.js";
-import { $ } from "../utils/dom.js?v=20260710-activity-review-ui-v1";
-import { escapeHtml } from "../utils/format.js?v=20260710-activity-review-ui-v1";
+import { $ } from "../utils/dom.js?v=20260711-activity-review-layout-v2";
+import { escapeHtml } from "../utils/format.js?v=20260711-activity-review-layout-v2";
 
 export function renderSearchResults() {
   $("#resultList").innerHTML = state.users

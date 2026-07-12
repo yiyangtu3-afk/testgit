@@ -1,8 +1,8 @@
-import { api } from "../api/client.js?v=20260710-activity-review-ui-v1";
-import { loadActivities, loadPendingActivities } from "../loaders.js?v=20260710-activity-review-ui-v1";
+import { api } from "../api/client.js?v=20260711-activity-review-layout-v2";
+import { loadActivities, loadPendingActivities } from "../loaders.js?v=20260711-activity-review-layout-v2";
 import { state } from "../state.js";
-import { $ } from "../utils/dom.js?v=20260710-activity-review-ui-v1";
-import { renderActivities, renderPendingActivities } from "./renderers.js?v=20260710-activity-review-ui-v1";
+import { $ } from "../utils/dom.js?v=20260711-activity-review-layout-v2";
+import { renderActivities, renderPendingActivities } from "./renderers.js?v=20260711-activity-review-layout-v2";
 
 export function bindActivityEvents() {
   $("#activityForm").addEventListener("submit", submitActivity);

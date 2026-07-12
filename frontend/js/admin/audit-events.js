@@ -1,7 +1,7 @@
-import { api } from "../api/client.js?v=20260710-activity-review-ui-v1";
+import { api } from "../api/client.js?v=20260711-activity-review-layout-v2";
 import { API_BASE, state } from "../state.js";
-import { isAdminUser } from "../utils/auth.js?v=20260710-activity-review-ui-v1";
-import { loadAdminData } from "../loaders.js?v=20260710-activity-review-ui-v1";
+import { isAdminUser } from "../utils/auth.js?v=20260711-activity-review-layout-v2";
+import { loadAdminData } from "../loaders.js?v=20260711-activity-review-layout-v2";
 
 export async function bindAdminAuditEvents(event) {
   const toggleAll = event.target.closest("[data-toggle-all-audit-events]");

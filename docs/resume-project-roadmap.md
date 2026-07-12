@@ -5,8 +5,8 @@
 
 ## 当前基线
 
-当前前端版本为 `20260710-activity-review-ui-v1`，本地验证地址为
-`http://127.0.0.1:5179/?v=20260710-activity-review-ui-v1`。当前基线保留
+当前前端版本为 `20260711-activity-review-layout-v2`，本地验证地址为
+`http://127.0.0.1:5179/?v=20260711-activity-review-layout-v2`。当前基线保留
 管理员审核工作台、普通用户审核反馈、普通文件附件卡片、窄窗口聊天
 滚动修复，以及真实的动态可见范围过滤。详细约束见
 [`new-chat-handoff-2026-07-08.md`](new-chat-handoff-2026-07-08.md)。

@@ -1,7 +1,7 @@
-import { api } from "./api/client.js?v=20260710-activity-review-ui-v1";
+import { api } from "./api/client.js?v=20260711-activity-review-layout-v2";
 import { state } from "./state.js";
-import { isAdminUser } from "./utils/auth.js?v=20260710-activity-review-ui-v1";
-import { normalizePost } from "./utils/format.js?v=20260710-activity-review-ui-v1";
+import { isAdminUser } from "./utils/auth.js?v=20260711-activity-review-layout-v2";
+import { normalizePost } from "./utils/format.js?v=20260711-activity-review-layout-v2";
 import {
   renderAdminAccessDenied,
   renderActivities,
@@ -15,7 +15,7 @@ import {
   renderPersonalPostManager,
   renderPendingActivities,
   renderSearchResults
-} from "./ui/renderers.js?v=20260710-activity-review-ui-v1";
+} from "./ui/renderers.js?v=20260711-activity-review-layout-v2";
 
 export async function loadUsers(keyword = "") {
   state.users = await api.users(keyword);

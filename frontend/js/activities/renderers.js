@@ -1,7 +1,7 @@
 import { state } from "../state.js";
-import { isActivityOrganizer, isAdminUser } from "../utils/auth.js?v=20260710-activity-review-ui-v1";
-import { $ } from "../utils/dom.js?v=20260710-activity-review-ui-v1";
-import { escapeHtml } from "../utils/format.js?v=20260710-activity-review-ui-v1";
+import { isActivityOrganizer, isAdminUser } from "../utils/auth.js?v=20260711-activity-review-layout-v2";
+import { $ } from "../utils/dom.js?v=20260711-activity-review-layout-v2";
+import { escapeHtml } from "../utils/format.js?v=20260711-activity-review-layout-v2";
 
 const statusLabels = {
   draft: "需修改",

@@ -1,15 +1,15 @@
-import { api } from "./api/client.js?v=20260710-activity-review-ui-v1";
-import { bindActivityEvents } from "./activities/events.js?v=20260710-activity-review-ui-v1";
-import { bindAdminAuditEvents } from "./admin/audit-events.js?v=20260710-activity-review-ui-v1";
-import { bindPersonalPostEvents } from "./posts/personal-post-events.js?v=20260710-activity-review-ui-v1";
+import { api } from "./api/client.js?v=20260711-activity-review-layout-v2";
+import { bindActivityEvents } from "./activities/events.js?v=20260711-activity-review-layout-v2";
+import { bindAdminAuditEvents } from "./admin/audit-events.js?v=20260711-activity-review-layout-v2";
+import { bindPersonalPostEvents } from "./posts/personal-post-events.js?v=20260711-activity-review-layout-v2";
 import { state, reportRanges } from "./state.js";
-import { $ } from "./utils/dom.js?v=20260710-activity-review-ui-v1";
-import { isAdminUser } from "./utils/auth.js?v=20260710-activity-review-ui-v1";
-import { filesToAttachments, reportToCsv } from "./utils/format.js?v=20260710-activity-review-ui-v1";
-import { loadActivities, loadAdminData, loadComments, loadFeed, loadFriendRequests, loadFriends, loadMessages, loadPersonalPosts, loadUsers } from "./loaders.js?v=20260710-activity-review-ui-v1";
-import { enterDemoWorkspace, loginWithCode, sendLoginCode } from "./auth/session.js?v=20260710-activity-review-ui-v1";
-import { logout, switchAccount } from "./auth/workspace.js?v=20260710-activity-review-ui-v1";
-import { currentPeer, renderAttachmentTray, renderExportPanel, renderFeed, renderIdentity, renderMessages, switchTab } from "./ui/renderers.js?v=20260710-activity-review-ui-v1";
+import { $ } from "./utils/dom.js?v=20260711-activity-review-layout-v2";
+import { isAdminUser } from "./utils/auth.js?v=20260711-activity-review-layout-v2";
+import { filesToAttachments, reportToCsv } from "./utils/format.js?v=20260711-activity-review-layout-v2";
+import { loadActivities, loadAdminData, loadComments, loadFeed, loadFriendRequests, loadFriends, loadMessages, loadPersonalPosts, loadUsers } from "./loaders.js?v=20260711-activity-review-layout-v2";
+import { enterDemoWorkspace, loginWithCode, sendLoginCode } from "./auth/session.js?v=20260711-activity-review-layout-v2";
+import { logout, switchAccount } from "./auth/workspace.js?v=20260711-activity-review-layout-v2";
+import { currentPeer, renderAttachmentTray, renderExportPanel, renderFeed, renderIdentity, renderMessages, switchTab } from "./ui/renderers.js?v=20260711-activity-review-layout-v2";
 
 function successNotice(message) {
   return { kind: "success", message };

@@ -17,7 +17,7 @@ Open the local demo in a browser:
 ./script/run_frontend_demo.sh
 ```
 
-Then visit `http://127.0.0.1:5179/?v=20260710-activity-review-ui-v1`.
+Then visit `http://127.0.0.1:5179/?v=20260711-activity-review-layout-v2`.
 
 The demo supports these flows:
 
