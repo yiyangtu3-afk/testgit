@@ -942,9 +942,16 @@ select:focus {
 }
 
 .is-feed,
-.is-activities,
-.is-admin {
+.is-activities {
   grid-template-rows: auto auto minmax(0, 1fr);
+  padding-bottom: 24px;
+  overflow: auto;
+}
+
+.is-admin {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   padding-bottom: 24px;
   overflow: auto;
 }

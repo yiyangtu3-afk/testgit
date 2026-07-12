@@ -385,6 +385,12 @@ if (files.js.indexOf("moderationWorkbenchMarkup()") > files.js.indexOf("Audit Lo
   failures.push("admin layout: expected pending content workbench to render before audit log");
 }
 
+expectMatch(
+  "css",
+  /\.is-admin\s*\{\s*display:\s*flex;\s*flex-direction:\s*column;/,
+  "admin layout: expected independent review workspaces to use a vertical layout"
+);
+
 expectIncludes("html", "20260710-activity-review-ui-v1", "HTML escaping cache-busting version");
 expectIncludes("appEntry", "20260710-activity-review-ui-v1", "root app imports current HTML escaping module version");
 
