@@ -1,5 +1,5 @@
 import { state } from "../state.js";
-import { $ } from "../utils/dom.js?v=20260710-conversation-previews-v1";
+import { $ } from "../utils/dom.js?v=20260710-activity-review-ui-v1";
 
 export function renderIdentity() {
   $("#currentUser").textContent = state.currentUser.name;
@@ -10,7 +10,7 @@ export function renderIdentity() {
 }
 
 export function switchTab(tab) {
-  ["chat", "feed", "admin"].forEach((name) => {
+  ["chat", "feed", "activities", "admin"].forEach((name) => {
     $(`#${name}Panel`).hidden = name !== tab;
     document.querySelector(`[data-tab="${name}"]`).classList.toggle("is-active", name === tab);
   });

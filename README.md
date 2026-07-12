@@ -17,7 +17,7 @@ Open the local demo in a browser:
 ./script/run_frontend_demo.sh
 ```
 
-Then visit `http://127.0.0.1:5179/?v=20260710-conversation-previews-v1`.
+Then visit `http://127.0.0.1:5179/?v=20260710-activity-review-ui-v1`.
 
 The demo supports these flows:
 
@@ -48,6 +48,11 @@ The demo supports these flows:
 - Open personal post management from the campus feed and edit or delete your
   own posts.
 - Expand a feed post, view comments, and add a new comment.
+- Browse published campus activities from the activity workspace.
+- Switch to the teacher or club-leader account, submit an activity, and see
+  its pending review state without supplying an organizer ID.
+- Switch to the administrator account, approve or reject pending activities,
+  and provide a required reason for rejection.
 - Review pending feed posts and comments from the admin content queue.
 - Delete one or more moderation records from the admin queue.
 - Delete one or more audit records from the admin audit table.
@@ -121,6 +126,7 @@ The frontend uses this module layout:
 - `api`: Live API adapter and mock API fallback.
 - `auth`: Login, quick demo entry, logout, and demo account switching.
 - `chat`: Chat-specific rendering.
+- `activities`: Activity list, submission, status, and admin review UI.
 - `contacts`: Friend and contact workflows are wired through shared loaders and
   contact renderers.
 - `posts`: Campus feed rendering.
@@ -288,6 +294,7 @@ workflow, notifications, production-style security, and repeatable delivery.
 
 Phase-two activity implementation follows the reviewed data model, state
 machine, permission matrix, transaction boundaries, and test scenarios in the
-[`activity domain design`](docs/activity-domain-design.md). The first backend
-slice covers teacher or club-leader submission and administrator review while
+[`activity domain design`](docs/activity-domain-design.md). The first
+end-to-end slice now covers teacher or club-leader submission, pending status,
+administrator approval or rejection, and the published activity list while
 keeping activity rules outside the feed and generic admin services.

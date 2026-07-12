@@ -13,7 +13,8 @@ insert into users (id, name, phone, major, avatar, presence) values
   ('u-1001', '林一', '13800000001', '学生账号', '林', 'online'),
   ('u-2001', '陈老师', '13800000002', '教师', '陈', 'online'),
   ('u-2002', '周同学', '13800000003', '学生', '周', 'offline'),
-  ('u-2003', '教务管理员', '13800000004', '管理员', '管', 'online')
+  ('u-2003', '教务管理员', '13800000004', '管理员', '管', 'online'),
+  ('u-2004', '王社长', '13800000005', '社团负责人', '王', 'online')
 on duplicate key update
   name = values(name),
   phone = values(phone),

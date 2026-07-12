@@ -1,7 +1,7 @@
 import { API_BASE, state } from "../state.js";
-import { loadFriends, loadMessages, loadUnreadCounts } from "../loaders.js?v=20260710-conversation-previews-v1";
-import { renderConversations } from "../ui/contacts-renderers.js?v=20260710-conversation-previews-v1";
-import { setRealtimeMode } from "../ui/status.js?v=20260710-conversation-previews-v1";
+import { loadFriends, loadMessages, loadUnreadCounts } from "../loaders.js?v=20260710-activity-review-ui-v1";
+import { renderConversations } from "../ui/contacts-renderers.js?v=20260710-activity-review-ui-v1";
+import { setRealtimeMode } from "../ui/status.js?v=20260710-activity-review-ui-v1";
 
 const HEARTBEAT_INTERVAL_MS = 15000;
 const HEARTBEAT_TIMEOUT_MS = 6000;

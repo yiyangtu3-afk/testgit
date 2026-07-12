@@ -29,6 +29,11 @@ export const state = {
   feedNotice: null,
   postComments: {},
   expandedPostId: null,
+  activities: [],
+  activitySubmissions: [],
+  pendingActivities: [],
+  activityNotice: null,
+  activityReviewNotice: null,
   metrics: {},
   moderationItems: [],
   moderationFilter: "all",
@@ -53,7 +58,8 @@ export const mockStore = {
     { id: "u-1001", name: "林一", role: "学生账号", phone: "13800000001", status: "online" },
     { id: "u-2001", name: "陈老师", role: "教师账号", phone: "13800000002", status: "online" },
     { id: "u-2002", name: "周同学", role: "学生账号", phone: "13800000003", status: "offline" },
-    { id: "u-2003", name: "教务管理员", role: "管理员账号", phone: "13800000004", status: "online" }
+    { id: "u-2003", name: "教务管理员", role: "管理员账号", phone: "13800000004", status: "online" },
+    { id: "u-2004", name: "王社长", role: "社团负责人", phone: "13800000005", status: "online" }
   ],
   friendRequests: [
     { id: "fr-1001", fromUserId: "u-2002", toUserId: "u-1001", status: "pending" }
@@ -143,6 +149,46 @@ export const mockStore = {
       reason: "校园动态发布审核",
       submittedAt: "2026-07-06 09:20",
       time: "09:20"
+    }
+  ],
+  activities: [
+    {
+      id: "activity-mock-published",
+      title: "校园开源协作日",
+      description: "面向全校同学的开源项目协作与成果交流活动。",
+      category: "科技",
+      location: "工程训练中心 A201",
+      startsAt: "2026-08-16T09:00:00",
+      endsAt: "2026-08-16T16:30:00",
+      capacity: 80,
+      organizerId: "u-2001",
+      organizerName: "陈老师",
+      status: "published",
+      reviewDecision: "approved",
+      reviewReason: null,
+      reviewerId: "u-2003",
+      reviewerName: "教务管理员",
+      reviewedAt: "2026-07-10T10:00:00",
+      createdAt: "2026-07-10T09:00:00"
+    },
+    {
+      id: "activity-mock-pending",
+      title: "社团夏季招新说明会",
+      description: "介绍学生社团方向、招新安排和本学期活动计划。",
+      category: "社团",
+      location: "大学生活动中心 203",
+      startsAt: "2026-08-20T18:30:00",
+      endsAt: "2026-08-20T20:00:00",
+      capacity: 120,
+      organizerId: "u-2004",
+      organizerName: "王社长",
+      status: "pending",
+      reviewDecision: "pending",
+      reviewReason: null,
+      reviewerId: null,
+      reviewerName: null,
+      reviewedAt: null,
+      createdAt: "2026-07-10T09:30:00"
     }
   ],
   auditEvents: [

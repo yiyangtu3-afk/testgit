@@ -1,7 +1,8 @@
 import { mockStore, reportRanges, state } from "../state.js";
-import { nowTime } from "../utils/dom.js?v=20260710-conversation-previews-v1";
+import { nowTime } from "../utils/dom.js?v=20260710-activity-review-ui-v1";
 
 let mockAuditId = Date.now();
+let mockActivityId = Date.now();
 
 export function accountById(userId) {
   return mockStore.accounts.find((account) => account.id === userId);
@@ -372,6 +373,63 @@ export const mockApi = {
       pushMockAudit("动态", `${state.currentUser.name}评论${post.author}的动态`);
     }
     return comment;
+  },
+  async activities() {
+    return mockStore.activities.filter((activity) => activity.status === "published");
+  },
+  async createActivity(activity) {
+    const role = state.currentUser.role || "";
+    if (!role.includes("教师") && !role.includes("社团负责人")) {
+      throw new Error("只有教师或社团负责人可以创建活动");
+    }
+    const created = {
+      id: `activity-mock-${++mockActivityId}`,
+      ...activity,
+      capacity: Number(activity.capacity),
+      organizerId: state.currentUser.id,
+      organizerName: state.currentUser.name,
+      status: "pending",
+      reviewDecision: "pending",
+      reviewReason: null,
+      reviewerId: null,
+      reviewerName: null,
+      reviewedAt: null,
+      createdAt: new Date().toISOString()
+    };
+    mockStore.activities.unshift(created);
+    pushMockAudit("活动", `${state.currentUser.name}提交活动“${created.title}”`);
+    return created;
+  },
+  async pendingActivities() {
+    if (!(state.currentUser.role || "").includes("管理员")) {
+      throw new Error("需要管理员账号审核活动");
+    }
+    return mockStore.activities.filter((activity) => {
+      return activity.status === "pending" && activity.reviewDecision === "pending";
+    });
+  },
+  async reviewActivity(activityId, decision, reason = null) {
+    if (!(state.currentUser.role || "").includes("管理员")) {
+      throw new Error("需要管理员账号审核活动");
+    }
+    const activity = mockStore.activities.find((item) => item.id === activityId);
+    if (!activity || activity.status !== "pending" || activity.reviewDecision !== "pending") {
+      throw new Error("活动已完成审核");
+    }
+    if (decision === "reject" && !String(reason || "").trim()) {
+      throw new Error("拒绝活动时必须填写原因");
+    }
+    activity.status = decision === "approve" ? "published" : "draft";
+    activity.reviewDecision = decision === "approve" ? "approved" : "rejected";
+    activity.reviewReason = decision === "reject" ? String(reason).trim() : null;
+    activity.reviewerId = state.currentUser.id;
+    activity.reviewerName = state.currentUser.name;
+    activity.reviewedAt = new Date().toISOString();
+    pushMockAudit(
+      "活动",
+      `${state.currentUser.name}${decision === "approve" ? "通过" : "拒绝"}活动“${activity.title}”`
+    );
+    return { ...activity };
   },
   async metrics() {
     const pendingModeration = mockStore.moderationItems.filter((item) => item.status === "pending").length;

@@ -1,11 +1,11 @@
 import { mockStore, state } from "../state.js";
-import { api } from "../api/client.js?v=20260710-conversation-previews-v1";
-import { accountById, pushMockAudit } from "../api/mock-api.js?v=20260710-conversation-previews-v1";
-import { $ } from "../utils/dom.js?v=20260710-conversation-previews-v1";
-import { setApiMode, setRealtimeMode, setStatus } from "../ui/status.js?v=20260710-conversation-previews-v1";
-import { renderAccountSwitch, renderAttachmentTray, renderExportPanel, renderIdentity, renderMessages } from "../ui/renderers.js?v=20260710-conversation-previews-v1";
-import { loadAdminData, loadConversationPreviews, loadFeed, loadFriendRequests, loadFriends, loadMessages, loadUnreadCounts, loadUsers } from "../loaders.js?v=20260710-conversation-previews-v1";
-import { connectChatRealtime, disconnectChatRealtime } from "../chat/realtime.js?v=20260710-conversation-previews-v1";
+import { api } from "../api/client.js?v=20260710-activity-review-ui-v1";
+import { accountById, pushMockAudit } from "../api/mock-api.js?v=20260710-activity-review-ui-v1";
+import { $ } from "../utils/dom.js?v=20260710-activity-review-ui-v1";
+import { setApiMode, setRealtimeMode, setStatus } from "../ui/status.js?v=20260710-activity-review-ui-v1";
+import { renderAccountSwitch, renderAttachmentTray, renderExportPanel, renderIdentity, renderMessages } from "../ui/renderers.js?v=20260710-activity-review-ui-v1";
+import { loadActivities, loadAdminData, loadConversationPreviews, loadFeed, loadFriendRequests, loadFriends, loadMessages, loadUnreadCounts, loadUsers } from "../loaders.js?v=20260710-activity-review-ui-v1";
+import { connectChatRealtime, disconnectChatRealtime } from "../chat/realtime.js?v=20260710-activity-review-ui-v1";
 
 export async function bootstrapWorkspace() {
   renderAccountSwitch();
@@ -16,7 +16,7 @@ export async function bootstrapWorkspace() {
   await loadConversationPreviews();
   await loadUnreadCounts();
   await loadMessages();
-  await Promise.all([loadFeed(), loadAdminData()]);
+  await Promise.all([loadFeed(), loadActivities(), loadAdminData()]);
   renderMessages();
 }
 
@@ -41,6 +41,9 @@ export async function switchAccount(userId) {
   state.unread = {};
   state.pendingAttachments = [];
   state.feedNotice = null;
+  state.pendingActivities = [];
+  state.activityNotice = null;
+  state.activityReviewNotice = null;
   state.moderationFilter = "all";
   state.selectedModerationIds = new Set();
   state.reviewingModerationId = "";
@@ -82,6 +85,11 @@ export function logout() {
   state.feedNotice = null;
   state.postComments = {};
   state.expandedPostId = null;
+  state.activities = [];
+  state.activitySubmissions = [];
+  state.pendingActivities = [];
+  state.activityNotice = null;
+  state.activityReviewNotice = null;
   state.metrics = {};
   state.moderationItems = [];
   state.moderationFilter = "all";

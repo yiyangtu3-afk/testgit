@@ -1,9 +1,10 @@
-import { api } from "./api/client.js?v=20260710-conversation-previews-v1";
+import { api } from "./api/client.js?v=20260710-activity-review-ui-v1";
 import { state } from "./state.js";
-import { isAdminUser } from "./utils/auth.js?v=20260710-conversation-previews-v1";
-import { normalizePost } from "./utils/format.js?v=20260710-conversation-previews-v1";
+import { isAdminUser } from "./utils/auth.js?v=20260710-activity-review-ui-v1";
+import { normalizePost } from "./utils/format.js?v=20260710-activity-review-ui-v1";
 import {
   renderAdminAccessDenied,
+  renderActivities,
   renderAuditEvents,
   renderConversations,
   renderFeed,
@@ -12,8 +13,9 @@ import {
   renderMetrics,
   renderModerationItems,
   renderPersonalPostManager,
+  renderPendingActivities,
   renderSearchResults
-} from "./ui/renderers.js?v=20260710-conversation-previews-v1";
+} from "./ui/renderers.js?v=20260710-activity-review-ui-v1";
 
 export async function loadUsers(keyword = "") {
   state.users = await api.users(keyword);
@@ -97,6 +99,21 @@ export async function loadComments(postId) {
   renderFeed();
 }
 
+export async function loadActivities() {
+  state.activities = await api.activities();
+  renderActivities();
+}
+
+export async function loadPendingActivities() {
+  if (!isAdminUser()) {
+    state.pendingActivities = [];
+    renderPendingActivities();
+    return;
+  }
+  state.pendingActivities = await api.pendingActivities();
+  renderPendingActivities();
+}
+
 export async function loadMetrics() {
   state.metrics = await api.metrics();
   renderMetrics();
@@ -130,10 +147,14 @@ export async function loadAdminData() {
     state.selectedAuditEventIds = new Set();
     state.adminNotice = null;
     state.reportExport = null;
+    state.pendingActivities = [];
+    state.activityReviewNotice = null;
+    renderPendingActivities();
     renderAdminAccessDenied();
     return;
   }
   await loadMetrics();
+  await loadPendingActivities();
   await loadModerationItems();
   await backfillModerationItemsWhenMetricsDisagree();
   await loadAuditEvents();

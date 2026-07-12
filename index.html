@@ -9,11 +9,11 @@
     />
     <title>CampusLink Demo</title>
     <script>
-      if (location.search !== "?v=20260710-conversation-previews-v1") {
-        history.replaceState(null, "", location.pathname + "?v=20260710-conversation-previews-v1");
+      if (location.search !== "?v=20260710-activity-review-ui-v1") {
+        history.replaceState(null, "", location.pathname + "?v=20260710-activity-review-ui-v1");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=20260710-conversation-previews-v1" />
+    <link rel="stylesheet" href="styles.css?v=20260710-activity-review-ui-v1" />
   </head>
   <body>
     <main class="app-shell">
@@ -77,6 +77,7 @@
           <div class="rail-logo">CL</div>
           <button class="rail-button is-active" type="button" data-tab="chat" aria-label="聊天">C</button>
           <button class="rail-button" type="button" data-tab="feed" aria-label="动态">F</button>
+          <button class="rail-button" type="button" data-tab="activities" aria-label="活动">E</button>
           <button class="rail-button" type="button" data-tab="admin" aria-label="后台">A</button>
         </aside>
 
@@ -172,6 +173,92 @@
           <div class="feed-list" id="feedList"></div>
         </section>
 
+        <section class="main-stage is-activities" id="activitiesPanel" hidden>
+          <header class="stage-header activity-header">
+            <div>
+              <p class="section-kicker">Campus Events</p>
+              <h2>校园活动</h2>
+            </div>
+            <p class="activity-header-note">从提案到发布，每一步都有清晰状态。</p>
+          </header>
+          <div class="activity-stage">
+            <section class="activity-intro" aria-labelledby="activityIntroTitle">
+              <div>
+                <p class="section-kicker">Open Calendar</p>
+                <h3 id="activityIntroTitle">把校园里的好想法，变成可参加的活动。</h3>
+              </div>
+              <p>教师和社团负责人提交活动，管理员审核通过后进入公开日程。</p>
+            </section>
+
+            <div class="activity-feedback" id="activityNotice" hidden></div>
+
+            <section class="activity-creator" id="activityCreatorPanel">
+              <div class="activity-section-head">
+                <div>
+                  <p class="section-kicker">New Proposal</p>
+                  <h3>提交活动</h3>
+                </div>
+                <span>提交后进入待审核</span>
+              </div>
+              <form class="activity-form" id="activityForm">
+                <label class="activity-field activity-field--wide" for="activityTitle">
+                  活动标题
+                  <input id="activityTitle" name="title" maxlength="120" required placeholder="例如：校园开源协作日" />
+                </label>
+                <label class="activity-field" for="activityCategory">
+                  类别
+                  <input id="activityCategory" name="category" maxlength="60" required placeholder="科技 / 社团 / 公益" />
+                </label>
+                <label class="activity-field" for="activityCapacity">
+                  名额
+                  <input id="activityCapacity" name="capacity" type="number" min="1" max="10000" value="40" required />
+                </label>
+                <label class="activity-field activity-field--wide" for="activityLocation">
+                  地点
+                  <input id="activityLocation" name="location" maxlength="160" required placeholder="工程训练中心 A201" />
+                </label>
+                <label class="activity-field" for="activityStartsAt">
+                  开始时间
+                  <input id="activityStartsAt" name="startsAt" type="datetime-local" required />
+                </label>
+                <label class="activity-field" for="activityEndsAt">
+                  结束时间
+                  <input id="activityEndsAt" name="endsAt" type="datetime-local" required />
+                </label>
+                <label class="activity-field activity-field--full" for="activityDescription">
+                  活动详情
+                  <textarea id="activityDescription" name="description" maxlength="2000" required placeholder="说明活动内容、参与方式和准备事项。"></textarea>
+                </label>
+                <div class="activity-form-actions">
+                  <p>组织者身份由当前登录账号确定，无法在表单中修改。</p>
+                  <button class="primary-button" id="submitActivityButton" type="submit">提交审核</button>
+                </div>
+              </form>
+            </section>
+
+            <section class="activity-submissions" id="activitySubmissionPanel" hidden>
+              <div class="activity-section-head">
+                <div>
+                  <p class="section-kicker">My Submission</p>
+                  <h3>本次提交</h3>
+                </div>
+              </div>
+              <div class="activity-list" id="activitySubmissionList"></div>
+            </section>
+
+            <section class="activity-calendar">
+              <div class="activity-section-head">
+                <div>
+                  <p class="section-kicker">Published</p>
+                  <h3>已发布活动</h3>
+                </div>
+                <strong id="publishedActivityCount">0</strong>
+              </div>
+              <div class="activity-list" id="activityList"></div>
+            </section>
+          </div>
+        </section>
+
         <section class="main-stage is-admin" id="adminPanel" hidden>
           <header class="stage-header">
             <div>
@@ -189,6 +276,7 @@
           </header>
           <div class="export-panel" id="exportPanel" hidden></div>
           <div class="metric-grid" id="metricGrid"></div>
+          <div class="activity-review-panel" id="activityReviewPanel"></div>
           <div class="moderation-panel" id="moderationPanel">
             <div class="admin-section-title">
               <div>
@@ -204,6 +292,6 @@
       </section>
     </main>
 
-    <script type="module" src="app.js?v=20260710-conversation-previews-v1"></script>
+    <script type="module" src="app.js?v=20260710-activity-review-ui-v1"></script>
   </body>
 </html>

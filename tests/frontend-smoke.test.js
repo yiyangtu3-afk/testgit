@@ -103,6 +103,85 @@ function runFeedRendererEscapingCheck() {
   }
 }
 
+function runActivityRendererCheck() {
+  const payload = "<img src=x onerror=alert(1)>";
+  const script = [
+    'globalThis.elements = {',
+    '  "#activityCreatorPanel": { hidden: false },',
+    '  "#activityNotice": { hidden: true, className: "", textContent: "" },',
+    '  "#activitySubmissionPanel": { hidden: true },',
+    '  "#activitySubmissionList": { innerHTML: "" },',
+    '  "#publishedActivityCount": { textContent: "" },',
+    '  "#activityList": { innerHTML: "" },',
+    '  "#activityReviewPanel": { hidden: true, innerHTML: "" }',
+    '};',
+    'globalThis.document = { querySelector(selector) { return globalThis.elements[selector]; } };',
+    'const { state } = await import("./frontend/js/state.js");',
+    'state.currentUser = { id: "u-2001", name: "陈老师", role: "教师账号" };',
+    `state.activities = [{ id: "activity-xss", title: ${JSON.stringify(payload)}, description: ${JSON.stringify(payload)}, category: "科技", location: "A201", startsAt: "2026-08-01T09:00:00", endsAt: "2026-08-01T11:00:00", capacity: 20, organizerId: "u-2001", organizerName: "陈老师", status: "published", reviewDecision: "approved" }];`,
+    'state.activitySubmissions = [];',
+    'const { renderActivities, renderPendingActivities } = await import("./frontend/js/activities/renderers.js");',
+    'renderActivities();',
+    'const activityHtml = globalThis.elements["#activityList"].innerHTML;',
+    'state.currentUser = { id: "u-2003", name: "教务管理员", role: "管理员账号" };',
+    `state.pendingActivities = [{ id: "activity-pending", title: ${JSON.stringify(payload)}, description: ${JSON.stringify(payload)}, category: "社团", location: "活动中心", startsAt: "2026-08-02T09:00:00", endsAt: "2026-08-02T11:00:00", capacity: 30, organizerId: "u-2004", organizerName: "王社长", status: "pending", reviewDecision: "pending" }];`,
+    'renderPendingActivities();',
+    'process.stdout.write(JSON.stringify({ activityHtml, reviewHtml: globalThis.elements["#activityReviewPanel"].innerHTML }));'
+  ].join("\n");
+  try {
+    const output = JSON.parse(execFileSync(
+      process.execPath,
+      ["--input-type=module", "--eval", script],
+      { cwd: root, encoding: "utf8" }
+    ));
+    if (output.activityHtml.includes(payload) || !output.activityHtml.includes("&lt;img")) {
+      failures.push("activity renderer: expected activity title and description to be escaped");
+    }
+    if (!output.reviewHtml.includes('data-review-activity="activity-pending"')) {
+      failures.push("activity renderer: expected pending activity review actions");
+    }
+    if (output.reviewHtml.includes(payload) || !output.reviewHtml.includes("&lt;img")) {
+      failures.push("activity review renderer: expected pending activity content to be escaped");
+    }
+  } catch (error) {
+    failures.push(`Activity renderer check failed: ${String(error.message || error)}`);
+  }
+}
+
+function runMockActivityWorkflowCheck() {
+  const script = [
+    'const { state } = await import("./frontend/js/state.js");',
+    'const { mockApi } = await import("./frontend/js/api/mock-api.js");',
+    'state.currentUser = { id: "u-2001", name: "陈老师", role: "教师账号" };',
+    'const created = await mockApi.createActivity({ title: "行为测试活动", description: "测试", category: "科技", location: "A201", startsAt: "2026-08-01T09:00", endsAt: "2026-08-01T11:00", capacity: 20 });',
+    'const createdOrganizerId = created.organizerId;',
+    'const createdStatus = created.status;',
+    'state.currentUser = { id: "u-2003", name: "教务管理员", role: "管理员账号" };',
+    'const pending = await mockApi.pendingActivities();',
+    'const reviewed = await mockApi.reviewActivity(created.id, "approve", null);',
+    'const published = await mockApi.activities();',
+    'process.stdout.write(JSON.stringify({ createdId: created.id, createdOrganizerId, createdStatus, pendingIds: pending.map((item) => item.id), reviewed, publishedIds: published.map((item) => item.id) }));'
+  ].join("\n");
+  try {
+    const output = JSON.parse(execFileSync(
+      process.execPath,
+      ["--input-type=module", "--eval", script],
+      { cwd: root, encoding: "utf8" }
+    ));
+    if (output.createdOrganizerId !== "u-2001" || output.createdStatus !== "pending") {
+      failures.push("mock activity workflow: expected authenticated teacher and pending creation");
+    }
+    if (!output.pendingIds.includes(output.createdId)) {
+      failures.push("mock activity workflow: expected created activity in admin pending queue");
+    }
+    if (output.reviewed.status !== "published" || !output.publishedIds.includes(output.createdId)) {
+      failures.push("mock activity workflow: expected approved activity in published list");
+    }
+  } catch (error) {
+    failures.push(`Mock activity workflow check failed: ${String(error.message || error)}`);
+  }
+}
+
 function checkVersionedModuleImports() {
   const bareImports = [...files.js.matchAll(/(?:from|import)\s*["']([^"']+\.js)["']/g)]
     .map((match) => match[1])
@@ -124,6 +203,8 @@ function listFiles(path) {
 runSyntaxCheck();
 runEscapeHtmlCheck();
 runFeedRendererEscapingCheck();
+runActivityRendererCheck();
+runMockActivityWorkflowCheck();
 checkVersionedModuleImports();
 
 if (files.appEntry.split("\n").length > 20) {
@@ -142,6 +223,11 @@ if (files.appEntry.split("\n").length > 20) {
   ["feedList", "campus feed list"],
   ["managePersonalPosts", "personal post manager button"],
   ["personalPostPanel", "personal post manager panel"],
+  ["activitiesPanel", "campus activity panel"],
+  ["activityForm", "activity submission form"],
+  ["activityList", "published activity list"],
+  ["activitySubmissionList", "activity submission status list"],
+  ["activityReviewPanel", "admin activity review panel"],
   ["exportReportButton", "admin report export button"],
   ["reportRange", "admin report range control"],
   ["exportPanel", "admin report export panel"],
@@ -172,6 +258,8 @@ if (files.html.indexOf('id="moderationPanel"') > files.html.indexOf('id="auditTa
   ['export function bindAppEvents', "event binding module"],
   ['export async function enterWorkspace', "auth workspace module"],
   ['export function renderMessages', "chat renderer module"],
+  ['export function renderActivities', "activity renderer module"],
+  ['export function bindActivityEvents', "activity event module"],
   ['export function connectChatRealtime', "chat realtime module"]
 ].forEach(([needle, label]) => expectIncludes("js", needle, label));
 
@@ -195,6 +283,11 @@ if (files.html.indexOf('id="moderationPanel"') > files.html.indexOf('id="auditTa
   ["print-link", "report print button styles"],
   ["download-link", "report download link styles"],
   ["moderation-panel", "moderation panel styles"],
+  ["activity-intro", "activity editorial introduction styles"],
+  ["activity-form", "activity submission form styles"],
+  ["activity-card", "activity card styles"],
+  ["activity-review-panel", "activity admin review styles"],
+  ["activity-status--pending", "activity pending status styles"],
   ["review-workbench", "admin review workbench styles"],
   ["audit-log-panel", "admin audit log panel styles"],
   ["admin-feedback", "admin operation feedback styles"],
@@ -222,6 +315,12 @@ expectIncludes("css", ".realtime-mode", "chat realtime status styles");
   ["resolveFriendRequest(requestId, decision)", "friend request resolution adapter"],
   ["sendMessage(peerId, text, attachments = [])", "attachment-aware message adapter"],
   ["publishComment(postId, body)", "feed comment adapter"],
+  ["createActivity(activity)", "activity submission adapter"],
+  ["pendingActivities()", "pending activity adapter"],
+  ["reviewActivity(activityId, decision, reason", "activity review adapter"],
+  ["活动已提交审核", "activity pending feedback"],
+  ["data-review-activity", "activity review action binding"],
+  ["拒绝活动时必须填写原因", "activity rejection reason guard"],
   ["personalPosts()", "personal posts adapter"],
   ["filter(isCurrentUserPost)", "personal post manager filters to current user"],
   ["#feedList\").hidden = true", "personal post manager hides campus feed list"],
@@ -286,8 +385,8 @@ if (files.js.indexOf("moderationWorkbenchMarkup()") > files.js.indexOf("Audit Lo
   failures.push("admin layout: expected pending content workbench to render before audit log");
 }
 
-expectIncludes("html", "20260710-conversation-previews-v1", "HTML escaping cache-busting version");
-expectIncludes("appEntry", "20260710-conversation-previews-v1", "root app imports current HTML escaping module version");
+expectIncludes("html", "20260710-activity-review-ui-v1", "HTML escaping cache-busting version");
+expectIncludes("appEntry", "20260710-activity-review-ui-v1", "root app imports current HTML escaping module version");
 
 expectIncludes("js", "setRealtimeMode", "chat realtime status updater");
 expectIncludes("js", "HEARTBEAT_INTERVAL_MS", "chat realtime heartbeat interval");
@@ -313,6 +412,8 @@ expectIncludes("js", "heartbeat.pong", "chat realtime heartbeat pong");
   ["reviewingModerationId", "moderation detail state"],
   ["adminNotice", "admin operation notice state"],
   ["reportExport", "report export state"],
+  ["activitySubmissions", "activity submission state"],
+  ["pendingActivities", "pending activity state"],
   ["withApi", "live API fallback helper"],
   ["setApiMode(\"mock\")", "default mock mode"]
 ].forEach(([needle, label]) => expectIncludes("js", needle, label));
@@ -330,6 +431,11 @@ expectMatch(
 );
 
 expectMatch("js", /request\("\/admin\/moderation"\)/, "moderation list endpoint");
+expectMatch("apiClient", /request\("\/activities"\)/, "published activity endpoint");
+expectMatch("apiClient", /request\("\/admin\/activities\/pending"\)/, "pending activity endpoint");
+expectMatch("apiClient", /\/admin\/activities\/\$\{activityId}\/reviews/, "activity review endpoint");
+expectMatch("js", /escapeHtml\(activity\.title\)/, "activity title is escaped");
+expectMatch("js", /escapeHtml\(activity\.description\)/, "activity description is escaped");
 expectMatch("js", /\/admin\/moderation\/\$\{itemId}\/\$\{decision}/, "moderation decision endpoint");
 expectMatch("js", /request\("\/admin\/moderation", \{\s*method: "DELETE"/, "moderation delete endpoint");
 expectMatch("js", /request\(`\/admin\/report\?range=\$\{encodeURIComponent\(range\)}`\)/, "admin report range endpoint");
@@ -393,6 +499,8 @@ expectMatch("js", /await loadFriends\(\)/, "chat websocket friend refresh");
   ['@GetMapping("/requests")', "backend friend requests route"],
   ['@PostMapping("/conversations/{peerId}/messages")', "backend message route"],
   ['@RequestMapping("/api/feed")', "backend feed route group"],
+  ['@RequestMapping("/api/activities")', "backend activity route group"],
+  ['@RequestMapping("/api/admin/activities")', "backend activity admin route group"],
   ['@GetMapping("/personal-posts")', "backend personal post list route"],
   ['@PatchMapping("/personal-posts/{postId}")', "backend personal post update route"],
   ['@DeleteMapping("/personal-posts/{postId}")', "backend personal post delete route"],
@@ -449,6 +557,7 @@ expectMatch("backend", /friendRepository\.areFriends\(currentUserId, peerId\)/, 
   ["visibility varchar(20)", "MySQL post visibility schema"],
   ["insert into users", "MySQL demo seed data"],
   ["m-demo-post-9001", "MySQL demo pending moderation seed"],
+  ["u-2004", "MySQL demo club leader account"],
   ["on duplicate key update", "idempotent MySQL demo seed data"]
 ].forEach(([needle, label]) => expectIncludes("resources", needle, label));
 

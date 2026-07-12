@@ -1,6 +1,6 @@
 import { API_BASE, state } from "../state.js";
-import { setApiMode } from "../ui/status.js?v=20260710-conversation-previews-v1";
-import { mockApi } from "./mock-api.js?v=20260710-conversation-previews-v1";
+import { setApiMode } from "../ui/status.js?v=20260710-activity-review-ui-v1";
+import { mockApi } from "./mock-api.js?v=20260710-activity-review-ui-v1";
 
 class ApiUnavailableError extends Error {
   constructor(cause) {
@@ -24,11 +24,12 @@ async function request(path, options = {}) {
     throw new ApiUnavailableError(error);
   }
 
+  const payload = await response.json().catch(() => null);
   if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`);
+    throw new Error(payload && payload.message ? payload.message : `HTTP ${response.status}`);
   }
 
-  return response.json();
+  return payload;
 }
 async function withApi(liveCall, fallbackCall) {
   try {
@@ -183,6 +184,30 @@ export const api = {
     return withApi(
       () => request(`/feed/${postId}/comments`, { method: "POST", body: JSON.stringify({ body }) }),
       () => mockApi.publishComment(postId, body)
+    );
+  },
+  activities() {
+    return withApi(() => request("/activities"), () => mockApi.activities());
+  },
+  createActivity(activity) {
+    return withApi(
+      () => request("/activities", { method: "POST", body: JSON.stringify(activity) }),
+      () => mockApi.createActivity(activity)
+    );
+  },
+  pendingActivities() {
+    return withApi(
+      () => request("/admin/activities/pending"),
+      () => mockApi.pendingActivities()
+    );
+  },
+  reviewActivity(activityId, decision, reason = null) {
+    return withApi(
+      () => request(`/admin/activities/${activityId}/reviews`, {
+        method: "POST",
+        body: JSON.stringify({ decision, reason })
+      }),
+      () => mockApi.reviewActivity(activityId, decision, reason)
     );
   },
   metrics() {
