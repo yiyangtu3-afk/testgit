@@ -309,3 +309,8 @@ machine, permission matrix, transaction boundaries, and test scenarios in the
 end-to-end slice now covers teacher or club-leader submission, pending status,
 administrator approval or rejection, and the published activity list while
 keeping activity rules outside the feed and generic admin services.
+
+The reviewed [`activity registration and waitlist design`](docs/activity-registration-design.md)
+defines the next slice: student registration, cancellation, capacity-safe
+waitlisting, and transactional promotion. Implementation starts with the
+activity-domain persistence layer and rollback-safe MySQL tests.
