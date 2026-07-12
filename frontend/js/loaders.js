@@ -110,7 +110,16 @@ export async function loadPendingActivities() {
     renderPendingActivities();
     return;
   }
-  state.pendingActivities = await api.pendingActivities();
+  renderPendingActivities();
+  try {
+    state.pendingActivities = await api.pendingActivities();
+  } catch (error) {
+    state.pendingActivities = [];
+    state.activityReviewNotice = {
+      kind: "error",
+      message: error.message || "待审核活动暂时无法加载，请稍后重试。"
+    };
+  }
   renderPendingActivities();
 }
 
@@ -153,6 +162,7 @@ export async function loadAdminData() {
     renderAdminAccessDenied();
     return;
   }
+  renderPendingActivities();
   await loadMetrics();
   await loadPendingActivities();
   await loadModerationItems();

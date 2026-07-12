@@ -53,6 +53,9 @@ The demo supports these flows:
   its pending review state without supplying an organizer ID.
 - Switch to the administrator account, approve or reject pending activities,
   and provide a required reason for rejection.
+- See the activity-review workspace immediately when opening the administrator
+  console. An empty queue or a failed activity request shows clear feedback
+  instead of hiding the workspace.
 - Review pending feed posts and comments from the admin content queue.
 - Delete one or more moderation records from the admin queue.
 - Delete one or more audit records from the admin audit table.
