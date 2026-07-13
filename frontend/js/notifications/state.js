@@ -31,3 +31,35 @@ export function activityNotificationState() {
     }
   };
 }
+
+export function socialNotificationState() {
+  if (!Array.isArray(state.socialNotifications)) {
+    state.socialNotifications = [];
+  }
+  if (!Number.isInteger(state.socialNotificationUnreadCount)) {
+    state.socialNotificationUnreadCount = 0;
+  }
+  if (!("socialNotificationNotice" in state)) {
+    state.socialNotificationNotice = null;
+  }
+  return {
+    get items() {
+      return state.socialNotifications;
+    },
+    set items(value) {
+      state.socialNotifications = value;
+    },
+    get unreadCount() {
+      return state.socialNotificationUnreadCount;
+    },
+    set unreadCount(value) {
+      state.socialNotificationUnreadCount = value;
+    },
+    get notice() {
+      return state.socialNotificationNotice;
+    },
+    set notice(value) {
+      state.socialNotificationNotice = value;
+    }
+  };
+}

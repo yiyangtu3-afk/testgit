@@ -99,6 +99,28 @@ create table if not exists comments (
   created_at timestamp not null default current_timestamp
 );
 
+create table if not exists post_likes (
+  post_id varchar(32) not null,
+  user_id varchar(32) not null,
+  created_at timestamp(6) not null default current_timestamp(6),
+  primary key (post_id, user_id),
+  key idx_post_likes_user (user_id, created_at)
+);
+
+create table if not exists social_notifications (
+  id varchar(32) primary key,
+  recipient_id varchar(32) not null,
+  actor_id varchar(32) not null,
+  target_id varchar(32) not null,
+  notification_type varchar(60) not null,
+  title varchar(120) not null,
+  body varchar(1000) not null,
+  read_at datetime(6) null,
+  created_at timestamp(6) not null default current_timestamp(6),
+  key idx_social_notifications_recipient (recipient_id, created_at),
+  key idx_social_notifications_unread (recipient_id, read_at, created_at)
+);
+
 create table if not exists moderation_items (
   id varchar(32) primary key,
   content_type varchar(30) not null,

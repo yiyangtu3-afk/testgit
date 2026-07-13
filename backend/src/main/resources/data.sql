@@ -79,7 +79,6 @@ on duplicate key update
   author_id = values(author_id),
   body = values(body),
   visibility = values(visibility),
-  likes = values(likes),
   moderation_status = values(moderation_status);
 
 insert into comments (id, post_id, author_id, body, moderation_status) values

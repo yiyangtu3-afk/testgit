@@ -18,7 +18,7 @@ Open the local demo in a browser:
 ```
 
 Then visit
-`http://127.0.0.1:5179/?v=20260712-activity-operations-v1`.
+`http://127.0.0.1:5179/?v=20260713-social-like-notifications-v1`.
 
 The demo supports these flows:
 
@@ -47,12 +47,13 @@ The demo supports these flows:
 - Filter published activities by an inclusive start-date range and category,
   register while a slot is available, see a waitlist state when full, and
   cancel a current registration.
-- Receive persistent in-app notifications when an activity is approved or
-  rejected, a registration succeeds or enters the waitlist, or a waitlisted
-  student is promoted. The notification rail shows an unread count, and the
-  notification center supports marking every item as read.
+- Receive persistent in-app notifications for activity state changes and new
+  post likes. The notification rail combines unread counts, and the unified
+  notification center supports marking activity and social items as read.
 - Switch online and invisible presence states.
 - Publish a campus feed post.
+- Like a post once per signed-in user, see the current-user liked state, and
+  click the same action again to cancel the like without erasing legacy counts.
 - Open personal post management from the campus feed and edit or delete your
   own posts.
 - Expand a feed post, view comments, and add a new comment.
@@ -117,6 +118,12 @@ cd backend
 mvn test
 ```
 
+On this machine, Microsoft JDK 21 can't let Mockito self-attach its Byte Buddy
+agent. The verified full run passes an explicit `-javaagent` through Maven's
+`argLine`; without it, Mockito-based tests fail during test setup rather than
+on application behavior. The July 13 run completed all 114 tests with the
+explicit agent and only printed the JVM class-sharing warning.
+
 The smoke test is dependency-free. It checks the static page, styles, frontend
 modules, adapter, and Java API skeleton for the selectors and routes that keep
 the demo flows connected. The backend test suite covers the migrated service
@@ -124,14 +131,14 @@ behavior for login, user search, friend requests, accepted friendships, chat
 messages, chat attachments, feed posts, comments, moderation, and audit
 records. Activity tests cover organizer permissions, review transitions,
 date/category filters, registration and waitlist promotion, organizer rosters,
-transactional check-in, persistent notifications, HTTP boundaries, MyBatis
-mapping, and rollback-safe history.
+transactional check-in, persistent notifications, user-scoped post likes,
+HTTP boundaries, MyBatis mapping, and rollback-safe history.
 The suite also includes MockMvc controller tests for the auth, users, friends,
-chat, feed, activity notifications, and admin API boundary, plus direct
-WebSocket handler tests for chat and recipient-only activity notification
-events. Repository integration tests connect to the local MySQL database
-without running `schema.sql` or `data.sql`; each test transaction rolls back,
-so existing demo history stays unchanged. Chat repository coverage verifies
+chat, feed, activity notifications, social notifications, and admin API
+boundaries, plus direct WebSocket handler tests for chat and recipient-only
+activity notification events. The full suite currently contains 114 tests.
+Repository integration tests use transactions that roll back, so test rows
+don't remain in existing demo history. Chat repository coverage verifies
 that unread counts include only messages addressed to the current user, still
 count newly received messages, and clear after the read cursor advances.
 
@@ -170,6 +177,14 @@ export. The administrator console displayed five real occupied registrations
 and zero check-ins. The activity review workspace, feed moderation detail, and
 chat composer remained correctly laid out.
 
+On July 13, 2026, the social-like slice was verified with the Java API and
+existing MySQL history. The student account liked a teacher post, saw the
+button change from **赞 12** to **已赞 13**, and cancelled it back to
+**赞 12**. The teacher then received one persisted **动态点赞** notification
+from the student. The unified read-all action cleared both activity and social
+unread counts. The administrator workspaces, moderation detail, chat page,
+and browser console remained healthy.
+
 ## Frontend structure
 
 The browser demo is still served as static files, but the JavaScript is split
@@ -183,8 +198,8 @@ The frontend uses this module layout:
 - `chat`: Chat-specific rendering.
 - `activities`: Activity filters, list, registration, submission, organizer
   roster, check-in, CSV export, status, and admin review UI.
-- `notifications`: Persistent activity notification state, rendering,
-  read-all interaction, and WebSocket event handling.
+- `notifications`: Unified activity and social notification rendering,
+  combined unread state, read-all interaction, and activity WebSocket events.
 - `contacts`: Friend and contact workflows are wired through shared loaders and
   contact renderers.
 - `posts`: Campus feed rendering.
@@ -204,7 +219,7 @@ The backend uses this package layout:
 
 - `controller`: HTTP routes and request validation entrypoints.
 - `service`: Business logic for auth, friends, chat, feed, activities, activity
-  notifications, admin, and audit.
+  notifications, social notifications, admin, and audit.
 - `mapper`: MyBatis mapper interfaces for mapper-based persistence.
 - `repository`: Repository interfaces and MyBatis-backed implementations for
   users, verification codes, friends, chat, feed, activities, moderation,
@@ -242,8 +257,9 @@ The MySQL persistence migration is complete for the current demo. Users,
 verification codes, friend requests, friendships, presence updates, chat
 messages, chat attachment metadata, feed posts, comments, moderation items,
 activities, activity review history, activity registrations, activity
-registration events, activity notifications, audit events, demo auth sessions,
-and the health check all use MyBatis mapper-backed data access. The seed data
+registration events, activity notifications, post likes, social notifications,
+audit events, demo auth sessions, and the health check all use MyBatis
+mapper-backed data access. The seed data
 also removes stale pending friend requests when the same users are already
 friends.
 
@@ -280,6 +296,8 @@ The current backend exposes these API paths:
 - `POST /api/activities/{activityId}/registrations/{registrationId}/check-in`
 - `GET /api/activity-notifications`
 - `POST /api/activity-notifications/read-all`
+- `GET /api/social-notifications`
+- `POST /api/social-notifications/read-all`
 - `GET /api/admin/activities/pending`
 - `POST /api/admin/activities/{activityId}/reviews`
 - `GET /api/admin/metrics`
@@ -362,6 +380,15 @@ to the author and accepted friends, and **仅老师可见** posts are visible to
 author and teacher accounts. The same rules apply when the frontend uses Mock
 data while the Java API is unavailable.
 
+Post likes now use the `(post_id, user_id)` key in `post_likes`. The like API
+toggles only the authenticated user's row and returns `likedByCurrentUser`.
+The existing `posts.likes` value remains a denormalized compatibility count so
+historical MySQL totals are not discarded. A new like by another user writes
+the count, relationship, audit event, and author notification in one service
+transaction. Cancelling doesn't delete the earlier notification, and liking
+your own post doesn't create one. Seed startup no longer overwrites existing
+post-like totals.
+
 The admin report endpoint accepts `range=today`, `range=week`, or `range=all`.
 It returns report metadata, the selected range, metrics, pending moderation
 items, and recent audit events. The frontend renders that payload as a compact
@@ -391,4 +418,5 @@ The reviewed
 [`activity registration and waitlist design`](docs/activity-registration-design.md)
 records the completed registration, cancellation, waitlist, organizer roster,
 transactional check-in, CSV export, and real activity-metric boundaries. The
-next roadmap work moves to broader notification and social-integrity tasks.
+next roadmap work adds persistent friend-request and comment notifications to
+the social notification foundation, then extends realtime delivery.

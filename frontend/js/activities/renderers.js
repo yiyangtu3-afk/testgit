@@ -1,9 +1,9 @@
 import { state } from "../state.js";
-import { isActivityOrganizer, isAdminUser, isStudentUser } from "../utils/auth.js?v=20260712-activity-operations-v1";
-import { $ } from "../utils/dom.js?v=20260712-activity-operations-v1";
-import { escapeHtml } from "../utils/format.js?v=20260712-activity-operations-v1";
-import { activityFilterState } from "./filters.js?v=20260712-activity-operations-v1";
-import { renderActivityOperations } from "./operations-renderer.js?v=20260712-activity-operations-v1";
+import { isActivityOrganizer, isAdminUser, isStudentUser } from "../utils/auth.js?v=20260713-social-like-notifications-v1";
+import { $ } from "../utils/dom.js?v=20260713-social-like-notifications-v1";
+import { escapeHtml } from "../utils/format.js?v=20260713-social-like-notifications-v1";
+import { activityFilterState } from "./filters.js?v=20260713-social-like-notifications-v1";
+import { renderActivityOperations } from "./operations-renderer.js?v=20260713-social-like-notifications-v1";
 
 const statusLabels = {
   draft: "需修改",

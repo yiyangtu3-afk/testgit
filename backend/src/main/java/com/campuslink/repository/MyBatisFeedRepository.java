@@ -2,6 +2,7 @@ package com.campuslink.repository;
 
 import com.campuslink.entity.DemoEntities.CommentEntity;
 import com.campuslink.entity.DemoEntities.PostEntity;
+import com.campuslink.entity.PostLikeResult;
 import com.campuslink.mapper.FeedMapper;
 import java.util.List;
 import java.util.Optional;
@@ -41,6 +42,11 @@ public class MyBatisFeedRepository implements FeedRepository {
   }
 
   @Override
+  public Optional<String> findPostAuthorId(Long postId) {
+    return Optional.ofNullable(feedMapper.findPostAuthorId(String.valueOf(postId)));
+  }
+
+  @Override
   @Transactional
   public PostEntity savePost(String authorId, String body, String visibility) {
     long postId = postIds.incrementAndGet();
@@ -68,14 +74,31 @@ public class MyBatisFeedRepository implements FeedRepository {
     feedMapper.deleteModerationItemsForPostComments(postIdText);
     feedMapper.deleteModerationItemForPost(postIdText);
     feedMapper.deleteCommentsForPost(postIdText);
+    feedMapper.deleteLikesForPost(postIdText);
     return feedMapper.deletePostOwnedBy(authorId, postIdText) > 0;
   }
 
   @Override
   @Transactional
-  public PostEntity incrementLikes(Long postId) {
-    feedMapper.incrementLikes(String.valueOf(postId));
-    return findPost(postId).orElseThrow(() -> new IllegalArgumentException("动态不存在"));
+  public PostLikeResult toggleLike(Long postId, String userId) {
+    String postIdText = String.valueOf(postId);
+    if (feedMapper.lockPost(postIdText) == null) {
+      throw new IllegalArgumentException("动态不存在");
+    }
+    boolean liked;
+    if (feedMapper.deleteLike(postIdText, userId) > 0) {
+      feedMapper.adjustLikes(postIdText, -1);
+      liked = false;
+    } else {
+      feedMapper.insertLike(postIdText, userId);
+      feedMapper.adjustLikes(postIdText, 1);
+      liked = true;
+    }
+    PostEntity post = findPost(postId)
+        .orElseThrow(() -> new IllegalArgumentException("动态不存在"));
+    return new PostLikeResult(new PostEntity(
+        post.id(), post.author(), post.body(), post.visibility(), post.likes(), post.comments(),
+        post.moderationStatus(), post.moderationReason(), liked), liked);
   }
 
   @Override

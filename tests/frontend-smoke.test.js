@@ -370,6 +370,44 @@ function runMockActivityOperationsCheck() {
   }
 }
 
+function runMockSocialLikeWorkflowCheck() {
+  const script = [
+    'const { state } = await import("./frontend/js/state.js");',
+    'const { mockApi } = await import("./frontend/js/api/mock-api.js");',
+    'state.currentUser = { id: "u-1001", name: "林一", role: "学生账号" };',
+    'const liked = await mockApi.likePost(1);',
+    'const feedAfterLike = await mockApi.feed();',
+    'const unliked = await mockApi.likePost(1);',
+    'state.currentUser = { id: "u-2001", name: "陈老师", role: "教师账号" };',
+    'const notifications = await mockApi.socialNotifications();',
+    'const read = await mockApi.markAllSocialNotificationsRead();',
+    'process.stdout.write(JSON.stringify({ liked, feedPost: feedAfterLike.find((post) => post.id === 1), unliked, notifications, read }));'
+  ].join("\n");
+  try {
+    const output = JSON.parse(execFileSync(
+      process.execPath,
+      ["--input-type=module", "--eval", script],
+      { cwd: root, encoding: "utf8" }
+    ));
+    if (!output.liked.likedByCurrentUser || !output.feedPost.likedByCurrentUser) {
+      failures.push("mock social likes: expected current-user liked state in mutation and feed results");
+    }
+    if (output.unliked.likedByCurrentUser || output.unliked.likes !== 12) {
+      failures.push("mock social likes: expected second click to cancel only the current user's like");
+    }
+    if (output.notifications.items.length !== 1
+        || output.notifications.items[0].type !== "social.post.liked"
+        || output.notifications.unreadCount !== 1) {
+      failures.push("mock social notifications: expected one persisted notification for the post author");
+    }
+    if (output.read.unreadCount !== 0 || output.read.items.some((item) => !item.read)) {
+      failures.push("mock social notifications: expected read-all state");
+    }
+  } catch (error) {
+    failures.push(`Mock social like workflow check failed: ${String(error.message || error)}`);
+  }
+}
+
 function checkVersionedModuleImports() {
   const bareImports = [...files.js.matchAll(/(?:from|import)\s*["']([^"']+\.js)["']/g)]
     .map((match) => match[1])
@@ -397,6 +435,7 @@ runMockActivityWorkflowCheck();
 runMockActivityFilterCheck();
 runMockActivityNotificationWorkflowCheck();
 runMockActivityOperationsCheck();
+runMockSocialLikeWorkflowCheck();
 checkVersionedModuleImports();
 
 if (files.appEntry.split("\n").length > 20) {
@@ -534,6 +573,8 @@ expectIncludes("css", ".realtime-mode", "chat realtime status styles");
   ["cancelActivityRegistration(activityId)", "activity cancellation adapter"],
   ["activityNotifications()", "activity notification list adapter"],
   ["markAllActivityNotificationsRead()", "activity notification read-all adapter"],
+  ["socialNotifications()", "social notification list adapter"],
+  ["markAllSocialNotificationsRead()", "social notification read-all adapter"],
   ["managedActivities()", "organizer managed activity adapter"],
   ["activityRoster(activityId)", "activity roster adapter"],
   ["checkInActivityRegistration(activityId, registrationId)", "activity check-in adapter"],
@@ -558,6 +599,8 @@ expectIncludes("css", ".realtime-mode", "chat realtime status styles");
   ["feedNotice", "feed moderation notice state"],
   ["动态已提交审核", "post submission moderation feedback"],
   ["评论已提交审核", "comment submission moderation feedback"],
+  ["已点赞这条动态", "post like success feedback"],
+  ["点赞状态更新失败", "post like failure feedback"],
   ["通过前不会出现在公共动态流", "pending post visibility explanation"],
   ["拒绝原因", "rejected post reason explanation"],
   ["已拒绝", "personal post rejected status label"],
@@ -622,8 +665,8 @@ expectMatch(
   "admin layout: expected independent review workspaces to use normal document flow"
 );
 
-expectIncludes("html", "20260712-activity-operations-v1", "HTML escaping cache-busting version");
-expectIncludes("appEntry", "20260712-activity-operations-v1", "root app imports current HTML escaping module version");
+expectIncludes("html", "20260713-social-like-notifications-v1", "HTML escaping cache-busting version");
+expectIncludes("appEntry", "20260713-social-like-notifications-v1", "root app imports current HTML escaping module version");
 
 expectIncludes("js", "setRealtimeMode", "chat realtime status updater");
 expectIncludes("js", "HEARTBEAT_INTERVAL_MS", "chat realtime heartbeat interval");
@@ -655,6 +698,8 @@ expectIncludes("js", "heartbeat.pong", "chat realtime heartbeat pong");
   ["pendingActivities", "pending activity state"],
   ["activityNotifications", "activity notification state"],
   ["activityNotificationUnreadCount", "activity notification unread state"],
+  ["socialNotifications", "social notification state"],
+  ["socialNotificationUnreadCount", "social notification unread state"],
   ["withApi", "live API fallback helper"],
   ["setApiMode(\"mock\")", "default mock mode"]
 ].forEach(([needle, label]) => expectIncludes("js", needle, label));
@@ -677,6 +722,8 @@ expectMatch("apiClient", /request\("\/admin\/activities\/pending"\)/, "pending a
 expectMatch("apiClient", /\/admin\/activities\/\$\{activityId}\/reviews/, "activity review endpoint");
 expectMatch("apiClient", /request\("\/activity-notifications"\)/, "activity notification list endpoint");
 expectMatch("apiClient", /request\("\/activity-notifications\/read-all", \{ method: "POST" \}\)/, "activity notification read-all endpoint");
+expectMatch("apiClient", /request\("\/social-notifications"\)/, "social notification list endpoint");
+expectMatch("apiClient", /request\("\/social-notifications\/read-all", \{ method: "POST" \}\)/, "social notification read-all endpoint");
 expectMatch("js", /escapeHtml\(activity\.title\)/, "activity title is escaped");
 expectMatch("js", /escapeHtml\(activity\.description\)/, "activity description is escaped");
 expectMatch("js", /\/admin\/moderation\/\$\{itemId}\/\$\{decision}/, "moderation decision endpoint");
@@ -686,7 +733,8 @@ expectMatch("js", /await loadModerationItems\(\);\s*await backfillModerationItem
 expectMatch("js", /post\.moderationStatus === "approved"/, "campus feed only renders approved posts");
 expectMatch("js", /comment\.moderationStatus === "approved"/, "campus feed only renders approved comments");
 expectMatch("js", /function canViewPost\(post\)/, "mock feed visibility guard");
-expectMatch("js", /return mockStore\.posts\.filter\(canViewPost\);/, "mock feed applies visibility guard");
+expectMatch("js", /return mockStore\.posts\.filter\(canViewPost\)\.map\(withCurrentUserLike\);/, "mock feed applies visibility guard and current-user like state");
+expectMatch("js", /aria-pressed="\$\{liked\}"/, "feed like action exposes pressed state");
 expectMatch("js", /function requireFriendship\(peerId\)/, "mock chat friendship guard");
 expectMatch("js", /async messages\(peerId, beforeId = null, limit = 30\) \{\s*requireFriendship\(peerId\);/s, "mock message reads require friendship");
 expectMatch("js", /async sendMessage\(peerId, text, attachments = \[\]\) \{\s*requireFriendship\(peerId\);/s, "mock sends require friendship");
@@ -751,6 +799,7 @@ expectMatch("js", /await loadFriends\(\)/, "chat websocket friend refresh");
   ['@RequestMapping("/api/admin/activities")', "backend activity admin route group"],
   ['@GetMapping("/activity-metrics")', "backend real activity metrics route"],
   ['@RequestMapping("/api/activity-notifications")', "backend activity notification route group"],
+  ['@RequestMapping("/api/social-notifications")', "backend social notification route group"],
   ['@GetMapping("/personal-posts")', "backend personal post list route"],
   ['@PatchMapping("/personal-posts/{postId}")', "backend personal post update route"],
   ['@DeleteMapping("/personal-posts/{postId}")', "backend personal post delete route"],
@@ -812,6 +861,8 @@ expectMatch("backend", /friendRepository\.areFriends\(currentUserId, peerId\)/, 
   ["m-demo-post-9001", "MySQL demo pending moderation seed"],
   ["u-2004", "MySQL demo club leader account"],
   ["create table if not exists activity_notifications", "MySQL activity notification schema"],
+  ["create table if not exists post_likes", "MySQL user-scoped post like schema"],
+  ["create table if not exists social_notifications", "MySQL social notification schema"],
   ["checked_in_at datetime(6)", "MySQL activity check-in timestamp"],
   ["on duplicate key update", "idempotent MySQL demo seed data"]
 ].forEach(([needle, label]) => expectIncludes("resources", needle, label));

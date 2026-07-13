@@ -5,6 +5,7 @@ import com.campuslink.dto.DemoDtos.PersonalPostDeleteResponse;
 import com.campuslink.dto.DemoDtos.PostView;
 import com.campuslink.entity.DemoEntities.CommentEntity;
 import com.campuslink.entity.DemoEntities.PostEntity;
+import com.campuslink.entity.PostLikeResult;
 import com.campuslink.repository.FeedRepository;
 import com.campuslink.repository.ModerationRepository;
 import java.util.List;
@@ -21,16 +22,19 @@ public class FeedService {
   private final ModerationRepository moderationRepository;
   private final AuditService auditService;
   private final UserService userService;
+  private final SocialNotificationService notifications;
 
   public FeedService(
       FeedRepository feedRepository,
       ModerationRepository moderationRepository,
       AuditService auditService,
-      UserService userService) {
+      UserService userService,
+      SocialNotificationService notifications) {
     this.feedRepository = feedRepository;
     this.moderationRepository = moderationRepository;
     this.auditService = auditService;
     this.userService = userService;
+    this.notifications = notifications;
   }
 
   public List<PostView> feed(String currentUserId) {
@@ -74,10 +78,20 @@ public class FeedService {
     return new PersonalPostDeleteResponse(true);
   }
 
+  @Transactional
   public PostView likePost(Long postId, String currentUserId) {
-    PostEntity liked = feedRepository.incrementLikes(postId);
-    auditService.addAudit("动态", userService.userName(currentUserId) + "点赞" + liked.author() + "的动态");
-    return DemoMapper.toPostView(liked);
+    PostLikeResult result = feedRepository.toggleLike(postId, currentUserId);
+    String action = result.liked() ? "点赞" : "取消点赞";
+    String actorName = userService.userName(currentUserId);
+    auditService.addAudit("动态", actorName + action + result.post().author() + "的动态");
+    if (result.liked()) {
+      String authorId = feedRepository.findPostAuthorId(postId)
+          .orElseThrow(() -> new IllegalArgumentException("动态不存在"));
+      if (!authorId.equals(currentUserId)) {
+        notifications.recordPostLiked(authorId, currentUserId, actorName, postId);
+      }
+    }
+    return DemoMapper.toPostView(result.post());
   }
 
   public List<CommentView> comments(Long postId) {
@@ -105,7 +119,8 @@ public class FeedService {
         post.likes(),
         post.comments(),
         post.moderationStatus(),
-        reason);
+        reason,
+        post.likedByCurrentUser());
   }
 
   private String requireSupportedVisibility(String visibility) {

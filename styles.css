@@ -279,6 +279,16 @@ select:focus {
   font-weight: 600;
 }
 
+.small-button.is-liked {
+  border-color: var(--black);
+  background: var(--black);
+  color: var(--white);
+}
+
+.small-button.is-liked:hover {
+  background: #2a2a2a;
+}
+
 .icon-action {
   position: relative;
   display: grid;

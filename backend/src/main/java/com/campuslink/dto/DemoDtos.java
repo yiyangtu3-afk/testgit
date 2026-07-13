@@ -110,7 +110,8 @@ public final class DemoDtos {
       int likes,
       int comments,
       String moderationStatus,
-      String moderationReason) {
+      String moderationReason,
+      boolean likedByCurrentUser) {
   }
 
   public record CommentView(Long id, String author, String body, String time, String moderationStatus) {

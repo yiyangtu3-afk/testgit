@@ -1,5 +1,5 @@
 import { state } from "../state.js";
-import { $ } from "../utils/dom.js?v=20260712-activity-operations-v1";
+import { $ } from "../utils/dom.js?v=20260713-social-like-notifications-v1";
 
 export function setApiMode(mode) {
   state.apiMode = mode;

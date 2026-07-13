@@ -65,7 +65,8 @@ final class DemoMapper {
         post.likes(),
         post.comments(),
         post.moderationStatus(),
-        post.moderationReason());
+        post.moderationReason(),
+        post.likedByCurrentUser());
   }
 
   static CommentView toCommentView(CommentEntity comment) {

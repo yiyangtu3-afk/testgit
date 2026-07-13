@@ -2,6 +2,7 @@ package com.campuslink.repository;
 
 import com.campuslink.entity.DemoEntities.CommentEntity;
 import com.campuslink.entity.DemoEntities.PostEntity;
+import com.campuslink.entity.PostLikeResult;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,13 +16,15 @@ public interface FeedRepository {
 
   Optional<PostEntity> findPost(Long postId);
 
+  Optional<String> findPostAuthorId(Long postId);
+
   PostEntity savePost(String authorId, String body, String visibility);
 
   Optional<PostEntity> updatePostOwnedBy(String authorId, Long postId, String body);
 
   boolean deletePostOwnedBy(String authorId, Long postId);
 
-  PostEntity incrementLikes(Long postId);
+  PostLikeResult toggleLike(Long postId, String userId);
 
   List<CommentEntity> findVisibleComments(Long postId);
 

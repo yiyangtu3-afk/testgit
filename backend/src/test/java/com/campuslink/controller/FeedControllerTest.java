@@ -43,7 +43,7 @@ class FeedControllerTest {
   void feedReturnsPosts() throws Exception {
     when(authTokenService.requireUserId("Bearer test-token")).thenReturn("u-1001");
     when(feedService.feed("u-1001")).thenReturn(List.of(
-        new PostView(1L, "林一", "动态", "全校可见", 3, 1, "approved", "内容符合校园动态规范")));
+        new PostView(1L, "林一", "动态", "全校可见", 3, 1, "approved", "内容符合校园动态规范", false)));
 
     mockMvc.perform(get("/api/feed").header("Authorization", "Bearer test-token"))
         .andExpect(status().isOk())
@@ -54,7 +54,7 @@ class FeedControllerTest {
   void publishCreatesPost() throws Exception {
     when(authTokenService.requireUserId("Bearer test-token")).thenReturn("u-1001");
     when(feedService.publish("u-1001", "新动态", "好友可见")).thenReturn(
-        new PostView(2L, "林一", "新动态", "好友可见", 0, 0, "pending", "校园动态发布审核"));
+        new PostView(2L, "林一", "新动态", "好友可见", 0, 0, "pending", "校园动态发布审核", false));
 
     mockMvc.perform(post("/api/feed")
             .contentType("application/json")
@@ -70,7 +70,7 @@ class FeedControllerTest {
   void personalPostsReturnsCurrentUsersPosts() throws Exception {
     when(authTokenService.requireUserId("Bearer test-token")).thenReturn("u-1001");
     when(feedService.personalPosts("u-1001")).thenReturn(List.of(
-        new PostView(2L, "林一", "自己的动态", "全校可见", 0, 0, "approved", "内容符合校园动态规范")));
+        new PostView(2L, "林一", "自己的动态", "全校可见", 0, 0, "approved", "内容符合校园动态规范", false)));
 
     mockMvc.perform(get("/api/feed/personal-posts")
         .header("Authorization", "Bearer test-token"))
@@ -83,7 +83,7 @@ class FeedControllerTest {
   void updatePersonalPostReturnsUpdatedPost() throws Exception {
     when(authTokenService.requireUserId("Bearer test-token")).thenReturn("u-1001");
     when(feedService.updatePersonalPost("u-1001", 2L, "更新后的动态")).thenReturn(
-        new PostView(2L, "林一", "更新后的动态", "全校可见", 0, 0, "pending", "校园动态发布审核"));
+        new PostView(2L, "林一", "更新后的动态", "全校可见", 0, 0, "pending", "校园动态发布审核", false));
 
     mockMvc.perform(patch("/api/feed/personal-posts/2")
             .contentType("application/json")
@@ -118,5 +118,19 @@ class FeedControllerTest {
             .content("{\"body\":\"新评论\"}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.body").value("新评论"));
+  }
+
+  @Test
+  void likeEndpointReturnsCurrentUsersToggleState() throws Exception {
+    when(authTokenService.requireUserId("Bearer test-token")).thenReturn("u-1001");
+    when(feedService.likePost(1L, "u-1001")).thenReturn(
+        new PostView(1L, "陈老师", "动态", "全校可见", 4, 1,
+            "approved", "内容符合校园动态规范", true));
+
+    mockMvc.perform(post("/api/feed/1/likes")
+            .header("Authorization", "Bearer test-token"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.likes").value(4))
+        .andExpect(jsonPath("$.likedByCurrentUser").value(true));
   }
 }

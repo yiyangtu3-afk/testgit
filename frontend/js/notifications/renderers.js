@@ -1,33 +1,38 @@
-import { $ } from "../utils/dom.js?v=20260712-activity-operations-v1";
-import { escapeHtml } from "../utils/format.js?v=20260712-activity-operations-v1";
-import { activityNotificationState } from "./state.js?v=20260712-activity-operations-v1";
+import { $ } from "../utils/dom.js?v=20260713-social-like-notifications-v1";
+import { escapeHtml } from "../utils/format.js?v=20260713-social-like-notifications-v1";
+import { activityNotificationState, socialNotificationState } from "./state.js?v=20260713-social-like-notifications-v1";
 
 const typeLabels = {
   "activity.review.approved": "审核通过",
   "activity.review.rejected": "审核退回",
   "activity.registration.registered": "报名成功",
   "activity.registration.waitlisted": "进入候补",
-  "activity.registration.promoted": "候补递补"
+  "activity.registration.promoted": "候补递补",
+  "social.post.liked": "动态点赞"
 };
 
 export function renderActivityNotifications() {
   const notificationState = activityNotificationState();
+  const socialState = socialNotificationState();
+  const unreadCount = notificationState.unreadCount + socialState.unreadCount;
+  const items = [...notificationState.items, ...socialState.items]
+    .sort((left, right) => new Date(right.createdAt) - new Date(left.createdAt));
   const badge = $("#activityNotificationBadge");
-  badge.hidden = notificationState.unreadCount === 0;
-  badge.textContent = String(notificationState.unreadCount);
-  $("#activityNotificationUnreadCount").textContent = String(notificationState.unreadCount);
-  $("#markAllActivityNotifications").disabled = notificationState.unreadCount === 0;
-  renderNotice(notificationState.notice);
-  $("#activityNotificationList").innerHTML = notificationState.items.length
-    ? notificationState.items.map(notificationCard).join("")
+  badge.hidden = unreadCount === 0;
+  badge.textContent = String(unreadCount);
+  $("#activityNotificationUnreadCount").textContent = String(unreadCount);
+  $("#markAllActivityNotifications").disabled = unreadCount === 0;
+  renderNotice(socialState.notice || notificationState.notice);
+  $("#activityNotificationList").innerHTML = items.length
+    ? items.map(notificationCard).join("")
     : `<div class="notification-empty">
-        <strong>还没有活动通知</strong>
-        <p>活动审核、报名、候补和递补结果会保留在这里。</p>
+        <strong>还没有站内通知</strong>
+        <p>活动状态和动态互动结果会保留在这里。</p>
       </div>`;
 }
 
 function notificationCard(notification) {
-  const typeLabel = typeLabels[notification.type] || "活动更新";
+  const typeLabel = typeLabels[notification.type] || "站内更新";
   return `<article class="notification-card${notification.read ? "" : " notification-card--unread"}">
     <div class="notification-marker" aria-hidden="true"></div>
     <div class="notification-copy">

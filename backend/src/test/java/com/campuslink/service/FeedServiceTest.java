@@ -8,8 +8,10 @@ import com.campuslink.dto.DemoDtos.PostView;
 import com.campuslink.entity.DemoEntities.CommentEntity;
 import com.campuslink.entity.DemoEntities.ModerationItemEntity;
 import com.campuslink.entity.DemoEntities.PostEntity;
+import com.campuslink.entity.PostLikeResult;
 import com.campuslink.repository.FeedRepository;
 import com.campuslink.repository.ModerationRepository;
+import com.campuslink.support.InMemorySocialNotificationRepository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -19,15 +21,18 @@ class FeedServiceTest {
 
   private final InMemoryFeedRepository feedRepository = new InMemoryFeedRepository();
   private final InMemoryModerationRepository moderationRepository = new InMemoryModerationRepository();
+  private final SocialNotificationService notifications = new SocialNotificationService(
+      new InMemorySocialNotificationRepository());
   private final FeedService feedService = new FeedService(
       feedRepository,
       moderationRepository,
       new AuditService(new TestAuditRepository()),
-      new UserService(new InMemoryUserRepository()));
+      new UserService(new InMemoryUserRepository()),
+      notifications);
 
   @Test
   void feedReturnsVisiblePostsFromRepository() {
-    feedRepository.posts.add(new PostEntity(2L, "周同学", "待审动态", "全校可见", 0, 0, "pending", "校园动态发布审核"));
+    feedRepository.posts.add(new PostEntity(2L, "周同学", "待审动态", "全校可见", 0, 0, "pending", "校园动态发布审核", false));
 
     List<PostView> posts = feedService.feed("u-1001");
 
@@ -63,8 +68,40 @@ class FeedServiceTest {
   }
 
   @Test
+  void currentUserCanToggleTheirLikeOnAndOff() {
+    PostView liked = feedService.likePost(1L, "u-1001");
+    PostView unliked = feedService.likePost(1L, "u-1001");
+
+    assertThat(liked.likes()).isEqualTo(1);
+    assertThat(liked.likedByCurrentUser()).isTrue();
+    assertThat(unliked.likes()).isZero();
+    assertThat(unliked.likedByCurrentUser()).isFalse();
+  }
+
+  @Test
+  void likingAnotherUsersPostCreatesPersistentNotificationForTheAuthor() {
+    feedService.likePost(1L, "u-1002");
+
+    assertThat(notifications.summary("u-1001").items())
+        .singleElement()
+        .satisfies(notification -> {
+          assertThat(notification.type()).isEqualTo("social.post.liked");
+          assertThat(notification.title()).isEqualTo("动态收到新点赞");
+          assertThat(notification.body()).contains("陈老师");
+          assertThat(notification.read()).isFalse();
+        });
+  }
+
+  @Test
+  void likingOwnPostDoesNotCreateNotification() {
+    feedService.likePost(1L, "u-1001");
+
+    assertThat(notifications.summary("u-1001").items()).isEmpty();
+  }
+
+  @Test
   void personalPostsReturnOnlyCurrentUsersPosts() {
-    feedRepository.posts.add(new PostEntity(2L, "陈老师", "老师动态", "全校可见", 0, 0, "approved", "内容符合校园动态规范"));
+    feedRepository.posts.add(new PostEntity(2L, "陈老师", "老师动态", "全校可见", 0, 0, "approved", "内容符合校园动态规范", false));
 
     assertThat(feedService.personalPosts("u-1001"))
         .extracting(PostView::body)
@@ -82,7 +119,7 @@ class FeedServiceTest {
 
   @Test
   void deletePersonalPostRejectsOtherAuthorsPost() {
-    feedRepository.posts.add(new PostEntity(2L, "陈老师", "老师动态", "全校可见", 0, 0, "approved", "内容符合校园动态规范"));
+    feedRepository.posts.add(new PostEntity(2L, "陈老师", "老师动态", "全校可见", 0, 0, "approved", "内容符合校园动态规范", false));
 
     assertThatThrownBy(() -> feedService.deletePersonalPost("u-1001", 2L))
         .isInstanceOf(IllegalArgumentException.class)
@@ -146,8 +183,9 @@ class FeedServiceTest {
   private static final class InMemoryFeedRepository implements FeedRepository {
 
     private final List<PostEntity> posts = new ArrayList<>(List.of(
-        new PostEntity(1L, "林一", "数据库动态", "全校可见", 0, 0, "approved", "内容符合校园动态规范")));
+        new PostEntity(1L, "林一", "数据库动态", "全校可见", 0, 0, "approved", "内容符合校园动态规范", false)));
     private final List<CommentEntity> comments = new ArrayList<>();
+    private final java.util.Set<String> likes = new java.util.HashSet<>();
     private String lastViewerId;
 
     @Override
@@ -173,8 +211,13 @@ class FeedServiceTest {
     }
 
     @Override
+    public Optional<String> findPostAuthorId(Long postId) {
+      return findPost(postId).map(post -> "林一".equals(post.author()) ? "u-1001" : "u-1002");
+    }
+
+    @Override
     public PostEntity savePost(String authorId, String body, String visibility) {
-      PostEntity post = new PostEntity((long) posts.size() + 1, "林一", body, visibility, 0, 0, "pending", "校园动态发布审核");
+      PostEntity post = new PostEntity((long) posts.size() + 1, "林一", body, visibility, 0, 0, "pending", "校园动态发布审核", false);
       posts.add(0, post);
       return post;
     }
@@ -187,7 +230,7 @@ class FeedServiceTest {
           .findFirst();
       existing.ifPresent(post -> {
         PostEntity updated = new PostEntity(
-            post.id(), post.author(), body, post.visibility(), post.likes(), post.comments(), "pending", "个人动态编辑审核");
+            post.id(), post.author(), body, post.visibility(), post.likes(), post.comments(), "pending", "个人动态编辑审核", post.likedByCurrentUser());
         posts.set(posts.indexOf(post), updated);
       });
       return existing.flatMap(post -> findPost(post.id()));
@@ -200,19 +243,25 @@ class FeedServiceTest {
     }
 
     @Override
-    public PostEntity incrementLikes(Long postId) {
+    public PostLikeResult toggleLike(Long postId, String userId) {
       PostEntity post = findPost(postId).orElseThrow();
-      PostEntity liked = new PostEntity(
+      String key = postId + ":" + userId;
+      boolean liked = likes.add(key);
+      if (!liked) {
+        likes.remove(key);
+      }
+      PostEntity likedPost = new PostEntity(
           post.id(),
           post.author(),
           post.body(),
           post.visibility(),
-          post.likes() + 1,
+          Math.max(0, post.likes() + (liked ? 1 : -1)),
           post.comments(),
           post.moderationStatus(),
-          post.moderationReason());
-      posts.set(posts.indexOf(post), liked);
-      return liked;
+          post.moderationReason(),
+          liked);
+      posts.set(posts.indexOf(post), likedPost);
+      return new PostLikeResult(likedPost, liked);
     }
 
     @Override
@@ -240,8 +289,11 @@ class FeedServiceTest {
 
     @Override
     public List<com.campuslink.entity.DemoEntities.UserEntity> findAll() {
-      return List.of(new com.campuslink.entity.DemoEntities.UserEntity(
-          "u-1001", "林一", "学生账号", "13800000001", "online"));
+      return List.of(
+          new com.campuslink.entity.DemoEntities.UserEntity(
+              "u-1001", "林一", "学生账号", "13800000001", "online"),
+          new com.campuslink.entity.DemoEntities.UserEntity(
+              "u-1002", "陈老师", "教师账号", "13800000002", "online"));
     }
 
     @Override

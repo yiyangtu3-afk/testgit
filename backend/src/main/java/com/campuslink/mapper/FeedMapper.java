@@ -33,7 +33,8 @@ public interface FeedMapper {
                  and m.status = p.moderation_status
                order by m.created_at desc, m.id desc
                limit 1
-             ) as moderationReason
+             ) as moderationReason,
+             false as likedByCurrentUser
       from posts p
       join users u on u.id = p.author_id
       where p.moderation_status = 'approved'
@@ -62,7 +63,11 @@ public interface FeedMapper {
                  and m.status = p.moderation_status
                order by m.created_at desc, m.id desc
                limit 1
-             ) as moderationReason
+             ) as moderationReason,
+             exists (
+               select 1 from post_likes pl
+               where pl.post_id = p.id and pl.user_id = #{viewerId}
+             ) as likedByCurrentUser
       from posts p
       join users author on author.id = p.author_id
       join users viewer on viewer.id = #{viewerId}
@@ -106,7 +111,8 @@ public interface FeedMapper {
                  and m.status = p.moderation_status
                order by m.created_at desc, m.id desc
                limit 1
-             ) as moderationReason
+             ) as moderationReason,
+             false as likedByCurrentUser
       from posts p
       join users u on u.id = p.author_id
       where p.author_id = #{authorId}
@@ -135,12 +141,16 @@ public interface FeedMapper {
                  and m.status = p.moderation_status
                order by m.created_at desc, m.id desc
                limit 1
-             ) as moderationReason
+             ) as moderationReason,
+             false as likedByCurrentUser
       from posts p
       join users u on u.id = p.author_id
       where p.id = #{postId}
       """)
   PostEntity findPost(@Param("postId") String postId);
+
+  @Select("select author_id from posts where id = #{postId}")
+  String findPostAuthorId(@Param("postId") String postId);
 
   @Select("""
       select cast(p.id as signed) as id,
@@ -162,7 +172,8 @@ public interface FeedMapper {
                  and m.status = p.moderation_status
                order by m.created_at desc, m.id desc
                limit 1
-             ) as moderationReason
+             ) as moderationReason,
+             false as likedByCurrentUser
       from posts p
       join users u on u.id = p.author_id
       where p.author_id = #{authorId} and p.id = #{postId}
@@ -202,11 +213,23 @@ public interface FeedMapper {
   @Delete("delete from comments where post_id = #{postId}")
   int deleteCommentsForPost(@Param("postId") String postId);
 
+  @Delete("delete from post_likes where post_id = #{postId}")
+  int deleteLikesForPost(@Param("postId") String postId);
+
   @Delete("delete from posts where author_id = #{authorId} and id = #{postId}")
   int deletePostOwnedBy(@Param("authorId") String authorId, @Param("postId") String postId);
 
-  @Update("update posts set likes = likes + 1 where id = #{postId}")
-  void incrementLikes(@Param("postId") String postId);
+  @Select("select id from posts where id = #{postId} for update")
+  String lockPost(@Param("postId") String postId);
+
+  @Insert("insert into post_likes (post_id, user_id) values (#{postId}, #{userId})")
+  int insertLike(@Param("postId") String postId, @Param("userId") String userId);
+
+  @Delete("delete from post_likes where post_id = #{postId} and user_id = #{userId}")
+  int deleteLike(@Param("postId") String postId, @Param("userId") String userId);
+
+  @Update("update posts set likes = greatest(likes + #{delta}, 0) where id = #{postId}")
+  int adjustLikes(@Param("postId") String postId, @Param("delta") int delta);
 
   @Select("""
       select cast(c.id as signed) as id,

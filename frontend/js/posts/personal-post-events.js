@@ -1,7 +1,7 @@
-import { api } from "../api/client.js?v=20260712-activity-operations-v1";
+import { api } from "../api/client.js?v=20260713-social-like-notifications-v1";
 import { state } from "../state.js";
-import { loadAdminData, loadFeed, loadPersonalPosts } from "../loaders.js?v=20260712-activity-operations-v1";
-import { renderPersonalPostManager } from "./renderers.js?v=20260712-activity-operations-v1";
+import { loadAdminData, loadFeed, loadPersonalPosts } from "../loaders.js?v=20260713-social-like-notifications-v1";
+import { renderPersonalPostManager } from "./renderers.js?v=20260713-social-like-notifications-v1";
 
 export async function bindPersonalPostEvents(event) {
   const openManager = event.target.closest("#managePersonalPosts");

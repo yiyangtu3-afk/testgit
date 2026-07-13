@@ -1,4 +1,4 @@
-# CampusLink 新对话交接说明（2026-07-09 更新）
+# CampusLink 新对话交接说明（2026-07-13 更新）
 
 本文用于在新 Codex 对话中恢复 CampusLink 当前开发上下文。当前状态保留
 **普通用户审核状态反馈**、窄窗口聊天滚动修复、动态可见范围真实过滤和
@@ -17,13 +17,13 @@
 当前静态资源版本是：
 
 ```text
-20260712-activity-operations-v1
+20260713-social-like-notifications-v1
 ```
 
 当前本地验证地址是：
 
 ```text
-http://127.0.0.1:5179/?v=20260712-activity-operations-v1
+http://127.0.0.1:5179/?v=20260713-social-like-notifications-v1
 ```
 
 ## 已完成内容
@@ -63,6 +63,12 @@ http://127.0.0.1:5179/?v=20260712-activity-operations-v1
   **身份**、**状态**、**模式** 三个信息块。
 - 聊天附件保持普通文件卡片展示，不做图片气泡或大图预览。
 - 修复窄窗口下林一与周同学聊天内容不能上下滑动的问题。
+- 动态点赞按 bearer token 当前用户写入 `post_likes`，再次点击只取消自己的
+  点赞；接口返回 `likedByCurrentUser`，前端显示 **赞** 或 **已赞**。
+- 新点赞会通过独立社交通知模块写给动态作者；本人点赞不通知，取消点赞不删除
+  已产生的历史通知。
+- 原活动通知页升级为 **站内通知**，合并活动与社交通知的列表、未读徽标和
+  全部已读操作。
 
 ## 2026-07-09 基线修复
 
@@ -216,9 +222,9 @@ scrollTop 从 1541.5 变到 1181.5
 
 ## 建议下一步
 
-校园活动报名闭环已经完成。下一步进入通知与社交完整性，优先把好友申请、动态
-评论和点赞结果接入持久化通知，并把点赞改为按用户记录的可取消操作。最新边界
-见 [`phase-two-activity-handoff.md`](phase-two-activity-handoff.md) 和
+校园活动报名闭环和按用户点赞通知切片已经完成。下一步继续通知与社交完整性，
+优先把好友申请结果接入现有社交通知模块，再补动态评论通知。最新边界见
+[`phase-two-activity-handoff.md`](phase-two-activity-handoff.md) 和
 [`resume-project-roadmap.md`](resume-project-roadmap.md)。
 
 ## 可直接复制到下个对话的提示词
@@ -237,13 +243,13 @@ backend/AGENTS.md。项目路径是 /Users/linus_k/Documents/test。不要重置
 - docs/phase-two-activity-handoff.md
 - docs/resume-project-roadmap.md
 
-可信基线和校园活动报名闭环已经完成并推送到 GitHub `main`。下一阶段是
-“通知与社交完整性”；优先把好友申请、动态评论和点赞结果接入持久化通知，
-并把点赞改为按用户记录的可取消操作。活动逻辑必须继续保留在独立领域模块，
-不能塞进 FeedService 或 AdminService。
+可信基线、校园活动报名闭环和按用户点赞通知切片已经完成并推送到 GitHub
+`main`。下一项把好友申请结果接入现有 `SocialNotificationService`，再补动态
+评论通知。活动逻辑必须继续保留在独立领域模块，不能塞进 `FeedService` 或
+`AdminService`。
 
-当前静态资源版本是 `20260712-activity-operations-v1`，本地验证地址是：
-http://127.0.0.1:5179/?v=20260712-activity-operations-v1
+当前静态资源版本是 `20260713-social-like-notifications-v1`，本地验证地址是：
+http://127.0.0.1:5179/?v=20260713-social-like-notifications-v1
 
 当前保留的功能：
 - 管理员后台有“待审核内容”工作台，位于指标卡片下方、审计记录上方。
@@ -253,6 +259,7 @@ http://127.0.0.1:5179/?v=20260712-activity-operations-v1
 - 普通用户发布评论后看到“评论已提交审核，通过后会显示在动态下”。
 - 个人动态管理展示待审核、已发布、已拒绝状态和审核原因。
 - 公共动态和评论只展示 approved 内容。
+- 动态点赞按当前用户持久化，可再次点击取消；动态作者能在站内通知看到点赞。
 - 聊天附件保持普通文件卡片展示，不保留图片气泡或大图预览。
 - 登录页是黑色右侧信息面板版本，文案为“简洁的校园沟通空间”。
 

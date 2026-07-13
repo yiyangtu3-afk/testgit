@@ -1,9 +1,10 @@
 import { mockStore, reportRanges, state } from "../state.js";
-import { nowTime } from "../utils/dom.js?v=20260712-activity-operations-v1";
+import { nowTime } from "../utils/dom.js?v=20260713-social-like-notifications-v1";
 
 let mockAuditId = Date.now();
 let mockActivityId = Date.now();
 let mockActivityNotificationId = Date.now();
+let mockSocialNotificationId = Date.now();
 
 export function accountById(userId) {
   return mockStore.accounts.find((account) => account.id === userId);
@@ -88,6 +89,30 @@ function pushMockActivityNotification(recipientId, activity, type, title, body) 
     type,
     title,
     body,
+    read: false,
+    createdAt: new Date().toISOString()
+  });
+}
+
+function postLikeKey(postId, userId = state.currentUser.id) {
+  return `${postId}:${userId}`;
+}
+
+function withCurrentUserLike(post) {
+  return {
+    ...post,
+    likedByCurrentUser: mockStore.postLikes.includes(postLikeKey(post.id))
+  };
+}
+
+function pushMockPostLikeNotification(post) {
+  mockStore.socialNotifications.unshift({
+    id: `social-notification-mock-${++mockSocialNotificationId}`,
+    recipientId: post.authorId,
+    targetId: String(post.id),
+    type: "social.post.liked",
+    title: "动态收到新点赞",
+    body: `${state.currentUser.name}赞了你的动态。`,
     read: false,
     createdAt: new Date().toISOString()
   });
@@ -281,7 +306,7 @@ export const mockApi = {
     return { presence };
   },
   async feed() {
-    return mockStore.posts.filter(canViewPost);
+    return mockStore.posts.filter(canViewPost).map(withCurrentUserLike);
   },
   async publishPost(body, visibility) {
     const post = {
@@ -314,7 +339,7 @@ export const mockApi = {
   async personalPosts() {
     return mockStore.posts.filter((post) => {
       return post.authorId === state.currentUser.id || (!post.authorId && post.author === state.currentUser.name);
-    });
+    }).map(withCurrentUserLike);
   },
   async updatePersonalPost(postId, body) {
     const post = mockStore.posts.find((item) => {
@@ -361,10 +386,22 @@ export const mockApi = {
   async likePost(postId) {
     const post = mockStore.posts.find((item) => item.id === postId);
     if (post) {
-      post.likes += 1;
-      pushMockAudit("动态", `${state.currentUser.name}点赞${post.author}的动态`);
+      const key = postLikeKey(postId);
+      const existingIndex = mockStore.postLikes.indexOf(key);
+      const liked = existingIndex === -1;
+      if (liked) {
+        mockStore.postLikes.push(key);
+        post.likes += 1;
+        if (post.authorId && post.authorId !== state.currentUser.id) {
+          pushMockPostLikeNotification(post);
+        }
+      } else {
+        mockStore.postLikes.splice(existingIndex, 1);
+        post.likes = Math.max(0, post.likes - 1);
+      }
+      pushMockAudit("动态", `${state.currentUser.name}${liked ? "点赞" : "取消点赞"}${post.author}的动态`);
     }
-    return post;
+    return post ? withCurrentUserLike(post) : null;
   },
   async comments(postId) {
     return (mockStore.comments[postId] || []).filter((comment) => {
@@ -610,6 +647,21 @@ export const mockApi = {
       if (notification.recipientId === state.currentUser.id) notification.read = true;
     });
     return this.activityNotifications();
+  },
+  async socialNotifications() {
+    const items = mockStore.socialNotifications
+      .filter((notification) => notification.recipientId === state.currentUser.id)
+      .map(({ recipientId, ...notification }) => ({ ...notification }));
+    return {
+      items,
+      unreadCount: items.filter((notification) => !notification.read).length
+    };
+  },
+  async markAllSocialNotificationsRead() {
+    mockStore.socialNotifications.forEach((notification) => {
+      if (notification.recipientId === state.currentUser.id) notification.read = true;
+    });
+    return this.socialNotifications();
   },
   async metrics() {
     const pendingModeration = mockStore.moderationItems.filter((item) => item.status === "pending").length;

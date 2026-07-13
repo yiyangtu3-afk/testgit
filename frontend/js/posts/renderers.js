@@ -1,6 +1,6 @@
 import { state } from "../state.js";
-import { $ } from "../utils/dom.js?v=20260712-activity-operations-v1";
-import { escapeHtml } from "../utils/format.js?v=20260712-activity-operations-v1";
+import { $ } from "../utils/dom.js?v=20260713-social-like-notifications-v1";
+import { escapeHtml } from "../utils/format.js?v=20260713-social-like-notifications-v1";
 
 export function renderFeed() {
   const feedList = $("#feedList");
@@ -16,6 +16,7 @@ export function renderFeed() {
     .map(
       (post) => {
         const expanded = state.expandedPostId === post.id;
+        const liked = Boolean(post.likedByCurrentUser);
         const comments = state.postComments[post.id] || [];
         const commentRows = comments.length
           ? comments
@@ -44,7 +45,7 @@ export function renderFeed() {
           </div>
           <p>${escapeHtml(post.body)}</p>
           <div class="feed-actions">
-            <button class="small-button" data-like="${escapeHtml(post.id)}" type="button">赞 ${escapeHtml(post.likes)}</button>
+            <button class="small-button${liked ? " is-liked" : ""}" data-like="${escapeHtml(post.id)}" type="button" aria-pressed="${liked}">${liked ? "已赞" : "赞"} ${escapeHtml(post.likes)}</button>
             <button class="small-button" data-comments="${escapeHtml(post.id)}" type="button">评论 ${escapeHtml(post.comments)}</button>
           </div>
           ${

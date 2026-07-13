@@ -30,7 +30,8 @@ public final class DemoEntities {
       int likes,
       int comments,
       String moderationStatus,
-      String moderationReason) {
+      String moderationReason,
+      boolean likedByCurrentUser) {
   }
 
   public record CommentEntity(Long id, String author, String body, String time, String moderationStatus) {

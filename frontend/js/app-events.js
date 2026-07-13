@@ -1,16 +1,16 @@
-import { api } from "./api/client.js?v=20260712-activity-operations-v1";
-import { bindActivityEvents } from "./activities/events.js?v=20260712-activity-operations-v1";
-import { bindAdminAuditEvents } from "./admin/audit-events.js?v=20260712-activity-operations-v1";
-import { bindPersonalPostEvents } from "./posts/personal-post-events.js?v=20260712-activity-operations-v1";
-import { bindActivityNotificationEvents } from "./notifications/events.js?v=20260712-activity-operations-v1";
+import { api } from "./api/client.js?v=20260713-social-like-notifications-v1";
+import { bindActivityEvents } from "./activities/events.js?v=20260713-social-like-notifications-v1";
+import { bindAdminAuditEvents } from "./admin/audit-events.js?v=20260713-social-like-notifications-v1";
+import { bindPersonalPostEvents } from "./posts/personal-post-events.js?v=20260713-social-like-notifications-v1";
+import { bindActivityNotificationEvents } from "./notifications/events.js?v=20260713-social-like-notifications-v1";
 import { state, reportRanges } from "./state.js";
-import { $ } from "./utils/dom.js?v=20260712-activity-operations-v1";
-import { isAdminUser } from "./utils/auth.js?v=20260712-activity-operations-v1";
-import { filesToAttachments, reportToCsv } from "./utils/format.js?v=20260712-activity-operations-v1";
-import { loadActivities, loadActivityNotifications, loadAdminData, loadComments, loadFeed, loadFriendRequests, loadFriends, loadMessages, loadPersonalPosts, loadUsers } from "./loaders.js?v=20260712-activity-operations-v1";
-import { enterDemoWorkspace, loginWithCode, sendLoginCode } from "./auth/session.js?v=20260712-activity-operations-v1";
-import { logout, switchAccount } from "./auth/workspace.js?v=20260712-activity-operations-v1";
-import { currentPeer, renderAttachmentTray, renderExportPanel, renderFeed, renderIdentity, renderMessages, switchTab } from "./ui/renderers.js?v=20260712-activity-operations-v1";
+import { $ } from "./utils/dom.js?v=20260713-social-like-notifications-v1";
+import { isAdminUser } from "./utils/auth.js?v=20260713-social-like-notifications-v1";
+import { filesToAttachments, reportToCsv } from "./utils/format.js?v=20260713-social-like-notifications-v1";
+import { loadActivities, loadAdminData, loadComments, loadFeed, loadFriendRequests, loadFriends, loadMessages, loadNotifications, loadPersonalPosts, loadUsers } from "./loaders.js?v=20260713-social-like-notifications-v1";
+import { enterDemoWorkspace, loginWithCode, sendLoginCode } from "./auth/session.js?v=20260713-social-like-notifications-v1";
+import { logout, switchAccount } from "./auth/workspace.js?v=20260713-social-like-notifications-v1";
+import { currentPeer, renderAttachmentTray, renderExportPanel, renderFeed, renderIdentity, renderMessages, switchTab } from "./ui/renderers.js?v=20260713-social-like-notifications-v1";
 
 function successNotice(message) {
   return { kind: "success", message };
@@ -147,7 +147,7 @@ export function bindAppEvents() {
         await loadActivities();
       }
       if (tabButton.dataset.tab === "notifications") {
-        await loadActivityNotifications();
+        await loadNotifications();
       }
     }
 
@@ -155,8 +155,23 @@ export function bindAppEvents() {
   
     const likeButton = event.target.closest("[data-like]");
     if (likeButton) {
-      await api.likePost(Number(likeButton.dataset.like));
-      await Promise.all([loadFeed(), loadAdminData()]);
+      likeButton.disabled = true;
+      try {
+        const result = await api.likePost(Number(likeButton.dataset.like));
+        state.feedNotice = {
+          kind: "success",
+          message: result.likedByCurrentUser ? "已点赞这条动态。" : "已取消点赞。"
+        };
+        await Promise.all([loadFeed(), loadAdminData()]);
+      } catch (error) {
+        state.feedNotice = {
+          kind: "error",
+          message: error.message || "点赞状态更新失败，请稍后重试。"
+        };
+        renderFeed();
+      } finally {
+        likeButton.disabled = false;
+      }
     }
 
     const commentsButton = event.target.closest("[data-comments]");

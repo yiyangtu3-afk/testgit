@@ -9,11 +9,11 @@
     />
     <title>CampusLink Demo</title>
     <script>
-      if (location.search !== "?v=20260712-activity-operations-v1") {
-        history.replaceState(null, "", location.pathname + "?v=20260712-activity-operations-v1");
+      if (location.search !== "?v=20260713-social-like-notifications-v1") {
+        history.replaceState(null, "", location.pathname + "?v=20260713-social-like-notifications-v1");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=20260712-activity-operations-v1" />
+    <link rel="stylesheet" href="styles.css?v=20260713-social-like-notifications-v1" />
   </head>
   <body>
     <main class="app-shell">
@@ -294,8 +294,8 @@
         <section class="main-stage is-notifications" id="notificationsPanel" hidden>
           <header class="stage-header notification-header">
             <div>
-              <p class="section-kicker">Activity Signals</p>
-              <h2>活动通知</h2>
+              <p class="section-kicker">Campus Signals</p>
+              <h2>站内通知</h2>
             </div>
             <div class="notification-header-actions">
               <span><strong id="activityNotificationUnreadCount">0</strong> 条未读</span>
@@ -306,7 +306,7 @@
             <section class="notification-intro">
               <p class="section-kicker">Status Ledger</p>
               <h3>每一次状态变化，都有记录。</h3>
-              <p>活动审核、报名、候补和递补结果会持久保留，并在在线时实时送达。</p>
+              <p>活动审核、报名进度和动态互动结果会持久保留，重要状态始终可追溯。</p>
             </section>
             <div class="activity-feedback" id="activityNotificationNotice" hidden></div>
             <div class="notification-list" id="activityNotificationList" aria-live="polite"></div>
@@ -346,6 +346,6 @@
       </section>
     </main>
 
-    <script type="module" src="app.js?v=20260712-activity-operations-v1"></script>
+    <script type="module" src="app.js?v=20260713-social-like-notifications-v1"></script>
   </body>
 </html>

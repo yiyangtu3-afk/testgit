@@ -1,7 +1,7 @@
-import { api } from "../api/client.js?v=20260712-activity-operations-v1";
-import { $ } from "../utils/dom.js?v=20260712-activity-operations-v1";
-import { renderActivityNotifications } from "./renderers.js?v=20260712-activity-operations-v1";
-import { activityNotificationState } from "./state.js?v=20260712-activity-operations-v1";
+import { api } from "../api/client.js?v=20260713-social-like-notifications-v1";
+import { $ } from "../utils/dom.js?v=20260713-social-like-notifications-v1";
+import { renderActivityNotifications } from "./renderers.js?v=20260713-social-like-notifications-v1";
+import { activityNotificationState, socialNotificationState } from "./state.js?v=20260713-social-like-notifications-v1";
 
 export function bindActivityNotificationEvents() {
   $("#markAllActivityNotifications").addEventListener("click", markAllRead);
@@ -10,12 +10,19 @@ export function bindActivityNotificationEvents() {
 async function markAllRead() {
   const button = $("#markAllActivityNotifications");
   const notificationState = activityNotificationState();
+  const socialState = socialNotificationState();
   button.disabled = true;
   try {
-    const summary = await api.markAllActivityNotificationsRead();
-    notificationState.items = summary.items || [];
-    notificationState.unreadCount = Number(summary.unreadCount || 0);
-    notificationState.notice = { kind: "success", message: "活动通知已全部标为已读。" };
+    const [activitySummary, socialSummary] = await Promise.all([
+      api.markAllActivityNotificationsRead(),
+      api.markAllSocialNotificationsRead()
+    ]);
+    notificationState.items = activitySummary.items || [];
+    notificationState.unreadCount = Number(activitySummary.unreadCount || 0);
+    socialState.items = socialSummary.items || [];
+    socialState.unreadCount = Number(socialSummary.unreadCount || 0);
+    notificationState.notice = { kind: "success", message: "站内通知已全部标为已读。" };
+    socialState.notice = null;
   } catch (error) {
     notificationState.notice = {
       kind: "error",
