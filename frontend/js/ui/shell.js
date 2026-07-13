@@ -1,5 +1,5 @@
 import { state } from "../state.js";
-import { $ } from "../utils/dom.js?v=20260711-activity-registration-v1";
+import { $ } from "../utils/dom.js?v=20260712-activity-filters-v1";
 
 export function renderIdentity() {
   $("#currentUser").textContent = state.currentUser.name;

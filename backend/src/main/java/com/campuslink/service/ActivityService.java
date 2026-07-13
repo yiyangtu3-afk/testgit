@@ -6,6 +6,7 @@ import com.campuslink.dto.ActivityDtos.ReviewActivityRequest;
 import com.campuslink.entity.ActivityEntity;
 import com.campuslink.entity.DemoEntities.UserEntity;
 import com.campuslink.repository.ActivityRepository;
+import java.time.LocalDate;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,7 +40,21 @@ public class ActivityService {
   }
 
   public List<ActivityView> published() {
-    return activityRepository.findPublished().stream().map(this::toView).toList();
+    return published(null, null, null);
+  }
+
+  public List<ActivityView> published(String category, LocalDate from, LocalDate to) {
+    if (from != null && to != null && to.isBefore(from)) {
+      throw new IllegalArgumentException("活动筛选结束日期不能早于开始日期");
+    }
+    String normalizedCategory = category == null || category.isBlank() ? null : category.trim();
+    return activityRepository.findPublished(
+            normalizedCategory,
+            from == null ? null : from.atStartOfDay(),
+            to == null ? null : to.plusDays(1).atStartOfDay())
+        .stream()
+        .map(this::toView)
+        .toList();
   }
 
   public List<ActivityView> pending(UserEntity reviewer) {

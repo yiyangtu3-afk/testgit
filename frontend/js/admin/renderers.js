@@ -1,6 +1,6 @@
 import { reportRanges, state } from "../state.js";
-import { $ } from "../utils/dom.js?v=20260711-activity-registration-v1";
-import { escapeHtml, exportSummary, reportPreviewRows } from "../utils/format.js?v=20260711-activity-registration-v1";
+import { $ } from "../utils/dom.js?v=20260712-activity-filters-v1";
+import { escapeHtml, exportSummary, reportPreviewRows } from "../utils/format.js?v=20260712-activity-filters-v1";
 
 export function renderMetrics() {
   $("#metricGrid").innerHTML = Object.entries(state.metrics)

@@ -67,9 +67,13 @@ public final class InMemoryActivityRepository implements ActivityRepository {
   }
 
   @Override
-  public List<ActivityEntity> findPublished() {
+  public List<ActivityEntity> findPublished(
+      String category, LocalDateTime startsFrom, LocalDateTime startsBefore) {
     return activities.stream()
         .filter(activity -> "published".equals(activity.status()) || "full".equals(activity.status()))
+        .filter(activity -> category == null || category.equals(activity.category()))
+        .filter(activity -> startsFrom == null || !activity.startsAt().isBefore(startsFrom))
+        .filter(activity -> startsBefore == null || activity.startsAt().isBefore(startsBefore))
         .toList();
   }
 

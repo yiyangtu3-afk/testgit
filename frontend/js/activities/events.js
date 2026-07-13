@@ -1,13 +1,46 @@
-import { api } from "../api/client.js?v=20260711-activity-registration-v1";
-import { loadActivities, loadPendingActivities } from "../loaders.js?v=20260711-activity-registration-v1";
+import { api } from "../api/client.js?v=20260712-activity-filters-v1";
+import { loadActivities, loadPendingActivities } from "../loaders.js?v=20260712-activity-filters-v1";
 import { state } from "../state.js";
-import { $ } from "../utils/dom.js?v=20260711-activity-registration-v1";
-import { renderActivities, renderPendingActivities } from "./renderers.js?v=20260711-activity-registration-v1";
+import { $ } from "../utils/dom.js?v=20260712-activity-filters-v1";
+import { renderActivities, renderPendingActivities } from "./renderers.js?v=20260712-activity-filters-v1";
 
 export function bindActivityEvents() {
   $("#activityForm").addEventListener("submit", submitActivity);
+  $("#activityFilterForm").addEventListener("submit", filterActivities);
+  $("#clearActivityFilters").addEventListener("click", clearActivityFilters);
   $("#activityList").addEventListener("click", updateRegistration);
   $("#activityReviewPanel").addEventListener("click", reviewActivity);
+}
+
+async function filterActivities(event) {
+  event.preventDefault();
+  const formData = new FormData(event.currentTarget);
+  await applyActivityFilters({
+    from: String(formData.get("from") || ""),
+    to: String(formData.get("to") || ""),
+    category: String(formData.get("category") || "").trim()
+  });
+}
+
+async function clearActivityFilters() {
+  $("#activityFilterForm").reset();
+  await applyActivityFilters({ from: "", to: "", category: "" });
+}
+
+async function applyActivityFilters(filters) {
+  if (filters.from && filters.to && filters.to < filters.from) {
+    state.activityNotice = { kind: "error", message: "筛选结束日期不能早于开始日期。" };
+    renderActivities();
+    return;
+  }
+  state.activityFilters = filters;
+  state.activityNotice = null;
+  try {
+    await loadActivities();
+  } catch (error) {
+    state.activityNotice = { kind: "error", message: error.message || "活动筛选失败，请稍后重试。" };
+    renderActivities();
+  }
 }
 
 async function updateRegistration(event) {

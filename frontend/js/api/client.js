@@ -1,6 +1,6 @@
 import { API_BASE, state } from "../state.js";
-import { setApiMode } from "../ui/status.js?v=20260711-activity-registration-v1";
-import { mockApi } from "./mock-api.js?v=20260711-activity-registration-v1";
+import { setApiMode } from "../ui/status.js?v=20260712-activity-filters-v1";
+import { mockApi } from "./mock-api.js?v=20260712-activity-filters-v1";
 
 class ApiUnavailableError extends Error {
   constructor(cause) {
@@ -186,8 +186,17 @@ export const api = {
       () => mockApi.publishComment(postId, body)
     );
   },
-  activities() {
-    return withApi(() => request("/activities"), () => mockApi.activities());
+  activities(filters = {}) {
+    const params = new URLSearchParams();
+    ["from", "to", "category"].forEach((key) => {
+      const value = String(filters[key] || "").trim();
+      if (value) params.set(key, value);
+    });
+    const query = params.toString();
+    return withApi(
+      () => request(`/activities${query ? `?${query}` : ""}`),
+      () => mockApi.activities(filters)
+    );
   },
   createActivity(activity) {
     return withApi(

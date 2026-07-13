@@ -24,7 +24,12 @@ public interface ActivityRepository {
 
   Optional<ActivityEntity> findByIdForUpdate(String activityId);
 
-  List<ActivityEntity> findPublished();
+  default List<ActivityEntity> findPublished() {
+    return findPublished(null, null, null);
+  }
+
+  List<ActivityEntity> findPublished(
+      String category, LocalDateTime startsFrom, LocalDateTime startsBefore);
 
   List<ActivityEntity> findPending();
 

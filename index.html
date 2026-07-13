@@ -9,11 +9,11 @@
     />
     <title>CampusLink Demo</title>
     <script>
-      if (location.search !== "?v=20260711-activity-registration-v1") {
-        history.replaceState(null, "", location.pathname + "?v=20260711-activity-registration-v1");
+      if (location.search !== "?v=20260712-activity-filters-v1") {
+        history.replaceState(null, "", location.pathname + "?v=20260712-activity-filters-v1");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=20260711-activity-registration-v1" />
+    <link rel="stylesheet" href="styles.css?v=20260712-activity-filters-v1" />
   </head>
   <body>
     <main class="app-shell">
@@ -254,6 +254,31 @@
                 </div>
                 <strong id="publishedActivityCount">0</strong>
               </div>
+              <form class="activity-filter-bar" id="activityFilterForm">
+                <div class="activity-filter-copy">
+                  <span>Find a date</span>
+                  <strong>筛选公开日程</strong>
+                </div>
+                <label for="activityFilterFrom">
+                  开始日期
+                  <input id="activityFilterFrom" name="from" type="date" />
+                </label>
+                <label for="activityFilterTo">
+                  结束日期
+                  <input id="activityFilterTo" name="to" type="date" />
+                </label>
+                <label for="activityFilterCategory">
+                  活动类别
+                  <select id="activityFilterCategory" name="category">
+                    <option value="">全部类别</option>
+                  </select>
+                </label>
+                <div class="activity-filter-actions">
+                  <button class="primary-button" type="submit">筛选</button>
+                  <button class="ghost-button" id="clearActivityFilters" type="button">清除</button>
+                </div>
+              </form>
+              <p class="activity-filter-summary" id="activityFilterSummary" aria-live="polite"></p>
               <div class="activity-list" id="activityList"></div>
             </section>
           </div>
@@ -292,6 +317,6 @@
       </section>
     </main>
 
-    <script type="module" src="app.js?v=20260711-activity-registration-v1"></script>
+    <script type="module" src="app.js?v=20260712-activity-filters-v1"></script>
   </body>
 </html>

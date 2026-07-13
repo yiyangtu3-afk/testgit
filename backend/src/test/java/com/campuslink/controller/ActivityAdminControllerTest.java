@@ -97,6 +97,83 @@ class ActivityAdminControllerTest {
   }
 
   @Test
+  void publishedActivityListFiltersByCategory() throws Exception {
+    String technologyId = submitActivity(
+        "校园编程工作坊", "科技", "2026-08-01T09:00:00", "2026-08-01T12:00:00");
+    String publicServiceId = submitActivity(
+        "校园公益集市", "公益", "2026-08-02T09:00:00", "2026-08-02T12:00:00");
+    approveActivity(technologyId);
+    approveActivity(publicServiceId);
+
+    mockMvc.perform(get("/api/activities")
+            .queryParam("category", "科技")
+            .header("Authorization", "Bearer student-token"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(1))
+        .andExpect(jsonPath("$[0].id").value(technologyId))
+        .andExpect(jsonPath("$[0].category").value("科技"));
+  }
+
+  @Test
+  void publishedActivityListFiltersByInclusiveDateRange() throws Exception {
+    String beforeRangeId = submitActivity(
+        "八月一日活动", "科技", "2026-08-01T09:00:00", "2026-08-01T12:00:00");
+    String inRangeId = submitActivity(
+        "八月二日活动", "公益", "2026-08-02T18:00:00", "2026-08-02T20:00:00");
+    String afterRangeId = submitActivity(
+        "八月四日活动", "社团", "2026-08-04T09:00:00", "2026-08-04T12:00:00");
+    approveActivity(beforeRangeId);
+    approveActivity(inRangeId);
+    approveActivity(afterRangeId);
+
+    mockMvc.perform(get("/api/activities")
+            .queryParam("from", "2026-08-02")
+            .queryParam("to", "2026-08-03")
+            .header("Authorization", "Bearer student-token"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(1))
+        .andExpect(jsonPath("$[0].id").value(inRangeId));
+  }
+
+  @Test
+  void publishedActivityListCombinesCategoryAndDateRange() throws Exception {
+    String technologyId = submitActivity(
+        "八月科技活动", "科技", "2026-08-02T09:00:00", "2026-08-02T12:00:00");
+    String publicServiceId = submitActivity(
+        "八月公益活动", "公益", "2026-08-02T18:00:00", "2026-08-02T20:00:00");
+    approveActivity(technologyId);
+    approveActivity(publicServiceId);
+
+    mockMvc.perform(get("/api/activities")
+            .queryParam("category", "公益")
+            .queryParam("from", "2026-08-02")
+            .queryParam("to", "2026-08-02")
+            .header("Authorization", "Bearer student-token"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(1))
+        .andExpect(jsonPath("$[0].id").value(publicServiceId));
+  }
+
+  @Test
+  void publishedActivityListRejectsInvalidDateFormat() throws Exception {
+    mockMvc.perform(get("/api/activities")
+            .queryParam("from", "2026/08/02")
+            .header("Authorization", "Bearer student-token"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value("活动日期格式必须为 YYYY-MM-DD"));
+  }
+
+  @Test
+  void publishedActivityListRejectsReversedDateRange() throws Exception {
+    mockMvc.perform(get("/api/activities")
+            .queryParam("from", "2026-08-03")
+            .queryParam("to", "2026-08-02")
+            .header("Authorization", "Bearer student-token"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value("活动筛选结束日期不能早于开始日期"));
+  }
+
+  @Test
   void studentCannotReviewActivity() throws Exception {
     String activityId = submitActivity();
 
@@ -121,23 +198,37 @@ class ActivityAdminControllerTest {
   }
 
   private String submitActivity() throws Exception {
+    return submitActivity(
+        "校园编程工作坊", "科技", "2026-08-01T09:00:00", "2026-08-01T12:00:00");
+  }
+
+  private String submitActivity(
+      String title, String category, String startsAt, String endsAt) throws Exception {
     MvcResult creation = mockMvc.perform(post("/api/activities")
             .header("Authorization", "Bearer teacher-token")
             .contentType("application/json")
-            .content("""
+            .content(String.format("""
                 {
-                  "title": "校园编程工作坊",
+                  "title": "%s",
                   "description": "完成一个可运行原型。",
-                  "category": "科技",
+                  "category": "%s",
                   "location": "A201",
-                  "startsAt": "2026-08-01T09:00:00",
-                  "endsAt": "2026-08-01T12:00:00",
+                  "startsAt": "%s",
+                  "endsAt": "%s",
                   "capacity": 40
                 }
-                """))
+                """, title, category, startsAt, endsAt)))
         .andExpect(status().isCreated())
         .andReturn();
     return com.jayway.jsonpath.JsonPath.read(
         creation.getResponse().getContentAsString(), "$.id");
+  }
+
+  private void approveActivity(String activityId) throws Exception {
+    mockMvc.perform(post("/api/admin/activities/{activityId}/reviews", activityId)
+            .header("Authorization", "Bearer admin-token")
+            .contentType("application/json")
+            .content("{\"decision\":\"approve\"}"))
+        .andExpect(status().isOk());
   }
 }

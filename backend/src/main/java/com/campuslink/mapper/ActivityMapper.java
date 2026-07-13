@@ -73,9 +73,17 @@ public interface ActivityMapper {
   @Select(ACTIVITY_SELECT + " where a.id = #{activityId} for update")
   ActivityEntity findByIdForUpdate(@Param("activityId") String activityId);
 
-  @Select(ACTIVITY_SELECT
-      + " where a.status in ('published', 'full') order by a.starts_at, a.created_at desc")
-  List<ActivityEntity> findPublished();
+  @Select("<script>" + ACTIVITY_SELECT
+      + " where a.status in ('published', 'full')"
+      + " <if test='category != null'>and a.category = #{category}</if>"
+      + " <if test='startsFrom != null'>and a.starts_at &gt;= #{startsFrom}</if>"
+      + " <if test='startsBefore != null'>and a.starts_at &lt; #{startsBefore}</if>"
+      + " order by a.starts_at, a.created_at desc"
+      + "</script>")
+  List<ActivityEntity> findPublished(
+      @Param("category") String category,
+      @Param("startsFrom") LocalDateTime startsFrom,
+      @Param("startsBefore") LocalDateTime startsBefore);
 
   @Select(ACTIVITY_SELECT
       + " where a.status = 'pending' and a.review_decision = 'pending'"

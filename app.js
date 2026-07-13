@@ -1,1 +1,1 @@
-import "./frontend/js/app.js?v=20260711-activity-registration-v1";
+import "./frontend/js/app.js?v=20260712-activity-filters-v1";

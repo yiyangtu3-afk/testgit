@@ -30,6 +30,8 @@ export const state = {
   postComments: {},
   expandedPostId: null,
   activities: [],
+  activityFilters: { from: "", to: "", category: "" },
+  activityCategories: [],
   activityRegistrations: {},
   activitySubmissions: [],
   pendingActivities: [],

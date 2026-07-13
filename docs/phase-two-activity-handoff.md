@@ -1,19 +1,19 @@
 # CampusLink 阶段二活动报名交接
 
-本文交接 CampusLink 的稳定基线和下一阶段工作。活动创建与管理员审核的前后
-端链路已经完成；下一个对话先补 live API 页面验收，再继续报名与候补切片，
-不要重做已完成的聊天、动态、内容审核和活动审核链路。
+本文交接 CampusLink 的稳定基线和下一阶段工作。活动创建与审核、学生报名与
+候补，以及时间和类别筛选已经完成；下一项进入持久化通知与 WebSocket 推送，
+不要重做已完成的聊天、动态、内容审核和活动报名链路。
 
 ## 稳定基线
 
-本轮前端实现基于 `ae09385 Add activity submission and review workflow`。远程仓库是
-`https://github.com/yiyangtu3-afk/testgit.git`，使用 `main` 分支；最新活动
-实现提交以 `main` 的最新提交为准。
+本轮实现继承 `92c6146 Add activity registration and waitlist workflow`。远程
+仓库是 `https://github.com/yiyangtu3-afk/testgit.git`，使用 `main` 分支；最新
+活动实现提交以 `main` 的最新提交为准。
 
-静态前端版本为 `20260711-activity-registration-v1`，本地地址为：
+静态前端版本为 `20260712-activity-filters-v1`，本地地址为：
 
 ```text
-http://127.0.0.1:5179/?v=20260711-activity-registration-v1
+http://127.0.0.1:5179/?v=20260712-activity-filters-v1
 ```
 
 后端本地地址为：
@@ -79,7 +79,8 @@ http://127.0.0.1:8080
 
 - `activities` 保存当前活动状态，`activity_reviews` 保存追加式审核历史。
 - `POST /api/activities` 从 bearer token 获取组织者，不接受客户端组织者 ID。
-- `GET /api/activities` 只返回本地 MySQL 中的 `published` 活动。
+- `GET /api/activities` 返回本地 MySQL 中的 `published` 和 `full` 活动，并
+  支持可选的 `from`、`to` 和 `category` 筛选。
 - `GET /api/admin/activities/pending` 只允许管理员查看待审活动。
 - `POST /api/admin/activities/{activityId}/reviews` 支持 `approve` 和 `reject`。
 - 教师和社团负责人可以创建；学生和仅管理员角色不能创建。
@@ -101,6 +102,8 @@ http://127.0.0.1:8080
 - live API 返回 `4xx` 或 `5xx` 时直接显示错误，不写入 Mock 活动。
 - Mock API 使用相同字段、权限、状态迁移和错误反馈。
 - Mock 与 MySQL 种子账号都增加 `u-2004` 社团负责人 **王社长**。
+- 学生活动页支持包含边界日期的时间范围和精确类别筛选；空结果、清除筛选和
+  当前报名或候补状态都有明确反馈。
 
 ## 当前验证记录
 
@@ -128,7 +131,7 @@ http://127.0.0.1:8080
 12. 修复了管理员页沿用三行网格造成活动审核区被后续工作区遮挡的问题。后台
     现使用普通文档流依次显示指标、活动审核、内容审核与审计记录，避免弹性
     子项收缩后内容溢出；前端 smoke 对此布局结构保留回归断言。
-13. 前端缓存版本升级为 `20260711-activity-registration-v1`，确保浏览器重新
+13. 前端缓存版本升级为 `20260712-activity-filters-v1`，确保浏览器重新
     获取 `styles.css` 和相关模块。所有 `state.js` 导入继续保持无查询参数。
 14. 2026 年 7 月 11 日以 Java API 模式完成浏览器验收：陈老师提交
     **活动闭环验收 20260711** 后，教务管理员在独立的待审核活动工作区发布；
@@ -140,12 +143,18 @@ http://127.0.0.1:8080
     测试，以及 1 个 `@Transactional`/`@Rollback` MySQL
     集成测试均通过。集成测试仅输出 Microsoft JDK 21 的 Mockito/Byte Buddy
     动态挂载警告。
+16. 2026 年 7 月 12 日完成时间与类别筛选：公开列表 API 支持包含边界的
+    `from`、`to` 和精确 `category` 组合查询；前端提供日期、类别、空结果与
+    清除筛选交互，并在结果中恢复学生报名状态。MyBatis 筛选集成测试使用
+    `@Transactional` 与 `@Rollback`；完整 Maven 测试 91 个全部通过。浏览器以
+    Java API 和历史 MySQL 数据验证活动页，并回归管理员后台、动态和聊天页。
+    `state.js` 继续保持无版本参数，同时新增旧缓存缺少筛选状态的兼容测试。
 
 ## 下一项工作
 
-下一项先实现学生按时间和类别浏览活动：扩展公开活动列表查询和活动页筛选，
-同时保留已报名状态。完成这部分浏览体验后，再实现审核、报名、候补和递补的
-持久化通知与 WebSocket 推送；不要在筛选切片中加入组织者名单、签到或导出。
+下一项实现审核、报名、候补和递补的持久化通知与 WebSocket 推送。通知必须在
+业务事务提交后可追溯，前端显示未读状态和明确结果；不要在这一切片加入组织者
+名单、签到或导出。
 
 ## 必读文件
 
@@ -164,8 +173,8 @@ http://127.0.0.1:8080
 
 前端修改后至少运行 `./script/run_frontend_check.sh`，并用浏览器检查管理员
 后台、动态审核反馈和聊天页。后端修改后运行 Maven 测试；本机完整 `mvn test`
-目前会受 Microsoft JDK 21 的 Mockito/Byte Buddy 动态挂载限制影响，需同时
-报告受影响的测试和本次相关测试的实际结果。
+会输出 Microsoft JDK 21 的 Mockito/Byte Buddy 动态挂载兼容性警告，需如实
+报告警告和测试的实际结果。
 
 本地 Java API 连上时展示的是历史 MySQL 数据，不能把它误认为 Mock 数据。
 不要使用 `git reset --hard`、`git clean` 或任何清理未跟踪文件的命令。每个

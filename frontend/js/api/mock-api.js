@@ -1,5 +1,5 @@
 import { mockStore, reportRanges, state } from "../state.js";
-import { nowTime } from "../utils/dom.js?v=20260711-activity-registration-v1";
+import { nowTime } from "../utils/dom.js?v=20260712-activity-filters-v1";
 
 let mockAuditId = Date.now();
 let mockActivityId = Date.now();
@@ -374,8 +374,20 @@ export const mockApi = {
     }
     return comment;
   },
-  async activities() {
-    return mockStore.activities.filter((activity) => ["published", "full"].includes(activity.status));
+  async activities(filters = {}) {
+    const category = String(filters.category || "").trim();
+    const from = String(filters.from || "").trim();
+    const to = String(filters.to || "").trim();
+    if (from && to && to < from) {
+      throw new Error("活动筛选结束日期不能早于开始日期");
+    }
+    return mockStore.activities.filter((activity) => {
+      const startsOn = String(activity.startsAt || "").slice(0, 10);
+      return ["published", "full"].includes(activity.status)
+        && (!category || activity.category === category)
+        && (!from || startsOn >= from)
+        && (!to || startsOn <= to);
+    });
   },
   async createActivity(activity) {
     const role = state.currentUser.role || "";

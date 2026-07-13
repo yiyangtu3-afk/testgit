@@ -58,8 +58,9 @@ public class MyBatisActivityRepository implements ActivityRepository {
   }
 
   @Override
-  public List<ActivityEntity> findPublished() {
-    return activityMapper.findPublished();
+  public List<ActivityEntity> findPublished(
+      String category, LocalDateTime startsFrom, LocalDateTime startsBefore) {
+    return activityMapper.findPublished(category, startsFrom, startsBefore);
   }
 
   @Override

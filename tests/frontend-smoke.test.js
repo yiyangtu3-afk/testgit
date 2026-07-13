@@ -111,6 +111,10 @@ function runActivityRendererCheck() {
     '  "#activityNotice": { hidden: true, className: "", textContent: "" },',
     '  "#activitySubmissionPanel": { hidden: true },',
     '  "#activitySubmissionList": { innerHTML: "" },',
+    '  "#activityFilterFrom": { value: "" },',
+    '  "#activityFilterTo": { value: "" },',
+    '  "#activityFilterCategory": { value: "", innerHTML: "" },',
+    '  "#activityFilterSummary": { textContent: "" },',
     '  "#publishedActivityCount": { textContent: "" },',
     '  "#activityList": { innerHTML: "" },',
     '  "#activityReviewPanel": { hidden: true, innerHTML: "" }',
@@ -120,6 +124,8 @@ function runActivityRendererCheck() {
     'state.currentUser = { id: "u-2001", name: "陈老师", role: "教师账号" };',
     `state.activities = [{ id: "activity-xss", title: ${JSON.stringify(payload)}, description: ${JSON.stringify(payload)}, category: "科技", location: "A201", startsAt: "2026-08-01T09:00:00", endsAt: "2026-08-01T11:00:00", capacity: 20, organizerId: "u-2001", organizerName: "陈老师", status: "published", reviewDecision: "approved" }];`,
     'state.activitySubmissions = [];',
+    'delete state.activityFilters;',
+    'delete state.activityCategories;',
     'const { renderActivities, renderPendingActivities } = await import("./frontend/js/activities/renderers.js");',
     'renderActivities();',
     'const activityHtml = globalThis.elements["#activityList"].innerHTML;',
@@ -195,6 +201,43 @@ function runMockActivityWorkflowCheck() {
   }
 }
 
+function runMockActivityFilterCheck() {
+  const script = [
+    'const { mockStore, state } = await import("./frontend/js/state.js");',
+    'const { mockApi } = await import("./frontend/js/api/mock-api.js");',
+    'state.currentUser = { id: "u-1001", name: "林一", role: "学生账号" };',
+    'mockStore.activities.push({ ...mockStore.activities[0], id: "activity-mock-public-service", title: "公益实践日", category: "公益", startsAt: "2026-09-03T09:00:00", endsAt: "2026-09-03T12:00:00" });',
+    'mockStore.activities.push({ ...mockStore.activities[0], id: "activity-mock-technology", title: "科技实践日", category: "科技", startsAt: "2026-09-04T09:00:00", endsAt: "2026-09-04T12:00:00" });',
+    'mockStore.activities.push({ ...mockStore.activities[0], id: "activity-mock-october", title: "十月公益日", category: "公益", startsAt: "2026-10-01T09:00:00", endsAt: "2026-10-01T12:00:00" });',
+    'const category = await mockApi.activities({ category: "公益" });',
+    'const dates = await mockApi.activities({ from: "2026-09-01", to: "2026-09-30" });',
+    'const combined = await mockApi.activities({ category: "公益", from: "2026-09-01", to: "2026-09-30" });',
+    'process.stdout.write(JSON.stringify({ category: category.map((activity) => activity.id), dates: dates.map((activity) => activity.id), combined: combined.map((activity) => activity.id) }));'
+  ].join("\n");
+  try {
+    const output = JSON.parse(execFileSync(
+      process.execPath,
+      ["--input-type=module", "--eval", script],
+      { cwd: root, encoding: "utf8" }
+    ));
+    if (!output.category.includes("activity-mock-public-service")
+        || !output.category.includes("activity-mock-october")
+        || output.category.includes("activity-mock-technology")) {
+      failures.push("mock activity filters: expected category filter to match live API semantics");
+    }
+    if (output.dates.length !== 2
+        || !output.dates.includes("activity-mock-public-service")
+        || !output.dates.includes("activity-mock-technology")) {
+      failures.push("mock activity filters: expected inclusive date range filtering");
+    }
+    if (output.combined.length !== 1 || output.combined[0] !== "activity-mock-public-service") {
+      failures.push("mock activity filters: expected category and date filters to combine");
+    }
+  } catch (error) {
+    failures.push(`Mock activity filter check failed: ${String(error.message || error)}`);
+  }
+}
+
 function checkVersionedModuleImports() {
   const bareImports = [...files.js.matchAll(/(?:from|import)\s*["']([^"']+\.js)["']/g)]
     .map((match) => match[1])
@@ -218,6 +261,7 @@ runEscapeHtmlCheck();
 runFeedRendererEscapingCheck();
 runActivityRendererCheck();
 runMockActivityWorkflowCheck();
+runMockActivityFilterCheck();
 checkVersionedModuleImports();
 
 if (files.appEntry.split("\n").length > 20) {
@@ -238,6 +282,12 @@ if (files.appEntry.split("\n").length > 20) {
   ["personalPostPanel", "personal post manager panel"],
   ["activitiesPanel", "campus activity panel"],
   ["activityForm", "activity submission form"],
+  ["activityFilterForm", "activity filter form"],
+  ["activityFilterFrom", "activity filter start date"],
+  ["activityFilterTo", "activity filter end date"],
+  ["activityFilterCategory", "activity category filter"],
+  ["clearActivityFilters", "activity filter reset action"],
+  ["activityFilterSummary", "activity filter result summary"],
   ["activityList", "published activity list"],
   ["activitySubmissionList", "activity submission status list"],
   ["activityReviewPanel", "admin activity review panel"],
@@ -297,6 +347,7 @@ if (files.html.indexOf('id="moderationPanel"') > files.html.indexOf('id="auditTa
   ["download-link", "report download link styles"],
   ["moderation-panel", "moderation panel styles"],
   ["activity-intro", "activity editorial introduction styles"],
+  ["activity-filter-bar", "activity filter toolbar styles"],
   ["activity-form", "activity submission form styles"],
   ["activity-card", "activity card styles"],
   ["activity-review-panel", "activity admin review styles"],
@@ -333,6 +384,9 @@ expectIncludes("css", ".realtime-mode", "chat realtime status styles");
   ["reviewActivity(activityId, decision, reason", "activity review adapter"],
   ["registerActivity(activityId)", "activity registration adapter"],
   ["cancelActivityRegistration(activityId)", "activity cancellation adapter"],
+  ["activityFilters", "activity filter state"],
+  ["filterActivities", "activity filter event"],
+  ["clearActivityFilters", "activity filter reset event"],
   ["活动已提交审核", "activity pending feedback"],
   ["data-review-activity", "activity review action binding"],
   ["data-activity-registration", "activity registration action binding"],
@@ -407,8 +461,8 @@ expectMatch(
   "admin layout: expected independent review workspaces to use normal document flow"
 );
 
-expectIncludes("html", "20260711-activity-registration-v1", "HTML escaping cache-busting version");
-expectIncludes("appEntry", "20260711-activity-registration-v1", "root app imports current HTML escaping module version");
+expectIncludes("html", "20260712-activity-filters-v1", "HTML escaping cache-busting version");
+expectIncludes("appEntry", "20260712-activity-filters-v1", "root app imports current HTML escaping module version");
 
 expectIncludes("js", "setRealtimeMode", "chat realtime status updater");
 expectIncludes("js", "HEARTBEAT_INTERVAL_MS", "chat realtime heartbeat interval");
@@ -453,7 +507,7 @@ expectMatch(
 );
 
 expectMatch("js", /request\("\/admin\/moderation"\)/, "moderation list endpoint");
-expectMatch("apiClient", /request\("\/activities"\)/, "published activity endpoint");
+expectMatch("apiClient", /request\(`\/activities\$\{query/, "filtered published activity endpoint");
 expectMatch("apiClient", /request\("\/admin\/activities\/pending"\)/, "pending activity endpoint");
 expectMatch("apiClient", /\/admin\/activities\/\$\{activityId}\/reviews/, "activity review endpoint");
 expectMatch("js", /escapeHtml\(activity\.title\)/, "activity title is escaped");

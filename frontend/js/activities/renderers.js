@@ -1,7 +1,8 @@
 import { state } from "../state.js";
-import { isActivityOrganizer, isAdminUser, isStudentUser } from "../utils/auth.js?v=20260711-activity-registration-v1";
-import { $ } from "../utils/dom.js?v=20260711-activity-registration-v1";
-import { escapeHtml } from "../utils/format.js?v=20260711-activity-registration-v1";
+import { isActivityOrganizer, isAdminUser, isStudentUser } from "../utils/auth.js?v=20260712-activity-filters-v1";
+import { $ } from "../utils/dom.js?v=20260712-activity-filters-v1";
+import { escapeHtml } from "../utils/format.js?v=20260712-activity-filters-v1";
+import { activityFilterState } from "./filters.js?v=20260712-activity-filters-v1";
 
 const statusLabels = {
   draft: "需修改",
@@ -16,13 +17,14 @@ export function renderActivities() {
   $("#activityCreatorPanel").hidden = !isActivityOrganizer();
   renderActivityNotice();
   renderActivitySubmissions();
+  renderActivityFilters();
   $("#publishedActivityCount").textContent = String(state.activities.length);
   $("#activityList").innerHTML = state.activities.length
     ? state.activities.map((activity) => activityCard(activity)).join("")
     : `
       <div class="activity-empty">
-        <strong>还没有已发布活动</strong>
-        <p>管理员审核通过的活动会出现在这里。</p>
+        <strong>${hasActivityFilters() ? "没有符合条件的活动" : "还没有已发布活动"}</strong>
+        <p>${hasActivityFilters() ? "调整日期或类别后再试一次。" : "管理员审核通过的活动会出现在这里。"}</p>
       </div>
     `;
 }
@@ -69,6 +71,33 @@ function renderActivitySubmissions() {
   $("#activitySubmissionList").innerHTML = submissions
     .map((activity) => activityCard(activity, true))
     .join("");
+}
+
+function renderActivityFilters() {
+  const { filters, categories } = activityFilterState();
+  $("#activityFilterFrom").value = filters.from;
+  $("#activityFilterTo").value = filters.to;
+  const category = $("#activityFilterCategory");
+  category.innerHTML = [
+    '<option value="">全部类别</option>',
+    ...categories.map((item) => {
+      return `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`;
+    })
+  ].join("");
+  category.value = filters.category;
+
+  const parts = [];
+  if (filters.from || filters.to) {
+    parts.push(`${filters.from || "最早"} 至 ${filters.to || "以后"}`);
+  }
+  if (filters.category) parts.push(filters.category);
+  $("#activityFilterSummary").textContent = parts.length
+    ? `当前显示 ${state.activities.length} 项 · ${parts.join(" · ")}`
+    : "按日期和类别查找活动，报名与候补状态会保留在结果中。";
+}
+
+function hasActivityFilters() {
+  return Object.values(activityFilterState().filters).some(Boolean);
 }
 
 function activityCard(activity, showReview = false) {

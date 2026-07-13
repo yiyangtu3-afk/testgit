@@ -17,7 +17,7 @@ Open the local demo in a browser:
 ./script/run_frontend_demo.sh
 ```
 
-Then visit `http://127.0.0.1:5179/?v=20260711-activity-registration-v1`.
+Then visit `http://127.0.0.1:5179/?v=20260712-activity-filters-v1`.
 
 The demo supports these flows:
 
@@ -43,8 +43,9 @@ The demo supports these flows:
   as a standard file card. The demo doesn't show image bubbles or large image
   previews.
 - Withdraw the latest message sent by the current user.
-- Browse activities as a student, register while a slot is available, see a
-  waitlist state when full, and cancel a current registration.
+- Filter published activities by an inclusive start-date range and category,
+  register while a slot is available, see a waitlist state when full, and
+  cancel a current registration.
 - Switch online and invisible presence states.
 - Publish a campus feed post.
 - Open personal post management from the campus feed and edit or delete your
@@ -112,11 +113,12 @@ modules, adapter, and Java API skeleton for the selectors and routes that keep
 the demo flows connected. The backend test suite covers the migrated service
 behavior for login, user search, friend requests, accepted friendships, chat
 messages, chat attachments, feed posts, comments, moderation, and audit
-records. Activity tests cover organizer permissions, review transitions, HTTP
-boundaries, MyBatis mapping, and rollback-safe review history. The suite also
-includes MockMvc controller tests for the auth, users, friends, chat, feed, and
-admin API boundary, plus direct WebSocket handler tests for chat heartbeat and
-broadcast behavior. Repository integration tests connect to the local MySQL
+records. Activity tests cover organizer permissions, review transitions,
+date/category filters, HTTP boundaries, MyBatis mapping, and rollback-safe
+review history. The suite also includes MockMvc controller tests for the auth,
+users, friends, chat, feed, and admin API boundary, plus direct WebSocket
+handler tests for chat heartbeat and broadcast behavior. Repository integration
+tests connect to the local MySQL
 database without running `schema.sql` or `data.sql`; each test transaction
 rolls back, so existing demo history stays unchanged.
 
@@ -127,6 +129,12 @@ submit an activity through the Java API, an administrator can publish it from
 the pending-activity workspace, and a student can then see it in the published
 list. This check intentionally uses local MySQL history; it doesn't replace
 the database with Mock data or reset existing records.
+
+On July 12, 2026, the student activity page was verified against the Java API
+and existing MySQL history. Category filtering, inclusive date-range filtering,
+combined empty results, clearing filters, and restoring registration state all
+worked without falling back to Mock. The administrator console, feed review
+feedback, and chat page were also checked after the UI change.
 
 ## Frontend structure
 
@@ -139,7 +147,8 @@ The frontend uses this module layout:
 - `api`: Live API adapter and mock API fallback.
 - `auth`: Login, quick demo entry, logout, and demo account switching.
 - `chat`: Chat-specific rendering.
-- `activities`: Activity list, submission, status, and admin review UI.
+- `activities`: Activity filters, list, registration, submission, status, and
+  admin review UI.
 - `contacts`: Friend and contact workflows are wired through shared loaders and
   contact renderers.
 - `posts`: Campus feed rendering.
@@ -250,6 +259,12 @@ Student registration uses the authenticated bearer token and never accepts an
 attendee ID. The service locks an activity while it assigns capacity, writes a
 current registration and an append-only registration event in one transaction,
 and promotes the oldest waitlisted attendee when a registered student cancels.
+
+The published activity list accepts optional `from`, `to`, and `category`
+query parameters. Dates use `YYYY-MM-DD`; both dates are inclusive and match
+the activity start time. Category matching is exact after surrounding
+whitespace is removed. Invalid dates and reversed ranges return `400` and do
+not fall back to Mock data.
 
 Chat messages accept optional attachment metadata in the message payload. The
 current demo stores file name, size, MIME type, and display kind only; it

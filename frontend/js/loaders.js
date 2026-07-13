@@ -1,7 +1,11 @@
-import { api } from "./api/client.js?v=20260711-activity-registration-v1";
+import { api } from "./api/client.js?v=20260712-activity-filters-v1";
+import {
+  activityFilterState,
+  rememberActivityCategories
+} from "./activities/filters.js?v=20260712-activity-filters-v1";
 import { state } from "./state.js";
-import { isAdminUser, isStudentUser } from "./utils/auth.js?v=20260711-activity-registration-v1";
-import { normalizePost } from "./utils/format.js?v=20260711-activity-registration-v1";
+import { isAdminUser, isStudentUser } from "./utils/auth.js?v=20260712-activity-filters-v1";
+import { normalizePost } from "./utils/format.js?v=20260712-activity-filters-v1";
 import {
   renderAdminAccessDenied,
   renderActivities,
@@ -15,7 +19,7 @@ import {
   renderPersonalPostManager,
   renderPendingActivities,
   renderSearchResults
-} from "./ui/renderers.js?v=20260711-activity-registration-v1";
+} from "./ui/renderers.js?v=20260712-activity-filters-v1";
 
 export async function loadUsers(keyword = "") {
   state.users = await api.users(keyword);
@@ -100,7 +104,9 @@ export async function loadComments(postId) {
 }
 
 export async function loadActivities() {
-  state.activities = await api.activities();
+  const { filters } = activityFilterState();
+  state.activities = await api.activities(filters);
+  rememberActivityCategories(state.activities);
   state.activityRegistrations = {};
   if (isStudentUser()) {
     let registrationLoadFailed = false;
