@@ -161,6 +161,46 @@ function runActivityRendererCheck() {
   }
 }
 
+function runActivityNotificationRendererCheck() {
+  const payload = "<img src=x onerror=alert(1)>";
+  const script = [
+    'globalThis.elements = {',
+    '  "#activityNotificationBadge": { hidden: true, textContent: "" },',
+    '  "#activityNotificationUnreadCount": { textContent: "" },',
+    '  "#activityNotificationList": { innerHTML: "" },',
+    '  "#activityNotificationNotice": { hidden: true, className: "", textContent: "" },',
+    '  "#markAllActivityNotifications": { disabled: false }',
+    '};',
+    'globalThis.document = { querySelector(selector) { return globalThis.elements[selector]; } };',
+    'const { state } = await import("./frontend/js/state.js");',
+    'delete state.activityNotifications;',
+    'delete state.activityNotificationUnreadCount;',
+    'delete state.activityNotificationNotice;',
+    'const { activityNotificationState } = await import("./frontend/js/notifications/state.js");',
+    'const notificationState = activityNotificationState();',
+    `notificationState.items = [{ id: "notification-xss", activityId: "activity-1", type: "activity.review.rejected", title: ${JSON.stringify(payload)}, body: ${JSON.stringify(payload)}, read: false, createdAt: "2026-07-12T12:00:00" }];`,
+    'notificationState.unreadCount = 1;',
+    'const { renderActivityNotifications } = await import("./frontend/js/notifications/renderers.js");',
+    'renderActivityNotifications();',
+    'process.stdout.write(JSON.stringify({ html: globalThis.elements["#activityNotificationList"].innerHTML, badge: globalThis.elements["#activityNotificationBadge"].textContent, hidden: globalThis.elements["#activityNotificationBadge"].hidden }));'
+  ].join("\n");
+  try {
+    const output = JSON.parse(execFileSync(
+      process.execPath,
+      ["--input-type=module", "--eval", script],
+      { cwd: root, encoding: "utf8" }
+    ));
+    if (output.html.includes(payload) || !output.html.includes("&lt;img")) {
+      failures.push("activity notification renderer: expected title and body to be escaped");
+    }
+    if (!output.html.includes("notification-card--unread") || output.badge !== "1" || output.hidden) {
+      failures.push("activity notification renderer: expected visible unread state and navigation badge");
+    }
+  } catch (error) {
+    failures.push(`Activity notification renderer check failed: ${String(error.message || error)}`);
+  }
+}
+
 function runMockActivityWorkflowCheck() {
   const script = [
     'const { state } = await import("./frontend/js/state.js");',
@@ -238,6 +278,50 @@ function runMockActivityFilterCheck() {
   }
 }
 
+function runMockActivityNotificationWorkflowCheck() {
+  const script = [
+    'const { state } = await import("./frontend/js/state.js");',
+    'const { mockApi } = await import("./frontend/js/api/mock-api.js");',
+    'state.currentUser = { id: "u-2001", name: "陈老师", role: "教师账号" };',
+    'const created = await mockApi.createActivity({ title: "通知行为测试", description: "测试", category: "科技", location: "A201", startsAt: "2026-09-01T09:00", endsAt: "2026-09-01T11:00", capacity: 1 });',
+    'state.currentUser = { id: "u-2003", name: "教务管理员", role: "管理员账号" };',
+    'await mockApi.reviewActivity(created.id, "approve", null);',
+    'state.currentUser = { id: "u-2001", name: "陈老师", role: "教师账号" };',
+    'const organizerSummary = await mockApi.activityNotifications();',
+    'state.currentUser = { id: "u-1001", name: "林一", role: "学生账号" };',
+    'await mockApi.registerActivity(created.id);',
+    'state.currentUser = { id: "u-2002", name: "周同学", role: "学生账号" };',
+    'await mockApi.registerActivity(created.id);',
+    'state.currentUser = { id: "u-1001", name: "林一", role: "学生账号" };',
+    'await mockApi.cancelActivityRegistration(created.id);',
+    'state.currentUser = { id: "u-2002", name: "周同学", role: "学生账号" };',
+    'const studentSummary = await mockApi.activityNotifications();',
+    'const readSummary = await mockApi.markAllActivityNotificationsRead();',
+    'process.stdout.write(JSON.stringify({ organizerSummary, studentSummary, readSummary }));'
+  ].join("\n");
+  try {
+    const output = JSON.parse(execFileSync(
+      process.execPath,
+      ["--input-type=module", "--eval", script],
+      { cwd: root, encoding: "utf8" }
+    ));
+    if (output.organizerSummary.items[0]?.type !== "activity.review.approved") {
+      failures.push("mock activity notifications: expected organizer approval result");
+    }
+    const studentTypes = output.studentSummary.items.map((item) => item.type);
+    if (!studentTypes.includes("activity.registration.waitlisted")
+        || !studentTypes.includes("activity.registration.promoted")) {
+      failures.push("mock activity notifications: expected waitlist and promotion results");
+    }
+    if (output.studentSummary.unreadCount !== 2 || output.readSummary.unreadCount !== 0
+        || output.readSummary.items.some((item) => !item.read)) {
+      failures.push("mock activity notifications: expected persisted unread and read-all state");
+    }
+  } catch (error) {
+    failures.push(`Mock activity notification workflow check failed: ${String(error.message || error)}`);
+  }
+}
+
 function checkVersionedModuleImports() {
   const bareImports = [...files.js.matchAll(/(?:from|import)\s*["']([^"']+\.js)["']/g)]
     .map((match) => match[1])
@@ -260,8 +344,10 @@ runSyntaxCheck();
 runEscapeHtmlCheck();
 runFeedRendererEscapingCheck();
 runActivityRendererCheck();
+runActivityNotificationRendererCheck();
 runMockActivityWorkflowCheck();
 runMockActivityFilterCheck();
+runMockActivityNotificationWorkflowCheck();
 checkVersionedModuleImports();
 
 if (files.appEntry.split("\n").length > 20) {
@@ -291,6 +377,11 @@ if (files.appEntry.split("\n").length > 20) {
   ["activityList", "published activity list"],
   ["activitySubmissionList", "activity submission status list"],
   ["activityReviewPanel", "admin activity review panel"],
+  ["notificationsPanel", "activity notification center"],
+  ["activityNotificationBadge", "activity notification navigation badge"],
+  ["activityNotificationUnreadCount", "activity notification unread count"],
+  ["activityNotificationList", "activity notification list"],
+  ["markAllActivityNotifications", "activity notification read-all action"],
   ["exportReportButton", "admin report export button"],
   ["reportRange", "admin report range control"],
   ["exportPanel", "admin report export panel"],
@@ -323,6 +414,8 @@ if (files.html.indexOf('id="moderationPanel"') > files.html.indexOf('id="auditTa
   ['export function renderMessages', "chat renderer module"],
   ['export function renderActivities', "activity renderer module"],
   ['export function bindActivityEvents', "activity event module"],
+  ['export function renderActivityNotifications', "activity notification renderer module"],
+  ['export function bindActivityNotificationEvents', "activity notification event module"],
   ['export function connectChatRealtime', "chat realtime module"]
 ].forEach(([needle, label]) => expectIncludes("js", needle, label));
 
@@ -351,6 +444,9 @@ if (files.html.indexOf('id="moderationPanel"') > files.html.indexOf('id="auditTa
   ["activity-form", "activity submission form styles"],
   ["activity-card", "activity card styles"],
   ["activity-review-panel", "activity admin review styles"],
+  ["notification-stage", "activity notification stage styles"],
+  ["notification-card", "activity notification card styles"],
+  ["notification-card--unread", "activity notification unread styles"],
   ["activity-status--pending", "activity pending status styles"],
   ["review-workbench", "admin review workbench styles"],
   ["audit-log-panel", "admin audit log panel styles"],
@@ -384,6 +480,9 @@ expectIncludes("css", ".realtime-mode", "chat realtime status styles");
   ["reviewActivity(activityId, decision, reason", "activity review adapter"],
   ["registerActivity(activityId)", "activity registration adapter"],
   ["cancelActivityRegistration(activityId)", "activity cancellation adapter"],
+  ["activityNotifications()", "activity notification list adapter"],
+  ["markAllActivityNotificationsRead()", "activity notification read-all adapter"],
+  ["活动通知暂时无法加载", "activity notification load failure feedback"],
   ["activityFilters", "activity filter state"],
   ["filterActivities", "activity filter event"],
   ["clearActivityFilters", "activity filter reset event"],
@@ -461,8 +560,8 @@ expectMatch(
   "admin layout: expected independent review workspaces to use normal document flow"
 );
 
-expectIncludes("html", "20260712-activity-filters-v1", "HTML escaping cache-busting version");
-expectIncludes("appEntry", "20260712-activity-filters-v1", "root app imports current HTML escaping module version");
+expectIncludes("html", "20260712-activity-notifications-v1", "HTML escaping cache-busting version");
+expectIncludes("appEntry", "20260712-activity-notifications-v1", "root app imports current HTML escaping module version");
 
 expectIncludes("js", "setRealtimeMode", "chat realtime status updater");
 expectIncludes("js", "HEARTBEAT_INTERVAL_MS", "chat realtime heartbeat interval");
@@ -490,6 +589,8 @@ expectIncludes("js", "heartbeat.pong", "chat realtime heartbeat pong");
   ["reportExport", "report export state"],
   ["activitySubmissions", "activity submission state"],
   ["pendingActivities", "pending activity state"],
+  ["activityNotifications", "activity notification state"],
+  ["activityNotificationUnreadCount", "activity notification unread state"],
   ["withApi", "live API fallback helper"],
   ["setApiMode(\"mock\")", "default mock mode"]
 ].forEach(([needle, label]) => expectIncludes("js", needle, label));
@@ -510,6 +611,8 @@ expectMatch("js", /request\("\/admin\/moderation"\)/, "moderation list endpoint"
 expectMatch("apiClient", /request\(`\/activities\$\{query/, "filtered published activity endpoint");
 expectMatch("apiClient", /request\("\/admin\/activities\/pending"\)/, "pending activity endpoint");
 expectMatch("apiClient", /\/admin\/activities\/\$\{activityId}\/reviews/, "activity review endpoint");
+expectMatch("apiClient", /request\("\/activity-notifications"\)/, "activity notification list endpoint");
+expectMatch("apiClient", /request\("\/activity-notifications\/read-all", \{ method: "POST" \}\)/, "activity notification read-all endpoint");
 expectMatch("js", /escapeHtml\(activity\.title\)/, "activity title is escaped");
 expectMatch("js", /escapeHtml\(activity\.description\)/, "activity description is escaped");
 expectMatch("js", /\/admin\/moderation\/\$\{itemId}\/\$\{decision}/, "moderation decision endpoint");
@@ -549,6 +652,8 @@ expectMatch("js", /window\.confirm\(message\)/, "admin delete confirmation dialo
 expectMatch("js", /data-select-audit-event/, "audit event selection binding");
 expectMatch("js", /data-toggle-all-audit-events/, "audit event select-all toggle binding");
 expectMatch("js", /new WebSocket\(`\$\{chatSocketUrl\(\)\}\?token=/, "chat websocket connection");
+expectIncludes("js", "activity.notification.created", "activity notification realtime event");
+expectMatch("js", /handleActivityNotificationEvent\(payload\)/, "activity notification realtime routing");
 expectIncludes("js", "message.withdrawn", "chat websocket withdraw event");
 expectMatch("js", /payload\.type === "message\.created" \|\| payload\.type === "message\.withdrawn"/, "chat websocket message event guard");
 expectMatch("js", /await refreshConversation\(payload\.peerId\)/, "chat websocket eager message refresh");
@@ -577,6 +682,7 @@ expectMatch("js", /await loadFriends\(\)/, "chat websocket friend refresh");
   ['@RequestMapping("/api/feed")', "backend feed route group"],
   ['@RequestMapping("/api/activities")', "backend activity route group"],
   ['@RequestMapping("/api/admin/activities")', "backend activity admin route group"],
+  ['@RequestMapping("/api/activity-notifications")', "backend activity notification route group"],
   ['@GetMapping("/personal-posts")', "backend personal post list route"],
   ['@PatchMapping("/personal-posts/{postId}")', "backend personal post update route"],
   ['@DeleteMapping("/personal-posts/{postId}")', "backend personal post delete route"],
@@ -601,6 +707,9 @@ expectMatch("js", /await loadFriends\(\)/, "chat websocket friend refresh");
   ["heartbeat.ping", "backend chat heartbeat ping handler"],
   ["heartbeat.pong", "backend chat heartbeat pong response"],
   ["publishMessageWithdrawn", "backend chat withdraw realtime notifier"],
+  ["ActivityNotificationRealtimePublisher", "backend activity notification realtime publisher"],
+  ["activity.notification.created", "backend activity notification realtime event"],
+  ["TransactionPhase.AFTER_COMMIT", "backend activity notification post-commit delivery"],
   ["record AttachmentView", "backend attachment message shape"],
   ["String moderationReason", "backend personal post moderation reason shape"],
   ["record ModerationItemView", "backend moderation shape"],
@@ -634,6 +743,7 @@ expectMatch("backend", /friendRepository\.areFriends\(currentUserId, peerId\)/, 
   ["insert into users", "MySQL demo seed data"],
   ["m-demo-post-9001", "MySQL demo pending moderation seed"],
   ["u-2004", "MySQL demo club leader account"],
+  ["create table if not exists activity_notifications", "MySQL activity notification schema"],
   ["on duplicate key update", "idempotent MySQL demo seed data"]
 ].forEach(([needle, label]) => expectIncludes("resources", needle, label));
 

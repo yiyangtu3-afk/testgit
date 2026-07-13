@@ -1,8 +1,8 @@
-import { api } from "../api/client.js?v=20260712-activity-filters-v1";
-import { loadActivities, loadPendingActivities } from "../loaders.js?v=20260712-activity-filters-v1";
+import { api } from "../api/client.js?v=20260712-activity-notifications-v1";
+import { loadActivities, loadPendingActivities } from "../loaders.js?v=20260712-activity-notifications-v1";
 import { state } from "../state.js";
-import { $ } from "../utils/dom.js?v=20260712-activity-filters-v1";
-import { renderActivities, renderPendingActivities } from "./renderers.js?v=20260712-activity-filters-v1";
+import { $ } from "../utils/dom.js?v=20260712-activity-notifications-v1";
+import { renderActivities, renderPendingActivities } from "./renderers.js?v=20260712-activity-notifications-v1";
 
 export function bindActivityEvents() {
   $("#activityForm").addEventListener("submit", submitActivity);

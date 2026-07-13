@@ -9,11 +9,11 @@
     />
     <title>CampusLink Demo</title>
     <script>
-      if (location.search !== "?v=20260712-activity-filters-v1") {
-        history.replaceState(null, "", location.pathname + "?v=20260712-activity-filters-v1");
+      if (location.search !== "?v=20260712-activity-notifications-v1") {
+        history.replaceState(null, "", location.pathname + "?v=20260712-activity-notifications-v1");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=20260712-activity-filters-v1" />
+    <link rel="stylesheet" href="styles.css?v=20260712-activity-notifications-v1" />
   </head>
   <body>
     <main class="app-shell">
@@ -78,6 +78,10 @@
           <button class="rail-button is-active" type="button" data-tab="chat" aria-label="聊天">C</button>
           <button class="rail-button" type="button" data-tab="feed" aria-label="动态">F</button>
           <button class="rail-button" type="button" data-tab="activities" aria-label="活动">E</button>
+          <button class="rail-button rail-button--notification" type="button" data-tab="notifications" aria-label="通知">
+            N
+            <strong id="activityNotificationBadge" hidden>0</strong>
+          </button>
           <button class="rail-button" type="button" data-tab="admin" aria-label="后台">A</button>
         </aside>
 
@@ -284,6 +288,28 @@
           </div>
         </section>
 
+        <section class="main-stage is-notifications" id="notificationsPanel" hidden>
+          <header class="stage-header notification-header">
+            <div>
+              <p class="section-kicker">Activity Signals</p>
+              <h2>活动通知</h2>
+            </div>
+            <div class="notification-header-actions">
+              <span><strong id="activityNotificationUnreadCount">0</strong> 条未读</span>
+              <button class="ghost-button" id="markAllActivityNotifications" type="button">全部已读</button>
+            </div>
+          </header>
+          <div class="notification-stage">
+            <section class="notification-intro">
+              <p class="section-kicker">Status Ledger</p>
+              <h3>每一次状态变化，都有记录。</h3>
+              <p>活动审核、报名、候补和递补结果会持久保留，并在在线时实时送达。</p>
+            </section>
+            <div class="activity-feedback" id="activityNotificationNotice" hidden></div>
+            <div class="notification-list" id="activityNotificationList" aria-live="polite"></div>
+          </div>
+        </section>
+
         <section class="main-stage is-admin" id="adminPanel" hidden>
           <header class="stage-header">
             <div>
@@ -317,6 +343,6 @@
       </section>
     </main>
 
-    <script type="module" src="app.js?v=20260712-activity-filters-v1"></script>
+    <script type="module" src="app.js?v=20260712-activity-notifications-v1"></script>
   </body>
 </html>

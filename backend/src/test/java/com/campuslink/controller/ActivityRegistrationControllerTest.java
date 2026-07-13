@@ -11,9 +11,11 @@ import com.campuslink.entity.DemoEntities.UserEntity;
 import com.campuslink.repository.AuthSessionRepository;
 import com.campuslink.repository.UserRepository;
 import com.campuslink.service.ActivityRegistrationService;
+import com.campuslink.service.ActivityNotificationService;
 import com.campuslink.service.ActivityService;
 import com.campuslink.service.AuthTokenService;
 import com.campuslink.support.InMemoryActivityRegistrationRepository;
+import com.campuslink.support.InMemoryActivityNotificationRepository;
 import com.campuslink.support.InMemoryActivityRepository;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,7 +34,8 @@ class ActivityRegistrationControllerTest {
     UserEntity teacher = new UserEntity("u-teacher", "陈老师", "教师", "2", "online");
     UserEntity admin = new UserEntity("u-admin", "管理员", "管理员", "3", "online");
     var activityRepository = new InMemoryActivityRepository();
-    var activityService = new ActivityService(activityRepository);
+    var activityService = new ActivityService(activityRepository,
+        new ActivityNotificationService(new InMemoryActivityNotificationRepository()));
     var pending = activityService.create(teacher, new CreateActivityRequest("报名测试", "测试", "科技",
         "A201", LocalDateTime.of(2026, 8, 1, 9, 0), LocalDateTime.of(2026, 8, 1, 10, 0), 1));
     activityId = activityService.review(admin, pending.id(), new ReviewActivityRequest("approve", null)).id();
@@ -51,7 +54,8 @@ class ActivityRegistrationControllerTest {
       public void updatePresence(String userId, String presence) { }
     };
     var service = new ActivityRegistrationService(activityRepository,
-        new InMemoryActivityRegistrationRepository());
+        new InMemoryActivityRegistrationRepository(),
+        new ActivityNotificationService(new InMemoryActivityNotificationRepository()));
     mockMvc = MockMvcBuilders.standaloneSetup(new ActivityRegistrationController(service,
         new AuthTokenService(sessions, userRepository))).setControllerAdvice(new GlobalExceptionHandler()).build();
   }

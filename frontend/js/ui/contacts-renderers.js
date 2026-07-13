@@ -1,6 +1,6 @@
 import { mockStore, state } from "../state.js";
-import { $ } from "../utils/dom.js?v=20260712-activity-filters-v1";
-import { escapeHtml } from "../utils/format.js?v=20260712-activity-filters-v1";
+import { $ } from "../utils/dom.js?v=20260712-activity-notifications-v1";
+import { escapeHtml } from "../utils/format.js?v=20260712-activity-notifications-v1";
 
 export function renderSearchResults() {
   $("#resultList").innerHTML = state.users

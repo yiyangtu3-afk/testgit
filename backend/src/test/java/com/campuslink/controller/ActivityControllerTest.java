@@ -9,8 +9,10 @@ import com.campuslink.entity.DemoEntities.UserEntity;
 import com.campuslink.repository.AuthSessionRepository;
 import com.campuslink.repository.UserRepository;
 import com.campuslink.service.ActivityService;
+import com.campuslink.service.ActivityNotificationService;
 import com.campuslink.service.AuthTokenService;
 import com.campuslink.support.InMemoryActivityRepository;
+import com.campuslink.support.InMemoryActivityNotificationRepository;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,7 +57,8 @@ class ActivityControllerTest {
       public void updatePresence(String userId, String presence) {
       }
     };
-    ActivityService activityService = new ActivityService(new InMemoryActivityRepository());
+    ActivityService activityService = new ActivityService(new InMemoryActivityRepository(),
+        new ActivityNotificationService(new InMemoryActivityNotificationRepository()));
     AuthTokenService authTokenService = new AuthTokenService(authSessions, users);
     mockMvc = MockMvcBuilders.standaloneSetup(
         new ActivityController(activityService, authTokenService))

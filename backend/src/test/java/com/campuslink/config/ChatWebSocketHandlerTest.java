@@ -3,6 +3,7 @@ package com.campuslink.config;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.campuslink.dto.DemoDtos.MessageView;
+import com.campuslink.dto.ActivityNotificationDtos.NotificationView;
 import com.campuslink.entity.DemoEntities.UserEntity;
 import com.campuslink.repository.AuthSessionRepository;
 import com.campuslink.repository.UserRepository;
@@ -13,6 +14,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.security.Principal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,7 +30,7 @@ import org.springframework.web.socket.WebSocketSession;
 
 class ChatWebSocketHandlerTest {
 
-  private final ObjectMapper objectMapper = new ObjectMapper();
+  private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
   private final InMemoryAuthSessionRepository authSessions = new InMemoryAuthSessionRepository();
   private final AuthTokenService authTokenService = new AuthTokenService(
       authSessions,
@@ -82,6 +84,28 @@ class ChatWebSocketHandlerTest {
     assertThat(recipientEvent.path("type").asText()).isEqualTo("message.withdrawn");
     assertThat(recipientEvent.path("peerId").asText()).isEqualTo("u-1001");
     assertThat(recipientEvent.path("message").path("deleted").asBoolean()).isTrue();
+  }
+
+  @Test
+  void publishActivityNotificationSendsEventOnlyToRecipient() throws Exception {
+    TestWebSocketSession recipient = connectedSession("demo.recipient", "u-2002");
+    TestWebSocketSession other = connectedSession("demo.student", "u-1001");
+    NotificationView notification = new NotificationView(
+        "notification-1",
+        "activity-1",
+        "activity.registration.promoted",
+        "候补已递补",
+        "你已获得活动名额。",
+        false,
+        LocalDateTime.of(2026, 7, 12, 12, 0));
+
+    handler.publishActivityNotification("u-2002", notification);
+
+    JsonNode recipientEvent = recipient.sentJson(objectMapper).getFirst();
+    assertThat(recipientEvent.path("type").asText()).isEqualTo("activity.notification.created");
+    assertThat(recipientEvent.path("notification").path("id").asText())
+        .isEqualTo("notification-1");
+    assertThat(other.sentMessages).isEmpty();
   }
 
   @Test

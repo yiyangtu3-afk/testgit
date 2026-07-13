@@ -1,8 +1,9 @@
 import { mockStore, reportRanges, state } from "../state.js";
-import { nowTime } from "../utils/dom.js?v=20260712-activity-filters-v1";
+import { nowTime } from "../utils/dom.js?v=20260712-activity-notifications-v1";
 
 let mockAuditId = Date.now();
 let mockActivityId = Date.now();
+let mockActivityNotificationId = Date.now();
 
 export function accountById(userId) {
   return mockStore.accounts.find((account) => account.id === userId);
@@ -77,6 +78,19 @@ function submittedAt() {
       hour12: false
     })
     .replaceAll("/", "-");
+}
+
+function pushMockActivityNotification(recipientId, activity, type, title, body) {
+  mockStore.activityNotifications.unshift({
+    id: `notification-mock-${++mockActivityNotificationId}`,
+    recipientId,
+    activityId: activity.id,
+    type,
+    title,
+    body,
+    read: false,
+    createdAt: new Date().toISOString()
+  });
 }
 
 export const mockApi = {
@@ -427,11 +441,21 @@ export const mockApi = {
     });
     const status = active.length < Number(activity.capacity) ? "registered" : "waitlisted";
     const registration = { id: existing?.id || `mock-registration-${Date.now()}`, activityId,
+      attendeeId: state.currentUser.id,
       status, queuePosition: status === "waitlisted" ? 1 : 0,
       registeredAt: status === "registered" ? new Date().toISOString() : null,
       waitlistedAt: status === "waitlisted" ? new Date().toISOString() : null };
     mockStore.activityRegistrations[key] = registration;
     if (status === "registered" && active.length + 1 >= Number(activity.capacity)) activity.status = "full";
+    pushMockActivityNotification(
+      state.currentUser.id,
+      activity,
+      `activity.registration.${status}`,
+      status === "registered" ? "活动报名成功" : "已加入活动候补",
+      status === "registered"
+        ? `你已成功报名“${activity.title}”。`
+        : `“${activity.title}”当前已满，你位于候补第 ${registration.queuePosition} 位。`
+    );
     return { ...registration };
   },
   async cancelActivityRegistration(activityId) {
@@ -444,7 +468,20 @@ export const mockApi = {
       const next = Object.values(mockStore.activityRegistrations).find((item) => {
         return item.activityId === activityId && item.status === "waitlisted";
       });
-      if (next) next.status = "registered";
+      if (next) {
+        next.status = "registered";
+        next.queuePosition = 0;
+        const activity = mockStore.activities.find((item) => item.id === activityId);
+        if (activity) {
+          pushMockActivityNotification(
+            next.attendeeId,
+            activity,
+            "activity.registration.promoted",
+            "候补已递补",
+            `“${activity.title}”已释放名额，你已获得活动名额。`
+          );
+        }
+      }
       else {
         const activity = mockStore.activities.find((item) => item.id === activityId);
         if (activity) activity.status = "published";
@@ -477,11 +514,35 @@ export const mockApi = {
     activity.reviewerId = state.currentUser.id;
     activity.reviewerName = state.currentUser.name;
     activity.reviewedAt = new Date().toISOString();
+    pushMockActivityNotification(
+      activity.organizerId,
+      activity,
+      decision === "approve" ? "activity.review.approved" : "activity.review.rejected",
+      decision === "approve" ? "活动已发布" : "活动审核未通过",
+      decision === "approve"
+        ? `你提交的“${activity.title}”已通过审核并公开发布。`
+        : `你提交的“${activity.title}”未通过审核。原因：${activity.reviewReason}`
+    );
     pushMockAudit(
       "活动",
       `${state.currentUser.name}${decision === "approve" ? "通过" : "拒绝"}活动“${activity.title}”`
     );
     return { ...activity };
+  },
+  async activityNotifications() {
+    const items = mockStore.activityNotifications
+      .filter((notification) => notification.recipientId === state.currentUser.id)
+      .map(({ recipientId, ...notification }) => ({ ...notification }));
+    return {
+      items,
+      unreadCount: items.filter((notification) => !notification.read).length
+    };
+  },
+  async markAllActivityNotificationsRead() {
+    mockStore.activityNotifications.forEach((notification) => {
+      if (notification.recipientId === state.currentUser.id) notification.read = true;
+    });
+    return this.activityNotifications();
   },
   async metrics() {
     const pendingModeration = mockStore.moderationItems.filter((item) => item.status === "pending").length;

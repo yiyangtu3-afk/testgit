@@ -1,19 +1,20 @@
 # CampusLink 阶段二活动报名交接
 
 本文交接 CampusLink 的稳定基线和下一阶段工作。活动创建与审核、学生报名与
-候补，以及时间和类别筛选已经完成；下一项进入持久化通知与 WebSocket 推送，
-不要重做已完成的聊天、动态、内容审核和活动报名链路。
+候补、时间与类别筛选，以及持久化通知与 WebSocket 推送已经完成；下一项进入
+组织者名单、签到、导出与真实管理指标，不要重做已完成的聊天、动态、内容审核
+和活动报名链路。
 
 ## 稳定基线
 
-本轮实现继承 `92c6146 Add activity registration and waitlist workflow`。远程
+本轮实现继承 `f5b1cc4 Add activity date and category filters`。远程
 仓库是 `https://github.com/yiyangtu3-afk/testgit.git`，使用 `main` 分支；最新
 活动实现提交以 `main` 的最新提交为准。
 
-静态前端版本为 `20260712-activity-filters-v1`，本地地址为：
+静态前端版本为 `20260712-activity-notifications-v1`，本地地址为：
 
 ```text
-http://127.0.0.1:5179/?v=20260712-activity-filters-v1
+http://127.0.0.1:5179/?v=20260712-activity-notifications-v1
 ```
 
 后端本地地址为：
@@ -104,6 +105,13 @@ http://127.0.0.1:8080
 - Mock 与 MySQL 种子账号都增加 `u-2004` 社团负责人 **王社长**。
 - 学生活动页支持包含边界日期的时间范围和精确类别筛选；空结果、清除筛选和
   当前报名或候补状态都有明确反馈。
+- 独立通知中心展示审核、报名、候补和递补结果，支持未读计数与全部已读。
+- 通知先与活动业务结果一同写入 MySQL，事务成功提交后才向收件人发送
+  `activity.notification.created` WebSocket 事件。
+- WebSocket 复用已认证的 `/ws/chat` 传输，但通知持久化领域不依赖聊天、动态
+  或管理员服务。
+- 用户离线时产生的通知会在下次登录后从 Java API 恢复；live API 错误不会
+  回退到 Mock 通知。
 
 ## 当前验证记录
 
@@ -149,12 +157,22 @@ http://127.0.0.1:8080
     `@Transactional` 与 `@Rollback`；完整 Maven 测试 91 个全部通过。浏览器以
     Java API 和历史 MySQL 数据验证活动页，并回归管理员后台、动态和聊天页。
     `state.js` 继续保持无版本参数，同时新增旧缓存缺少筛选状态的兼容测试。
+17. 2026 年 7 月 12 日完成活动通知闭环：新增 `activity_notifications` 表、
+    当前用户通知 API、全部已读操作和提交后 WebSocket 推送。审核同意与拒绝、
+    报名成功、加入候补和递补都在原业务事务内写通知；1 个真实 MySQL
+    `@Transactional`/`@Rollback` 集成测试覆盖完整候补递补与已读流程。完整
+    Maven 测试 97 个全部通过，无失败、错误或跳过，仅输出 Microsoft JDK 21
+    的 Mockito/Byte Buddy 动态代理兼容性警告。前端检查通过，浏览器以真实
+    Java API 验证教师审核通知、学生实时报名与候补通知、离线递补恢复和全部
+    已读，并回归管理员后台、动态审核反馈与聊天页；MySQL 历史数据未重置，
+    浏览器控制台无错误。前端版本升级为
+    `20260712-activity-notifications-v1`，共享 `state.js` 导入仍无查询参数。
 
 ## 下一项工作
 
-下一项实现审核、报名、候补和递补的持久化通知与 WebSocket 推送。通知必须在
-业务事务提交后可追溯，前端显示未读状态和明确结果；不要在这一切片加入组织者
-名单、签到或导出。
+下一项实现组织者报名名单、签到和导出，并把管理员活动报名与签到指标改为真实
+数据。必须继续从 bearer token 解析组织者身份，限制组织者只能管理自己的活动，
+签到与事件历史的跨表写入使用事务，并为 MyBatis 变更保留可回滚集成测试。
 
 ## 必读文件
 

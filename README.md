@@ -17,7 +17,8 @@ Open the local demo in a browser:
 ./script/run_frontend_demo.sh
 ```
 
-Then visit `http://127.0.0.1:5179/?v=20260712-activity-filters-v1`.
+Then visit
+`http://127.0.0.1:5179/?v=20260712-activity-notifications-v1`.
 
 The demo supports these flows:
 
@@ -46,6 +47,10 @@ The demo supports these flows:
 - Filter published activities by an inclusive start-date range and category,
   register while a slot is available, see a waitlist state when full, and
   cancel a current registration.
+- Receive persistent in-app notifications when an activity is approved or
+  rejected, a registration succeeds or enters the waitlist, or a waitlisted
+  student is promoted. The notification rail shows an unread count, and the
+  notification center supports marking every item as read.
 - Switch online and invisible presence states.
 - Publish a campus feed post.
 - Open personal post management from the campus feed and edit or delete your
@@ -114,13 +119,14 @@ the demo flows connected. The backend test suite covers the migrated service
 behavior for login, user search, friend requests, accepted friendships, chat
 messages, chat attachments, feed posts, comments, moderation, and audit
 records. Activity tests cover organizer permissions, review transitions,
-date/category filters, HTTP boundaries, MyBatis mapping, and rollback-safe
-review history. The suite also includes MockMvc controller tests for the auth,
-users, friends, chat, feed, and admin API boundary, plus direct WebSocket
-handler tests for chat heartbeat and broadcast behavior. Repository integration
-tests connect to the local MySQL
-database without running `schema.sql` or `data.sql`; each test transaction
-rolls back, so existing demo history stays unchanged.
+date/category filters, registration and waitlist promotion, persistent
+notifications, HTTP boundaries, MyBatis mapping, and rollback-safe history.
+The suite also includes MockMvc controller tests for the auth, users, friends,
+chat, feed, activity notifications, and admin API boundary, plus direct
+WebSocket handler tests for chat and recipient-only activity notification
+events. Repository integration tests connect to the local MySQL database
+without running `schema.sql` or `data.sql`; each test transaction rolls back,
+so existing demo history stays unchanged.
 
 ## Local live API acceptance
 
@@ -136,6 +142,14 @@ combined empty results, clearing filters, and restoring registration state all
 worked without falling back to Mock. The administrator console, feed review
 feedback, and chat page were also checked after the UI change.
 
+The same day, the complete activity notification path was verified with the
+Java API and existing MySQL data. A teacher received the approval result, one
+student received a live registration result, and a second student received a
+waitlist result followed by a persisted promotion result after returning
+online. Unread counts and **mark all read** survived account switches. The
+administrator console, moderation feedback, and chat page remained usable,
+and the browser console reported no errors.
+
 ## Frontend structure
 
 The browser demo is still served as static files, but the JavaScript is split
@@ -149,6 +163,8 @@ The frontend uses this module layout:
 - `chat`: Chat-specific rendering.
 - `activities`: Activity filters, list, registration, submission, status, and
   admin review UI.
+- `notifications`: Persistent activity notification state, rendering,
+  read-all interaction, and WebSocket event handling.
 - `contacts`: Friend and contact workflows are wired through shared loaders and
   contact renderers.
 - `posts`: Campus feed rendering.
@@ -167,8 +183,8 @@ access, interface models, and configuration in separate packages.
 The backend uses this package layout:
 
 - `controller`: HTTP routes and request validation entrypoints.
-- `service`: Business logic for auth, friends, chat, feed, activities, admin,
-  and audit.
+- `service`: Business logic for auth, friends, chat, feed, activities, activity
+  notifications, admin, and audit.
 - `mapper`: MyBatis mapper interfaces for mapper-based persistence.
 - `repository`: Repository interfaces and MyBatis-backed implementations for
   users, verification codes, friends, chat, feed, activities, moderation,
@@ -205,9 +221,11 @@ that Java can reach MySQL.
 The MySQL persistence migration is complete for the current demo. Users,
 verification codes, friend requests, friendships, presence updates, chat
 messages, chat attachment metadata, feed posts, comments, moderation items,
-activities, activity review history, audit events, demo auth sessions, and the
-health check all use MyBatis mapper-backed data access. The seed data also
-removes stale pending friend requests when the same users are already friends.
+activities, activity review history, activity registrations, activity
+registration events, activity notifications, audit events, demo auth sessions,
+and the health check all use MyBatis mapper-backed data access. The seed data
+also removes stale pending friend requests when the same users are already
+friends.
 
 The current backend exposes these API paths:
 
@@ -237,6 +255,8 @@ The current backend exposes these API paths:
 - `GET /api/activities/{activityId}/registrations/current`
 - `POST /api/activities/{activityId}/registrations`
 - `DELETE /api/activities/{activityId}/registrations/current`
+- `GET /api/activity-notifications`
+- `POST /api/activity-notifications/read-all`
 - `GET /api/admin/activities/pending`
 - `POST /api/admin/activities/{activityId}/reviews`
 - `GET /api/admin/metrics`

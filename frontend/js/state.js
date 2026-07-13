@@ -37,6 +37,9 @@ export const state = {
   pendingActivities: [],
   activityNotice: null,
   activityReviewNotice: null,
+  activityNotifications: [],
+  activityNotificationUnreadCount: 0,
+  activityNotificationNotice: null,
   metrics: {},
   moderationItems: [],
   moderationFilter: "all",
@@ -195,6 +198,7 @@ export const mockStore = {
     }
   ],
   activityRegistrations: {},
+  activityNotifications: [],
   auditEvents: [
     { id: "a-mock-1", time: "09:18", module: "用户", event: "13800000001 登录成功" },
     { id: "a-mock-2", time: "09:24", module: "聊天", event: "林一向陈老师发送消息" },

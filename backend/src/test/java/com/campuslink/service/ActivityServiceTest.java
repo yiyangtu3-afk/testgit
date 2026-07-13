@@ -8,13 +8,18 @@ import com.campuslink.dto.ActivityDtos.ReviewActivityRequest;
 import com.campuslink.entity.ActivityReviewEntity;
 import com.campuslink.entity.DemoEntities.UserEntity;
 import com.campuslink.support.InMemoryActivityRepository;
+import com.campuslink.support.InMemoryActivityNotificationRepository;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.Test;
 
 class ActivityServiceTest {
 
   private final InMemoryActivityRepository repository = new InMemoryActivityRepository();
-  private final ActivityService service = new ActivityService(repository);
+  private final InMemoryActivityNotificationRepository notificationRepository =
+      new InMemoryActivityNotificationRepository();
+  private final ActivityNotificationService notifications =
+      new ActivityNotificationService(notificationRepository);
+  private final ActivityService service = new ActivityService(repository, notifications);
 
   @Test
   void teacherSubmitsPendingActivityAsAuthenticatedOrganizer() {
@@ -49,6 +54,14 @@ class ActivityServiceTest {
     assertThat(published.status()).isEqualTo("published");
     assertThat(published.reviewDecision()).isEqualTo("approved");
     assertThat(published.reviewerId()).isEqualTo("u-admin");
+    assertThat(notifications.summary(teacher).items())
+        .singleElement()
+        .satisfies(notification -> {
+          assertThat(notification.type()).isEqualTo("activity.review.approved");
+          assertThat(notification.title()).isEqualTo("活动已发布");
+          assertThat(notification.body()).contains("校园编程工作坊");
+          assertThat(notification.read()).isFalse();
+        });
   }
 
   @Test
@@ -68,6 +81,13 @@ class ActivityServiceTest {
     assertThat(repository.findReviews(pending.id()))
         .extracting(ActivityReviewEntity::decision)
         .containsExactly("submitted", "rejected");
+    assertThat(notifications.summary(teacher).items())
+        .singleElement()
+        .satisfies(notification -> {
+          assertThat(notification.type()).isEqualTo("activity.review.rejected");
+          assertThat(notification.title()).isEqualTo("活动审核未通过");
+          assertThat(notification.body()).contains("场地审批材料不完整");
+        });
   }
 
   @Test

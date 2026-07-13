@@ -1,6 +1,6 @@
 import { API_BASE, state } from "../state.js";
-import { setApiMode } from "../ui/status.js?v=20260712-activity-filters-v1";
-import { mockApi } from "./mock-api.js?v=20260712-activity-filters-v1";
+import { setApiMode } from "../ui/status.js?v=20260712-activity-notifications-v1";
+import { mockApi } from "./mock-api.js?v=20260712-activity-notifications-v1";
 
 class ApiUnavailableError extends Error {
   constructor(cause) {
@@ -235,6 +235,18 @@ export const api = {
         body: JSON.stringify({ decision, reason })
       }),
       () => mockApi.reviewActivity(activityId, decision, reason)
+    );
+  },
+  activityNotifications() {
+    return withApi(
+      () => request("/activity-notifications"),
+      () => mockApi.activityNotifications()
+    );
+  },
+  markAllActivityNotificationsRead() {
+    return withApi(
+      () => request("/activity-notifications/read-all", { method: "POST" }),
+      () => mockApi.markAllActivityNotificationsRead()
     );
   },
   metrics() {

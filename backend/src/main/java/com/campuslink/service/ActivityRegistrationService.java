@@ -14,11 +14,15 @@ public class ActivityRegistrationService {
 
   private final ActivityRepository activities;
   private final ActivityRegistrationRepository registrations;
+  private final ActivityNotificationService notifications;
 
   public ActivityRegistrationService(
-      ActivityRepository activities, ActivityRegistrationRepository registrations) {
+      ActivityRepository activities,
+      ActivityRegistrationRepository registrations,
+      ActivityNotificationService notifications) {
     this.activities = activities;
     this.registrations = registrations;
+    this.notifications = notifications;
   }
 
   @Transactional
@@ -44,8 +48,10 @@ public class ActivityRegistrationService {
     if ("registered".equals(status) && registrations.countOccupied(activityId) == activity.capacity()) {
       activities.updateRegistrationStatus(activityId, "full");
     }
-    return view(registration, status,
-        "waitlisted".equals(status) ? registrations.queuePosition(registration.id()) : 0);
+    int queuePosition = "waitlisted".equals(status)
+        ? registrations.queuePosition(registration.id()) : 0;
+    notifications.recordRegistrationResult(activity, attendee.id(), status, queuePosition);
+    return view(registration, status, queuePosition);
   }
 
   public RegistrationView current(UserEntity attendee, String activityId) {
@@ -79,6 +85,7 @@ public class ActivityRegistrationService {
         registrations.updateStatus(next.id(), "registered");
         registrations.addEvent(next.id(), activityId, next.attendeeId(), attendee.id(), "promoted",
             "waitlisted", "registered");
+        notifications.recordPromotion(activity, next.attendeeId());
       }
     }
     return new RegistrationView(registration.id(), activityId, "cancelled", 0,

@@ -193,3 +193,16 @@ create table if not exists activity_registration_events (
   key idx_activity_registration_events_activity (activity_id, created_at),
   key idx_activity_registration_events_registration (registration_id, created_at)
 );
+
+create table if not exists activity_notifications (
+  id varchar(32) primary key,
+  recipient_id varchar(32) not null,
+  activity_id varchar(32) not null,
+  notification_type varchar(60) not null,
+  title varchar(120) not null,
+  body varchar(1000) not null,
+  read_at datetime(6) null,
+  created_at timestamp(6) not null default current_timestamp(6),
+  key idx_activity_notifications_recipient (recipient_id, created_at),
+  key idx_activity_notifications_unread (recipient_id, read_at, created_at)
+);

@@ -1,6 +1,8 @@
 package com.campuslink.config;
 
 import com.campuslink.dto.DemoDtos.MessageView;
+import com.campuslink.dto.ActivityNotificationDtos.NotificationView;
+import com.campuslink.service.ActivityNotificationRealtimePublisher;
 import com.campuslink.service.AuthTokenService;
 import com.campuslink.service.ChatRealtimeNotifier;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -20,7 +22,8 @@ import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 @Component
-public class ChatWebSocketHandler extends TextWebSocketHandler implements ChatRealtimeNotifier {
+public class ChatWebSocketHandler extends TextWebSocketHandler
+    implements ChatRealtimeNotifier, ActivityNotificationRealtimePublisher {
 
   private static final String USER_ID_ATTRIBUTE = "userId";
 
@@ -88,6 +91,12 @@ public class ChatWebSocketHandler extends TextWebSocketHandler implements ChatRe
     publishConversationEvent("message.withdrawn", peerId, message);
   }
 
+  @Override
+  public void publishActivityNotification(String recipientId, NotificationView notification) {
+    send(recipientId, new ActivityNotificationRealtimeEvent(
+        "activity.notification.created", notification));
+  }
+
   private void publishConversationEvent(String type, String peerId, MessageView message) {
     send(message.from(), new ChatRealtimeEvent(type, peerId, message));
     if (!peerId.equals(message.from())) {
@@ -95,7 +104,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler implements ChatRe
     }
   }
 
-  private void send(String userId, ChatRealtimeEvent event) {
+  private void send(String userId, Object event) {
     Set<WebSocketSession> sessions = sessionsByUser.getOrDefault(userId, Set.of());
     for (WebSocketSession session : sessions) {
       if (!session.isOpen()) {
@@ -142,6 +151,10 @@ public class ChatWebSocketHandler extends TextWebSocketHandler implements ChatRe
   }
 
   private record ChatRealtimeEvent(String type, String peerId, MessageView message) {
+  }
+
+  private record ActivityNotificationRealtimeEvent(
+      String type, NotificationView notification) {
   }
 
   private record HeartbeatEvent(String type) {

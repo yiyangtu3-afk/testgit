@@ -15,9 +15,13 @@ import org.springframework.transaction.annotation.Transactional;
 public class ActivityService {
 
   private final ActivityRepository activityRepository;
+  private final ActivityNotificationService notifications;
 
-  public ActivityService(ActivityRepository activityRepository) {
+  public ActivityService(
+      ActivityRepository activityRepository,
+      ActivityNotificationService notifications) {
     this.activityRepository = activityRepository;
+    this.notifications = notifications;
   }
 
   @Transactional
@@ -99,9 +103,10 @@ public class ActivityService {
       throw new IllegalArgumentException("活动已完成审核");
     }
     activityRepository.addReview(activityId, reviewer.id(), storedDecision, reason);
-    return activityRepository.findById(activityId)
-        .map(this::toView)
+    ActivityEntity reviewed = activityRepository.findById(activityId)
         .orElseThrow(() -> new IllegalStateException("活动审核结果读取失败"));
+    notifications.recordReviewResult(reviewed);
+    return toView(reviewed);
   }
 
   private void requireOrganizer(UserEntity user) {

@@ -1,11 +1,11 @@
 import { mockStore, state } from "../state.js";
-import { api } from "../api/client.js?v=20260712-activity-filters-v1";
-import { accountById, pushMockAudit } from "../api/mock-api.js?v=20260712-activity-filters-v1";
-import { $ } from "../utils/dom.js?v=20260712-activity-filters-v1";
-import { setApiMode, setRealtimeMode, setStatus } from "../ui/status.js?v=20260712-activity-filters-v1";
-import { renderAccountSwitch, renderAttachmentTray, renderExportPanel, renderIdentity, renderMessages } from "../ui/renderers.js?v=20260712-activity-filters-v1";
-import { loadActivities, loadAdminData, loadConversationPreviews, loadFeed, loadFriendRequests, loadFriends, loadMessages, loadUnreadCounts, loadUsers } from "../loaders.js?v=20260712-activity-filters-v1";
-import { connectChatRealtime, disconnectChatRealtime } from "../chat/realtime.js?v=20260712-activity-filters-v1";
+import { api } from "../api/client.js?v=20260712-activity-notifications-v1";
+import { accountById, pushMockAudit } from "../api/mock-api.js?v=20260712-activity-notifications-v1";
+import { $ } from "../utils/dom.js?v=20260712-activity-notifications-v1";
+import { setApiMode, setRealtimeMode, setStatus } from "../ui/status.js?v=20260712-activity-notifications-v1";
+import { renderAccountSwitch, renderAttachmentTray, renderExportPanel, renderIdentity, renderMessages } from "../ui/renderers.js?v=20260712-activity-notifications-v1";
+import { loadActivities, loadActivityNotifications, loadAdminData, loadConversationPreviews, loadFeed, loadFriendRequests, loadFriends, loadMessages, loadUnreadCounts, loadUsers } from "../loaders.js?v=20260712-activity-notifications-v1";
+import { connectChatRealtime, disconnectChatRealtime } from "../chat/realtime.js?v=20260712-activity-notifications-v1";
 
 export async function bootstrapWorkspace() {
   renderAccountSwitch();
@@ -16,7 +16,7 @@ export async function bootstrapWorkspace() {
   await loadConversationPreviews();
   await loadUnreadCounts();
   await loadMessages();
-  await Promise.all([loadFeed(), loadActivities(), loadAdminData()]);
+  await Promise.all([loadFeed(), loadActivities(), loadActivityNotifications(), loadAdminData()]);
   renderMessages();
 }
 
@@ -44,6 +44,9 @@ export async function switchAccount(userId) {
   state.pendingActivities = [];
   state.activityNotice = null;
   state.activityReviewNotice = null;
+  state.activityNotifications = [];
+  state.activityNotificationUnreadCount = 0;
+  state.activityNotificationNotice = null;
   state.moderationFilter = "all";
   state.selectedModerationIds = new Set();
   state.reviewingModerationId = "";
@@ -90,6 +93,9 @@ export function logout() {
   state.pendingActivities = [];
   state.activityNotice = null;
   state.activityReviewNotice = null;
+  state.activityNotifications = [];
+  state.activityNotificationUnreadCount = 0;
+  state.activityNotificationNotice = null;
   state.metrics = {};
   state.moderationItems = [];
   state.moderationFilter = "all";

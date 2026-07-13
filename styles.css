@@ -437,7 +437,7 @@ select:focus {
 
 .rail {
   display: grid;
-  grid-template-rows: 82px repeat(4, 48px) 1fr;
+  grid-template-rows: 82px repeat(5, 48px) 1fr;
   justify-items: center;
   gap: 10px;
   min-height: 0;
@@ -479,6 +479,27 @@ select:focus {
 .rail-button.is-active {
   background: var(--black);
   color: var(--white);
+}
+
+.rail-button--notification {
+  position: relative;
+}
+
+.rail-button--notification strong {
+  position: absolute;
+  top: -4px;
+  right: -5px;
+  display: grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border: 2px solid #f7f7f8;
+  border-radius: 999px;
+  background: #c83232;
+  color: var(--white);
+  font-size: 9px;
+  line-height: 1;
 }
 
 .sidebar {
@@ -942,7 +963,8 @@ select:focus {
 }
 
 .is-feed,
-.is-activities {
+.is-activities,
+.is-notifications {
   grid-template-rows: auto auto minmax(0, 1fr);
   padding-bottom: 24px;
   overflow: auto;
@@ -957,6 +979,164 @@ select:focus {
 .is-activities {
   grid-template-rows: auto minmax(0, 1fr);
   padding-bottom: 0;
+}
+
+.is-notifications {
+  grid-template-rows: auto minmax(0, 1fr);
+  padding-bottom: 0;
+}
+
+.notification-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.notification-header-actions > span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.notification-header-actions strong {
+  color: var(--ink);
+  font-size: 18px;
+}
+
+.notification-stage {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  min-height: 0;
+  padding: 28px 32px 42px;
+  overflow: auto;
+}
+
+.notification-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 0.55fr);
+  align-items: end;
+  gap: 32px;
+  padding: 28px 30px;
+  border-radius: 22px;
+  background: var(--black);
+  color: var(--white);
+}
+
+.notification-intro .section-kicker {
+  grid-column: 1 / -1;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.notification-intro h3 {
+  margin: 0;
+  max-width: 560px;
+  font-size: clamp(28px, 3.2vw, 48px);
+  line-height: 1.08;
+}
+
+.notification-intro > p:last-child {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.notification-list {
+  display: grid;
+  gap: 10px;
+}
+
+.notification-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 16px;
+  padding: 20px 22px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.notification-card--unread {
+  border-color: rgba(20, 20, 22, 0.38);
+  background: var(--surface-strong);
+  box-shadow: 0 12px 34px rgba(20, 20, 22, 0.07);
+}
+
+.notification-marker {
+  width: 9px;
+  height: 9px;
+  margin-top: 5px;
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+  background: transparent;
+}
+
+.notification-card--unread .notification-marker {
+  background: var(--ink);
+}
+
+.notification-copy {
+  min-width: 0;
+}
+
+.notification-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.notification-meta span {
+  color: var(--ink);
+  text-transform: uppercase;
+}
+
+.notification-copy h3 {
+  margin: 8px 0 0;
+  font-size: 18px;
+}
+
+.notification-copy > p {
+  margin: 7px 0 0;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.notification-read-state {
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.notification-card--unread .notification-read-state {
+  background: var(--black);
+  color: var(--white);
+}
+
+.notification-empty {
+  padding: 42px 24px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 18px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.notification-empty strong {
+  color: var(--ink);
+  font-size: 17px;
+}
+
+.notification-empty p {
+  margin: 8px 0 0;
 }
 
 .activity-header-note {
@@ -2367,7 +2547,7 @@ select:focus {
   }
 
   .rail {
-    grid-template-columns: 82px repeat(4, 48px) 1fr;
+    grid-template-columns: 82px repeat(5, 48px) 1fr;
     grid-template-rows: auto;
     justify-items: start;
     padding: 12px;
@@ -2390,6 +2570,23 @@ select:focus {
   .stage-header {
     align-items: start;
     flex-direction: column;
+  }
+
+  .notification-intro {
+    grid-template-columns: 1fr;
+  }
+
+  .notification-stage {
+    padding: 20px 18px 32px;
+  }
+
+  .notification-card {
+    grid-template-columns: 12px minmax(0, 1fr);
+  }
+
+  .notification-read-state {
+    grid-column: 2;
+    justify-self: start;
   }
 
   .activity-field--wide {

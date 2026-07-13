@@ -7,6 +7,7 @@ import com.campuslink.dto.ActivityDtos.CreateActivityRequest;
 import com.campuslink.dto.ActivityDtos.ReviewActivityRequest;
 import com.campuslink.entity.DemoEntities.UserEntity;
 import com.campuslink.support.InMemoryActivityRegistrationRepository;
+import com.campuslink.support.InMemoryActivityNotificationRepository;
 import com.campuslink.support.InMemoryActivityRepository;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,12 +17,17 @@ class ActivityRegistrationServiceTest {
   private final InMemoryActivityRepository activities = new InMemoryActivityRepository();
   private final InMemoryActivityRegistrationRepository registrations =
       new InMemoryActivityRegistrationRepository();
+  private final InMemoryActivityNotificationRepository notificationRepository =
+      new InMemoryActivityNotificationRepository();
+  private final ActivityNotificationService notifications =
+      new ActivityNotificationService(notificationRepository);
   private final ActivityRegistrationService service =
-      new ActivityRegistrationService(activities, registrations);
+      new ActivityRegistrationService(activities, registrations, notifications);
   private String activityId;
 
   @BeforeEach void publishCapacityOneActivity() {
-    var activityService = new ActivityService(activities);
+    var activityService = new ActivityService(activities,
+        new ActivityNotificationService(new InMemoryActivityNotificationRepository()));
     var teacher = user("u-teacher", "教师");
     var admin = user("u-admin", "管理员");
     var pending = activityService.create(teacher, new CreateActivityRequest("测试活动", "测试报名",
@@ -32,20 +38,41 @@ class ActivityRegistrationServiceTest {
   }
 
   @Test void firstStudentRegistersAndNextStudentWaitlists() {
-    assertThat(service.register(user("u-one", "学生"), activityId).status()).isEqualTo("registered");
-    var waitlisted = service.register(user("u-two", "学生"), activityId);
+    var firstStudent = user("u-one", "学生");
+    var secondStudent = user("u-two", "学生");
+    assertThat(service.register(firstStudent, activityId).status()).isEqualTo("registered");
+    var waitlisted = service.register(secondStudent, activityId);
     assertThat(waitlisted.status()).isEqualTo("waitlisted");
     assertThat(waitlisted.queuePosition()).isEqualTo(1);
     assertThat(activities.findById(activityId).orElseThrow().status()).isEqualTo("full");
+    assertThat(notifications.summary(firstStudent).items())
+        .singleElement()
+        .extracting("type", "title")
+        .containsExactly("activity.registration.registered", "活动报名成功");
+    assertThat(notifications.summary(secondStudent).items())
+        .singleElement()
+        .satisfies(notification -> {
+          assertThat(notification.type()).isEqualTo("activity.registration.waitlisted");
+          assertThat(notification.title()).isEqualTo("已加入活动候补");
+          assertThat(notification.body()).contains("第 1 位");
+        });
   }
 
   @Test void cancellationPromotesOldestWaitlistedStudent() {
-    service.register(user("u-one", "学生"), activityId);
-    service.register(user("u-two", "学生"), activityId);
-    service.cancel(user("u-one", "学生"), activityId);
+    var firstStudent = user("u-one", "学生");
+    var waitlistedStudent = user("u-two", "学生");
+    service.register(firstStudent, activityId);
+    service.register(waitlistedStudent, activityId);
+    service.cancel(firstStudent, activityId);
     assertThat(registrations.find(activityId, "u-two").status()).isEqualTo("registered");
     assertThat(registrations.findEvents(activityId)).extracting("eventType")
         .containsExactly("registered", "waitlisted", "cancelled", "promoted");
+    assertThat(notifications.summary(waitlistedStudent).items().getFirst())
+        .satisfies(notification -> {
+          assertThat(notification.type()).isEqualTo("activity.registration.promoted");
+          assertThat(notification.title()).isEqualTo("候补已递补");
+          assertThat(notification.body()).contains("已获得活动名额");
+        });
   }
 
   @Test void duplicateRegistrationIsRejected() {
