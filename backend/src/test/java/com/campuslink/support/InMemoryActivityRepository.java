@@ -62,8 +62,15 @@ public final class InMemoryActivityRepository implements ActivityRepository {
   }
 
   @Override
+  public Optional<ActivityEntity> findByIdForUpdate(String activityId) {
+    return findById(activityId);
+  }
+
+  @Override
   public List<ActivityEntity> findPublished() {
-    return activities.stream().filter(activity -> "published".equals(activity.status())).toList();
+    return activities.stream()
+        .filter(activity -> "published".equals(activity.status()) || "full".equals(activity.status()))
+        .toList();
   }
 
   @Override
@@ -103,6 +110,23 @@ public final class InMemoryActivityRepository implements ActivityRepository {
         "教务管理员",
         LocalDateTime.of(2026, 7, 10, 10, 0),
         activity.createdAt());
+    activities.set(activities.indexOf(activity), updated);
+    return 1;
+  }
+
+  @Override
+  public int updateRegistrationStatus(String activityId, String status) {
+    Optional<ActivityEntity> current = findById(activityId)
+        .filter(activity -> "published".equals(activity.status()) || "full".equals(activity.status()));
+    if (current.isEmpty()) {
+      return 0;
+    }
+    ActivityEntity activity = current.get();
+    ActivityEntity updated = new ActivityEntity(
+        activity.id(), activity.title(), activity.description(), activity.category(), activity.location(),
+        activity.startsAt(), activity.endsAt(), activity.capacity(), activity.organizerId(),
+        activity.organizerName(), status, activity.reviewDecision(), activity.reviewReason(),
+        activity.reviewerId(), activity.reviewerName(), activity.reviewedAt(), activity.createdAt());
     activities.set(activities.indexOf(activity), updated);
     return 1;
   }

@@ -22,6 +22,8 @@ public interface ActivityRepository {
 
   Optional<ActivityEntity> findById(String activityId);
 
+  Optional<ActivityEntity> findByIdForUpdate(String activityId);
+
   List<ActivityEntity> findPublished();
 
   List<ActivityEntity> findPending();
@@ -32,6 +34,8 @@ public interface ActivityRepository {
       String decision,
       String reason,
       String reviewerId);
+
+  int updateRegistrationStatus(String activityId, String status);
 
   List<ActivityReviewEntity> findReviews(String activityId);
 }

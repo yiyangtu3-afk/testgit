@@ -17,7 +17,7 @@ Open the local demo in a browser:
 ./script/run_frontend_demo.sh
 ```
 
-Then visit `http://127.0.0.1:5179/?v=20260711-activity-review-layout-v2`.
+Then visit `http://127.0.0.1:5179/?v=20260711-activity-registration-v1`.
 
 The demo supports these flows:
 
@@ -43,6 +43,8 @@ The demo supports these flows:
   as a standard file card. The demo doesn't show image bubbles or large image
   previews.
 - Withdraw the latest message sent by the current user.
+- Browse activities as a student, register while a slot is available, see a
+  waitlist state when full, and cancel a current registration.
 - Switch online and invisible presence states.
 - Publish a campus feed post.
 - Open personal post management from the campus feed and edit or delete your
@@ -223,6 +225,9 @@ The current backend exposes these API paths:
 - `POST /api/feed/{postId}/comments`
 - `GET /api/activities`
 - `POST /api/activities`
+- `GET /api/activities/{activityId}/registrations/current`
+- `POST /api/activities/{activityId}/registrations`
+- `DELETE /api/activities/{activityId}/registrations/current`
 - `GET /api/admin/activities/pending`
 - `POST /api/admin/activities/{activityId}/reviews`
 - `GET /api/admin/metrics`
@@ -240,6 +245,11 @@ supplies the organizer, and only a role containing `教师` or `社团负责人`
 create an activity. New activities enter `pending`. Only an administrator can
 approve them into `published` or reject them back to `draft`; rejection keeps
 the reason in current activity state and append-only review history.
+
+Student registration uses the authenticated bearer token and never accepts an
+attendee ID. The service locks an activity while it assigns capacity, writes a
+current registration and an append-only registration event in one transaction,
+and promotes the oldest waitlisted attendee when a registered student cancels.
 
 Chat messages accept optional attachment metadata in the message payload. The
 current demo stores file name, size, MIME type, and display kind only; it

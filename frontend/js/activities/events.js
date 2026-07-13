@@ -1,12 +1,37 @@
-import { api } from "../api/client.js?v=20260711-activity-review-layout-v2";
-import { loadActivities, loadPendingActivities } from "../loaders.js?v=20260711-activity-review-layout-v2";
+import { api } from "../api/client.js?v=20260711-activity-registration-v1";
+import { loadActivities, loadPendingActivities } from "../loaders.js?v=20260711-activity-registration-v1";
 import { state } from "../state.js";
-import { $ } from "../utils/dom.js?v=20260711-activity-review-layout-v2";
-import { renderActivities, renderPendingActivities } from "./renderers.js?v=20260711-activity-review-layout-v2";
+import { $ } from "../utils/dom.js?v=20260711-activity-registration-v1";
+import { renderActivities, renderPendingActivities } from "./renderers.js?v=20260711-activity-registration-v1";
 
 export function bindActivityEvents() {
   $("#activityForm").addEventListener("submit", submitActivity);
+  $("#activityList").addEventListener("click", updateRegistration);
   $("#activityReviewPanel").addEventListener("click", reviewActivity);
+}
+
+async function updateRegistration(event) {
+  const button = event.target.closest("[data-activity-registration]");
+  if (!button) return;
+  const activityId = button.dataset.activityRegistration;
+  const action = button.dataset.action;
+  button.disabled = true;
+  try {
+    const registration = action === "cancel"
+      ? await api.cancelActivityRegistration(activityId)
+      : await api.registerActivity(activityId);
+    state.activityRegistrations[activityId] = registration;
+    state.activityNotice = { kind: "success", message: registration.status === "registered"
+      ? "报名成功，已为你保留名额。" : registration.status === "waitlisted"
+        ? `活动已满，你已进入候补队列（第 ${registration.queuePosition} 位）。`
+        : "已取消报名。" };
+    await loadActivities();
+  } catch (error) {
+    state.activityNotice = { kind: "error", message: error.message || "报名操作失败，请稍后重试。" };
+    renderActivities();
+  } finally {
+    button.disabled = false;
+  }
 }
 
 async function submitActivity(event) {

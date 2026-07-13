@@ -53,6 +53,11 @@ public class MyBatisActivityRepository implements ActivityRepository {
   }
 
   @Override
+  public Optional<ActivityEntity> findByIdForUpdate(String activityId) {
+    return Optional.ofNullable(activityMapper.findByIdForUpdate(activityId));
+  }
+
+  @Override
   public List<ActivityEntity> findPublished() {
     return activityMapper.findPublished();
   }
@@ -70,6 +75,11 @@ public class MyBatisActivityRepository implements ActivityRepository {
       String reason,
       String reviewerId) {
     return activityMapper.updateReview(activityId, status, decision, reason, reviewerId);
+  }
+
+  @Override
+  public int updateRegistrationStatus(String activityId, String status) {
+    return activityMapper.updateRegistrationStatus(activityId, status);
   }
 
   @Override

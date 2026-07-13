@@ -1,6 +1,6 @@
 import { API_BASE, state } from "../state.js";
-import { setApiMode } from "../ui/status.js?v=20260711-activity-review-layout-v2";
-import { mockApi } from "./mock-api.js?v=20260711-activity-review-layout-v2";
+import { setApiMode } from "../ui/status.js?v=20260711-activity-registration-v1";
+import { mockApi } from "./mock-api.js?v=20260711-activity-registration-v1";
 
 class ApiUnavailableError extends Error {
   constructor(cause) {
@@ -193,6 +193,24 @@ export const api = {
     return withApi(
       () => request("/activities", { method: "POST", body: JSON.stringify(activity) }),
       () => mockApi.createActivity(activity)
+    );
+  },
+  activityRegistration(activityId) {
+    return withApi(
+      () => request(`/activities/${activityId}/registrations/current`),
+      () => mockApi.activityRegistration(activityId)
+    );
+  },
+  registerActivity(activityId) {
+    return withApi(
+      () => request(`/activities/${activityId}/registrations`, { method: "POST" }),
+      () => mockApi.registerActivity(activityId)
+    );
+  },
+  cancelActivityRegistration(activityId) {
+    return withApi(
+      () => request(`/activities/${activityId}/registrations/current`, { method: "DELETE" }),
+      () => mockApi.cancelActivityRegistration(activityId)
     );
   },
   pendingActivities() {

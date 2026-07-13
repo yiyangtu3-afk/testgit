@@ -1,7 +1,7 @@
-import { api } from "../api/client.js?v=20260711-activity-review-layout-v2";
+import { api } from "../api/client.js?v=20260711-activity-registration-v1";
 import { state } from "../state.js";
-import { loadAdminData, loadFeed, loadPersonalPosts } from "../loaders.js?v=20260711-activity-review-layout-v2";
-import { renderPersonalPostManager } from "./renderers.js?v=20260711-activity-review-layout-v2";
+import { loadAdminData, loadFeed, loadPersonalPosts } from "../loaders.js?v=20260711-activity-registration-v1";
+import { renderPersonalPostManager } from "./renderers.js?v=20260711-activity-registration-v1";
 
 export async function bindPersonalPostEvents(event) {
   const openManager = event.target.closest("#managePersonalPosts");

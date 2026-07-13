@@ -163,3 +163,33 @@ set @activity_review_time_migration = if(
 prepare update_activity_review_time from @activity_review_time_migration;
 execute update_activity_review_time;
 deallocate prepare update_activity_review_time;
+
+create table if not exists activity_registrations (
+  id varchar(32) primary key,
+  activity_id varchar(32) not null,
+  attendee_id varchar(32) not null,
+  status varchar(20) not null,
+  registered_at datetime null,
+  waitlisted_at datetime null,
+  cancelled_at datetime null,
+  created_at timestamp not null default current_timestamp,
+  updated_at timestamp not null default current_timestamp on update current_timestamp,
+  unique key uk_activity_registrations_attendee (activity_id, attendee_id),
+  key idx_activity_registrations_status (activity_id, status),
+  key idx_activity_registrations_waitlist (activity_id, status, waitlisted_at, id),
+  key idx_activity_registrations_attendee (attendee_id, updated_at)
+);
+
+create table if not exists activity_registration_events (
+  id varchar(32) primary key,
+  registration_id varchar(32) not null,
+  activity_id varchar(32) not null,
+  attendee_id varchar(32) not null,
+  actor_id varchar(32) not null,
+  event_type varchar(20) not null,
+  from_status varchar(20) null,
+  to_status varchar(20) not null,
+  created_at timestamp(6) not null default current_timestamp(6),
+  key idx_activity_registration_events_activity (activity_id, created_at),
+  key idx_activity_registration_events_registration (registration_id, created_at)
+);

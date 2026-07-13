@@ -1,5 +1,5 @@
 import { mockStore, reportRanges, state } from "../state.js";
-import { nowTime } from "../utils/dom.js?v=20260711-activity-review-layout-v2";
+import { nowTime } from "../utils/dom.js?v=20260711-activity-registration-v1";
 
 let mockAuditId = Date.now();
 let mockActivityId = Date.now();
@@ -375,7 +375,7 @@ export const mockApi = {
     return comment;
   },
   async activities() {
-    return mockStore.activities.filter((activity) => activity.status === "published");
+    return mockStore.activities.filter((activity) => ["published", "full"].includes(activity.status));
   },
   async createActivity(activity) {
     const role = state.currentUser.role || "";
@@ -399,6 +399,46 @@ export const mockApi = {
     mockStore.activities.unshift(created);
     pushMockAudit("活动", `${state.currentUser.name}提交活动“${created.title}”`);
     return created;
+  },
+  async activityRegistration(activityId) {
+    return mockStore.activityRegistrations[`${activityId}:${state.currentUser.id}`] || null;
+  },
+  async registerActivity(activityId) {
+    if (!(state.currentUser.role || "").includes("学生")) throw new Error("只有学生可以报名活动");
+    const activity = mockStore.activities.find((item) => item.id === activityId);
+    if (!activity || !["published", "full"].includes(activity.status)) throw new Error("当前活动暂不接受报名");
+    const key = `${activityId}:${state.currentUser.id}`;
+    const existing = mockStore.activityRegistrations[key];
+    if (existing && ["registered", "waitlisted"].includes(existing.status)) throw new Error("你已报名该活动");
+    const active = Object.values(mockStore.activityRegistrations).filter((item) => {
+      return item.activityId === activityId && item.status === "registered";
+    });
+    const status = active.length < Number(activity.capacity) ? "registered" : "waitlisted";
+    const registration = { id: existing?.id || `mock-registration-${Date.now()}`, activityId,
+      status, queuePosition: status === "waitlisted" ? 1 : 0,
+      registeredAt: status === "registered" ? new Date().toISOString() : null,
+      waitlistedAt: status === "waitlisted" ? new Date().toISOString() : null };
+    mockStore.activityRegistrations[key] = registration;
+    if (status === "registered" && active.length + 1 >= Number(activity.capacity)) activity.status = "full";
+    return { ...registration };
+  },
+  async cancelActivityRegistration(activityId) {
+    const key = `${activityId}:${state.currentUser.id}`;
+    const registration = mockStore.activityRegistrations[key];
+    if (!registration || registration.status === "cancelled") throw new Error("没有可取消的报名记录");
+    const previous = registration.status;
+    registration.status = "cancelled";
+    if (previous === "registered") {
+      const next = Object.values(mockStore.activityRegistrations).find((item) => {
+        return item.activityId === activityId && item.status === "waitlisted";
+      });
+      if (next) next.status = "registered";
+      else {
+        const activity = mockStore.activities.find((item) => item.id === activityId);
+        if (activity) activity.status = "published";
+      }
+    }
+    return { ...registration };
   },
   async pendingActivities() {
     if (!(state.currentUser.role || "").includes("管理员")) {

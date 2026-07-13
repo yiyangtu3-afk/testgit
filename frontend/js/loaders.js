@@ -1,7 +1,7 @@
-import { api } from "./api/client.js?v=20260711-activity-review-layout-v2";
+import { api } from "./api/client.js?v=20260711-activity-registration-v1";
 import { state } from "./state.js";
-import { isAdminUser } from "./utils/auth.js?v=20260711-activity-review-layout-v2";
-import { normalizePost } from "./utils/format.js?v=20260711-activity-review-layout-v2";
+import { isAdminUser, isStudentUser } from "./utils/auth.js?v=20260711-activity-registration-v1";
+import { normalizePost } from "./utils/format.js?v=20260711-activity-registration-v1";
 import {
   renderAdminAccessDenied,
   renderActivities,
@@ -15,7 +15,7 @@ import {
   renderPersonalPostManager,
   renderPendingActivities,
   renderSearchResults
-} from "./ui/renderers.js?v=20260711-activity-review-layout-v2";
+} from "./ui/renderers.js?v=20260711-activity-registration-v1";
 
 export async function loadUsers(keyword = "") {
   state.users = await api.users(keyword);
@@ -101,6 +101,25 @@ export async function loadComments(postId) {
 
 export async function loadActivities() {
   state.activities = await api.activities();
+  state.activityRegistrations = {};
+  if (isStudentUser()) {
+    let registrationLoadFailed = false;
+    const entries = await Promise.all(state.activities.map(async (activity) => {
+      try {
+        return [activity.id, await api.activityRegistration(activity.id)];
+      } catch {
+        registrationLoadFailed = true;
+        return [activity.id, null];
+      }
+    }));
+    state.activityRegistrations = Object.fromEntries(entries.filter(([, item]) => item));
+    if (registrationLoadFailed) {
+      state.activityNotice = {
+        kind: "error",
+        message: "报名状态暂时无法加载，请确认后端已更新后重试。"
+      };
+    }
+  }
   renderActivities();
 }
 

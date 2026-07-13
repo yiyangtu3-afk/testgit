@@ -123,10 +123,14 @@ function runActivityRendererCheck() {
     'const { renderActivities, renderPendingActivities } = await import("./frontend/js/activities/renderers.js");',
     'renderActivities();',
     'const activityHtml = globalThis.elements["#activityList"].innerHTML;',
+    'state.currentUser = { id: "u-1001", name: "林一", role: "学生账号" };',
+    'state.activityRegistrations = { "activity-xss": { id: "registration-1", activityId: "activity-xss", status: "registered", queuePosition: 0 } };',
+    'renderActivities();',
+    'const registrationHtml = globalThis.elements["#activityList"].innerHTML;',
     'state.currentUser = { id: "u-2003", name: "教务管理员", role: "管理员账号" };',
     `state.pendingActivities = [{ id: "activity-pending", title: ${JSON.stringify(payload)}, description: ${JSON.stringify(payload)}, category: "社团", location: "活动中心", startsAt: "2026-08-02T09:00:00", endsAt: "2026-08-02T11:00:00", capacity: 30, organizerId: "u-2004", organizerName: "王社长", status: "pending", reviewDecision: "pending" }];`,
     'renderPendingActivities();',
-    'process.stdout.write(JSON.stringify({ activityHtml, reviewHtml: globalThis.elements["#activityReviewPanel"].innerHTML }));'
+    'process.stdout.write(JSON.stringify({ activityHtml, registrationHtml, reviewHtml: globalThis.elements["#activityReviewPanel"].innerHTML }));'
   ].join("\n");
   try {
     const output = JSON.parse(execFileSync(
@@ -136,6 +140,9 @@ function runActivityRendererCheck() {
     ));
     if (output.activityHtml.includes(payload) || !output.activityHtml.includes("&lt;img")) {
       failures.push("activity renderer: expected activity title and description to be escaped");
+    }
+    if (!output.registrationHtml.includes("已报名") || !output.registrationHtml.includes("取消报名")) {
+      failures.push("activity renderer: expected current student registration actions");
     }
     if (!output.reviewHtml.includes('data-review-activity="activity-pending"')) {
       failures.push("activity renderer: expected pending activity review actions");
@@ -160,7 +167,10 @@ function runMockActivityWorkflowCheck() {
     'const pending = await mockApi.pendingActivities();',
     'const reviewed = await mockApi.reviewActivity(created.id, "approve", null);',
     'const published = await mockApi.activities();',
-    'process.stdout.write(JSON.stringify({ createdId: created.id, createdOrganizerId, createdStatus, pendingIds: pending.map((item) => item.id), reviewed, publishedIds: published.map((item) => item.id) }));'
+    'state.currentUser = { id: "u-1001", name: "林一", role: "学生账号" };',
+    'const registration = await mockApi.registerActivity(created.id);',
+    'const cancelled = await mockApi.cancelActivityRegistration(created.id);',
+    'process.stdout.write(JSON.stringify({ createdId: created.id, createdOrganizerId, createdStatus, pendingIds: pending.map((item) => item.id), reviewed, publishedIds: published.map((item) => item.id), registration, cancelled }));'
   ].join("\n");
   try {
     const output = JSON.parse(execFileSync(
@@ -176,6 +186,9 @@ function runMockActivityWorkflowCheck() {
     }
     if (output.reviewed.status !== "published" || !output.publishedIds.includes(output.createdId)) {
       failures.push("mock activity workflow: expected approved activity in published list");
+    }
+    if (output.registration.status !== "registered" || output.cancelled.status !== "cancelled") {
+      failures.push("mock activity workflow: expected student registration and cancellation");
     }
   } catch (error) {
     failures.push(`Mock activity workflow check failed: ${String(error.message || error)}`);
@@ -318,8 +331,11 @@ expectIncludes("css", ".realtime-mode", "chat realtime status styles");
   ["createActivity(activity)", "activity submission adapter"],
   ["pendingActivities()", "pending activity adapter"],
   ["reviewActivity(activityId, decision, reason", "activity review adapter"],
+  ["registerActivity(activityId)", "activity registration adapter"],
+  ["cancelActivityRegistration(activityId)", "activity cancellation adapter"],
   ["活动已提交审核", "activity pending feedback"],
   ["data-review-activity", "activity review action binding"],
+  ["data-activity-registration", "activity registration action binding"],
   ["拒绝活动时必须填写原因", "activity rejection reason guard"],
   ["personalPosts()", "personal posts adapter"],
   ["filter(isCurrentUserPost)", "personal post manager filters to current user"],
@@ -391,8 +407,8 @@ expectMatch(
   "admin layout: expected independent review workspaces to use normal document flow"
 );
 
-expectIncludes("html", "20260711-activity-review-layout-v2", "HTML escaping cache-busting version");
-expectIncludes("appEntry", "20260711-activity-review-layout-v2", "root app imports current HTML escaping module version");
+expectIncludes("html", "20260711-activity-registration-v1", "HTML escaping cache-busting version");
+expectIncludes("appEntry", "20260711-activity-registration-v1", "root app imports current HTML escaping module version");
 
 expectIncludes("js", "setRealtimeMode", "chat realtime status updater");
 expectIncludes("js", "HEARTBEAT_INTERVAL_MS", "chat realtime heartbeat interval");

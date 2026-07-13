@@ -1,6 +1,7 @@
 package com.campuslink.config;
 
 import com.campuslink.service.ForbiddenException;
+import com.campuslink.service.ConflictException;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -43,6 +44,12 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(ForbiddenException.class)
   @ResponseStatus(HttpStatus.FORBIDDEN)
   public Map<String, String> forbidden(ForbiddenException error) {
+    return Map.of("message", error.getMessage());
+  }
+
+  @ExceptionHandler(ConflictException.class)
+  @ResponseStatus(HttpStatus.CONFLICT)
+  public Map<String, String> conflict(ConflictException error) {
     return Map.of("message", error.getMessage());
   }
 }

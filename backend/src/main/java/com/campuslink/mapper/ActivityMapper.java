@@ -70,8 +70,11 @@ public interface ActivityMapper {
   @Select(ACTIVITY_SELECT + " where a.id = #{activityId}")
   ActivityEntity findById(@Param("activityId") String activityId);
 
+  @Select(ACTIVITY_SELECT + " where a.id = #{activityId} for update")
+  ActivityEntity findByIdForUpdate(@Param("activityId") String activityId);
+
   @Select(ACTIVITY_SELECT
-      + " where a.status = 'published' order by a.starts_at, a.created_at desc")
+      + " where a.status in ('published', 'full') order by a.starts_at, a.created_at desc")
   List<ActivityEntity> findPublished();
 
   @Select(ACTIVITY_SELECT
@@ -96,6 +99,13 @@ public interface ActivityMapper {
       @Param("decision") String decision,
       @Param("reason") String reason,
       @Param("reviewerId") String reviewerId);
+
+  @Update("""
+      update activities set status = #{status}
+      where id = #{activityId} and status in ('published', 'full')
+      """)
+  int updateRegistrationStatus(
+      @Param("activityId") String activityId, @Param("status") String status);
 
   @Select("""
       select id,

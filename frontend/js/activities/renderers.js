@@ -1,7 +1,7 @@
 import { state } from "../state.js";
-import { isActivityOrganizer, isAdminUser } from "../utils/auth.js?v=20260711-activity-review-layout-v2";
-import { $ } from "../utils/dom.js?v=20260711-activity-review-layout-v2";
-import { escapeHtml } from "../utils/format.js?v=20260711-activity-review-layout-v2";
+import { isActivityOrganizer, isAdminUser, isStudentUser } from "../utils/auth.js?v=20260711-activity-registration-v1";
+import { $ } from "../utils/dom.js?v=20260711-activity-registration-v1";
+import { escapeHtml } from "../utils/format.js?v=20260711-activity-registration-v1";
 
 const statusLabels = {
   draft: "需修改",
@@ -76,6 +76,10 @@ function activityCard(activity, showReview = false) {
   const rejection = showReview && activity.reviewDecision === "rejected"
     ? `<p class="activity-rejection"><strong>拒绝原因：</strong>${escapeHtml(activity.reviewReason || "未填写")}</p>`
     : "";
+  const registration = state.activityRegistrations[activity.id];
+  const registrationAction = !showReview && isStudentUser()
+    ? activityRegistrationMarkup(activity, registration)
+    : "";
   return `
     <article class="activity-card activity-card--${escapeHtml(activity.status)}">
       <div class="activity-card-date" aria-label="活动日期">
@@ -95,9 +99,24 @@ function activityCard(activity, showReview = false) {
           <span>${escapeHtml(activity.organizerName)} · ${escapeHtml(activity.capacity)} 人</span>
         </div>
         ${rejection}
+        ${registrationAction}
       </div>
     </article>
   `;
+}
+
+function activityRegistrationMarkup(activity, registration) {
+  if (registration && ["registered", "waitlisted"].includes(registration.status)) {
+    const label = registration.status === "registered" ? "已报名" : `候补第 ${registration.queuePosition} 位`;
+    return `<div class="activity-registration activity-registration--${escapeHtml(registration.status)}">
+      <strong>${escapeHtml(label)}</strong>
+      <button class="ghost-button" type="button" data-activity-registration="${escapeHtml(activity.id)}" data-action="cancel">取消报名</button>
+    </div>`;
+  }
+  const label = activity.status === "full" ? "加入候补" : "立即报名";
+  return `<div class="activity-registration"><span>${activity.status === "full" ? "名额已满，按报名顺序候补" : "名额开放中"}</span>
+    <button class="primary-button" type="button" data-activity-registration="${escapeHtml(activity.id)}" data-action="register">${label}</button>
+  </div>`;
 }
 
 function activityReviewCard(activity) {

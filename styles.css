@@ -1237,6 +1237,35 @@ select:focus {
   font-size: 12px;
 }
 
+.activity-registration {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.activity-registration > span,
+.activity-registration > strong {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.activity-registration--registered > strong {
+  color: #1e5e36;
+}
+
+.activity-registration--waitlisted > strong {
+  color: #6a5211;
+}
+
+.activity-status--full {
+  background: #fff4cc;
+  color: #6a5211;
+}
+
 .activity-empty {
   padding: 28px;
   border: 1px dashed var(--line-strong);
