@@ -126,7 +126,9 @@ chat, feed, activity notifications, and admin API boundary, plus direct
 WebSocket handler tests for chat and recipient-only activity notification
 events. Repository integration tests connect to the local MySQL database
 without running `schema.sql` or `data.sql`; each test transaction rolls back,
-so existing demo history stays unchanged.
+so existing demo history stays unchanged. Chat repository coverage verifies
+that unread counts include only messages addressed to the current user, still
+count newly received messages, and clear after the read cursor advances.
 
 ## Local live API acceptance
 
@@ -149,6 +151,12 @@ waitlist result followed by a persisted promotion result after returning
 online. Unread counts and **mark all read** survived account switches. The
 administrator console, moderation feedback, and chat page remained usable,
 and the browser console reported no errors.
+
+The same Java API acceptance also verified the contact unread-count boundary.
+When signed in as the teacher, contacts with no direct conversation show
+**暂无消息** without an unread badge, even when those friends have sent messages
+to another user. Opening an empty conversation keeps the message list empty.
+This check used existing MySQL history and didn't reset or replace it.
 
 ## Frontend structure
 

@@ -48,7 +48,8 @@ public interface ChatMapper {
       from messages m
       left join conversation_reads r
         on r.user_id = #{userId} and r.peer_id = m.from_user_id
-      where m.from_user_id <> #{userId}
+      where m.peer_id = #{userId}
+        and m.from_user_id <> #{userId}
         and m.status = 'active'
         and m.id regexp '^[0-9]+$'
         and exists (

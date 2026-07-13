@@ -7,7 +7,7 @@
 
 ## 稳定基线
 
-本轮实现继承 `f5b1cc4 Add activity date and category filters`。远程
+本轮实现继承 `f6da8af Add persistent activity notifications`。远程
 仓库是 `https://github.com/yiyangtu3-afk/testgit.git`，使用 `main` 分支；最新
 活动实现提交以 `main` 的最新提交为准。
 
@@ -32,6 +32,8 @@ http://127.0.0.1:8080
 - 动态可见范围已在 MySQL 查询中执行，公共动态和评论只显示 `approved`。
 - 聊天读取、发送与撤回必须是好友双方，支持游标分页、持久化已读状态和
   联系人最新消息预览。
+- 聊天未读统计同时限定发送者和收件人，好友发给第三人的消息不会串入当前
+  账号的联系人未读数。
 - 用户生成内容通过 HTML 转义与 CSP 防护，不能作为脚本执行。
 - 跨表业务写入由服务层 `@Transactional` 保护。
 - `ChatRepositoryIntegrationTest` 使用真实 MySQL，并禁用 `schema.sql` 与
@@ -167,6 +169,16 @@ http://127.0.0.1:8080
     已读，并回归管理员后台、动态审核反馈与聊天页；MySQL 历史数据未重置，
     浏览器控制台无错误。前端版本升级为
     `20260712-activity-notifications-v1`，共享 `state.js` 导入仍无查询参数。
+18. 2026 年 7 月 12 日修复联系人未读数串号：未读 MyBatis 查询新增当前
+    收件人约束，不再把好友发给第三人的消息计入当前账号。测试先复现陈老师
+    错误看到周同学 `4` 条、教务管理员 `2` 条未读的行为，再用最小 SQL 修复
+    转绿。`ChatRepositoryIntegrationTest` 现有 3 个真实 MySQL
+    `@Transactional`/`@Rollback` 场景，覆盖跨会话排除、真实收件计数和已读
+    游标清零；聊天 Repository、Service 和 Controller 定向测试 16 个通过，
+    完整 Maven 测试 99 个全部通过。浏览器以 Java API 验证陈老师的两个空
+    会话都显示 **暂无消息** 且没有未读徽标，打开空会话后消息数为 `0`，控制台
+    无错误。测试和验收都保留本地 MySQL 历史数据；本轮没有前端代码改动，
+    前端版本保持不变。
 
 ## 下一项工作
 
