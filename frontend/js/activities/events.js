@@ -1,15 +1,80 @@
-import { api } from "../api/client.js?v=20260712-activity-notifications-v1";
-import { loadActivities, loadPendingActivities } from "../loaders.js?v=20260712-activity-notifications-v1";
+import { api } from "../api/client.js?v=20260712-activity-operations-v1";
+import { loadActivities, loadPendingActivities } from "../loaders.js?v=20260712-activity-operations-v1";
 import { state } from "../state.js";
-import { $ } from "../utils/dom.js?v=20260712-activity-notifications-v1";
-import { renderActivities, renderPendingActivities } from "./renderers.js?v=20260712-activity-notifications-v1";
+import { $ } from "../utils/dom.js?v=20260712-activity-operations-v1";
+import { activityRosterToCsv } from "../utils/format.js?v=20260712-activity-operations-v1";
+import { renderActivities, renderPendingActivities } from "./renderers.js?v=20260712-activity-operations-v1";
 
 export function bindActivityEvents() {
   $("#activityForm").addEventListener("submit", submitActivity);
   $("#activityFilterForm").addEventListener("submit", filterActivities);
   $("#clearActivityFilters").addEventListener("click", clearActivityFilters);
   $("#activityList").addEventListener("click", updateRegistration);
+  $("#activitySubmissionList").addEventListener("click", openActivityRoster);
+  $("#activityRosterPanel").addEventListener("click", manageActivityRoster);
   $("#activityReviewPanel").addEventListener("click", reviewActivity);
+}
+
+async function openActivityRoster(event) {
+  const button = event.target.closest("[data-open-activity-roster]");
+  if (!button) return;
+  const activityId = button.dataset.openActivityRoster;
+  if (state.expandedActivityRosterId === activityId) {
+    state.expandedActivityRosterId = "";
+    state.activityOperationsNotice = null;
+    renderActivities();
+    return;
+  }
+  state.expandedActivityRosterId = activityId;
+  state.activityOperationsNotice = null;
+  renderActivities();
+  try {
+    state.activityRosters[activityId] = await api.activityRoster(activityId);
+  } catch (error) {
+    state.expandedActivityRosterId = "";
+    state.activityOperationsNotice = {
+      kind: "error",
+      message: error.message || "报名名单加载失败，请稍后重试。"
+    };
+  }
+  renderActivities();
+}
+
+async function manageActivityRoster(event) {
+  const checkInButton = event.target.closest("[data-check-in-registration]");
+  if (checkInButton) {
+    await checkInRegistration(checkInButton);
+    return;
+  }
+  const exportButton = event.target.closest("[data-export-activity-roster]");
+  if (exportButton) exportActivityRoster(exportButton.dataset.exportActivityRoster);
+}
+
+async function checkInRegistration(button) {
+  const activityId = state.expandedActivityRosterId;
+  button.disabled = true;
+  try {
+    await api.checkInActivityRegistration(activityId, button.dataset.checkInRegistration);
+    state.activityRosters[activityId] = await api.activityRoster(activityId);
+    state.activityOperationsNotice = { kind: "success", message: "签到成功，名单与统计已更新。" };
+  } catch (error) {
+    state.activityOperationsNotice = { kind: "error", message: error.message || "签到失败，请稍后重试。" };
+  }
+  renderActivities();
+}
+
+function exportActivityRoster(activityId) {
+  const roster = state.activityRosters[activityId];
+  if (!roster) return;
+  const blob = new Blob(["\ufeff", activityRosterToCsv(roster)], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `campuslink-activity-roster-${activityId}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+  state.activityOperationsNotice = { kind: "success", message: "报名名单 CSV 已生成。" };
+  renderActivities();
 }
 
 async function filterActivities(event) {
@@ -92,6 +157,7 @@ async function submitActivity(event) {
   try {
     const created = await api.createActivity(activity);
     state.activitySubmissions = [created, ...state.activitySubmissions.filter((item) => item.id !== created.id)];
+    state.managedActivities = [created, ...state.managedActivities.filter((item) => item.id !== created.id)];
     state.activityNotice = {
       kind: "success",
       message: "活动已提交审核。管理员通过前，它不会出现在公开活动列表。"

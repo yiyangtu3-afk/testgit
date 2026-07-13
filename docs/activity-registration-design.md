@@ -1,21 +1,25 @@
 # Activity registration and waitlist design
 
-This design defines the next CampusLink activity-domain slice: a student can
-browse published activities, register, cancel, and join a fair waitlist when
-an activity is full. It preserves the existing `ActivityService` boundary and
-does not place registration rules in `FeedService` or `AdminService`.
+This design records the completed CampusLink activity-registration domain: a
+student can register, cancel, and join a fair waitlist, while the organizer can
+read the roster, check in registered attendees, and export roster data. It
+preserves the `ActivityService` boundary and doesn't place activity rules in
+`FeedService` or `AdminService`.
 
 ## Scope and terms
 
-This slice implements registration and cancellation only. Notifications,
-organizer rosters, check-in, exports, and administrator metrics remain later
-slices. The existing activity review workflow remains unchanged.
+The current slice includes registration, cancellation, organizer rosters,
+check-in, frontend CSV export, and real administrator activity metrics.
+Persistent activity notifications remain in their independent notification
+module. The existing activity review workflow remains unchanged.
 
 - **Registered** means the student holds a capacity slot.
 - **Waitlisted** means the student has no slot and waits in a stable queue.
 - **Promotion** means the first waitlisted student receives a released slot.
 - **Active registration** means a registration in `registered` or `waitlisted`
   status.
+- **Occupied registration** means a registration in `registered` or
+  `checked_in` status and consumes one capacity slot.
 
 ## Data model
 
@@ -35,6 +39,7 @@ This table holds one current registration row per activity and attendee.
 | `status` | `registered`, `waitlisted`, `checked_in`, or `cancelled`. |
 | `registered_at` | Most recent time the attendee received a slot. |
 | `waitlisted_at` | Time used to order the active waitlist. |
+| `checked_in_at` | Time when the organizer confirmed attendance. |
 | `cancelled_at` | Most recent cancellation time. |
 | `created_at` and `updated_at` | Current-row audit timestamps. |
 
@@ -49,10 +54,11 @@ This append-only table preserves transitions that the current row no longer
 shows. It contains `id`, `registration_id`, `activity_id`, `attendee_id`,
 `actor_id`, `event_type`, `from_status`, `to_status`, and `created_at`.
 
-The initial event types are `registered`, `waitlisted`, `cancelled`, and
-`promoted`. The actor is the student for registration and cancellation; it is
-the service actor for an automatic promotion. A later notification slice can
-reliably consume this history without inferring events from mutable rows.
+The event types are `registered`, `waitlisted`, `cancelled`, `promoted`, and
+`checked_in`. The actor is the student for registration and cancellation, the
+actor that released the slot for automatic promotion, and the organizer for
+check-in. Notifications can consume this history without inferring events from
+mutable rows.
 
 The schema continues the repository's application-level user references and
 doesn't introduce foreign keys solely for this slice. It adds indexes on
@@ -78,14 +84,13 @@ new --slot available--> registered --cancel--> cancelled
 new --full------------> waitlisted --cancel--> cancelled
 waitlisted --first slot released--> registered
 cancelled --register again--> registered or waitlisted
-registered --check in (later slice)--> checked_in
+registered --organizer check in--> checked_in
 ```
 
-`checked_in` is reserved for the organizer check-in slice. It consumes a slot
-just like `registered` and this slice does not expose a check-in endpoint.
-Only activities in `published` or `full` accept registrations. Draft, pending,
-closed, and cancelled activities reject both new registration and cancellation
-requests as applicable.
+`checked_in` consumes a slot just like `registered`. A checked-in registration
+can't be cancelled through the student endpoint. Only activities in
+`published` or `full` accept registrations. Draft, pending, closed, and
+cancelled activities reject new registrations.
 
 ## Permission matrix
 
@@ -100,6 +105,10 @@ attendee, organizer, reviewer, or actor ID from the client.
 | Cancel own active registration | Allowed | Denied | Denied | Denied | Denied |
 | Register as another attendee | Denied | Denied | Denied | Denied | Denied |
 | Register for own activity | Denied | Denied | Denied | Denied | Denied |
+| Read managed activity list | Denied | Own only | Own only | Denied | Allowed |
+| Read activity roster | Denied | Own only | Own only | Denied | Allowed |
+| Check in a registered attendee | Denied | Own only | Own only | Denied | Allowed |
+| Read aggregate activity metrics | Denied | Denied | Denied | Allowed | Denied |
 
 The current demo identifies a student through a role containing `学生`.
 `requireStudentAttendee` belongs in the independent activity-registration
@@ -108,19 +117,22 @@ prevents a future dual-role account from consuming its own capacity.
 
 ## API contract
 
-The current authenticated `GET /api/activities` endpoint expands to include
-both `published` and `full` activities. It accepts optional `category`,
-`startsFrom`, and `startsTo` filters so the student UI can browse by category
-and time. It returns capacity, `registeredCount`, `waitlistedCount`,
-`remainingCapacity`, and the caller's current registration summary.
+The authenticated `GET /api/activities` endpoint includes both `published` and
+`full` activities. It accepts optional `category`, `from`, and `to` filters so
+the UI can browse by category and start date. The frontend loads the caller's
+registration separately for every visible activity.
 
 The registration endpoints are all authenticated:
 
 | Method and path | Result |
 | --- | --- |
-| `GET /api/activities/{activityId}/registration` | Returns the caller's current registration or an explicit no-registration result. |
+| `GET /api/activities/{activityId}/registrations/current` | Returns the caller's current registration or `204` when none exists. |
 | `POST /api/activities/{activityId}/registrations` | Creates or reactivates the caller's registration. Returns `201` with `registered` or `waitlisted`, plus queue position when waitlisted. |
-| `DELETE /api/activities/{activityId}/registrations/current` | Cancels the caller's active registration and returns the updated activity summary. |
+| `DELETE /api/activities/{activityId}/registrations/current` | Cancels the caller's active registration. |
+| `GET /api/activities/managed` | Returns activities owned by the current teacher or club leader. |
+| `GET /api/activities/{activityId}/registrations/roster` | Returns the organizer-owned activity roster and counts. |
+| `POST /api/activities/{activityId}/registrations/{registrationId}/check-in` | Checks in one registered attendee. |
+| `GET /api/admin/activity-metrics` | Returns real occupied-registration and check-in counts to an administrator. |
 
 A duplicate active registration returns `409`, as does cancelling an already
 cancelled or missing registration. A non-student or organizer attempting to
@@ -152,10 +164,15 @@ promotion events. If no candidate exists, it changes `full` back to
 `published`; otherwise it remains `full`. Cancelling a waitlisted attendee
 doesn't affect capacity or activity status.
 
-An exception from any registration update, event insertion, or activity-status
-update rolls back all writes. The design deliberately doesn't publish a
-WebSocket event in this transaction. A later notification slice consumes the
-committed event history after transaction completion.
+An exception from any registration update, event insertion, activity-status
+update, or notification write rolls back all writes. WebSocket delivery runs
+after the transaction commits, so clients never receive a state change that
+the database later rolls back.
+
+Check-in locks the organizer-owned activity and selected registration. The
+service updates the current row to `checked_in`, stores `checked_in_at`, and
+appends the `checked_in` event before the transaction commits. Any failure
+rolls back both writes.
 
 ## Test design
 
@@ -179,6 +196,11 @@ controller, and MyBatis levels.
 - Draft, pending, closed, and cancelled activities reject registration; a
   student cannot cancel someone else's record because the API never accepts an
   attendee ID.
+- Only the activity organizer can read its roster or check in a participant.
+- Check-in accepts only `registered`; repeated check-in and waitlist check-in
+  return `409`.
+- Administrator metrics count `registered` plus `checked_in` as occupied and
+  count `checked_in` separately.
 
 ### HTTP boundaries
 
@@ -195,36 +217,29 @@ controller, and MyBatis levels.
 `ActivityRegistrationRepositoryIntegrationTest` uses local MySQL with
 `spring.sql.init.mode=never`, `@Transactional`, and `@Rollback`, following the
 existing activity repository test. It verifies row mapping, registration and
-event creation, cancellation plus promotion, activity-status transitions, and
-the waitlist ordering query. After each test it confirms matching test activity
-and registration rows are absent, so local historical data remains intact.
+event creation, cancellation plus promotion, organizer roster mapping, and the
+check-in timestamp and event. Each test transaction rolls back, so local
+historical data remains intact.
 
-A dedicated transaction-failure integration case makes the event write fail
-after the registration write and verifies that neither the current registration
-nor the activity status changed. A contention integration test invokes multiple
-independent service transactions against capacity one and verifies exactly one
-registered attendee, all remaining callers waitlisted, and no count exceeds
-capacity. Its fixture uses a unique test prefix and rolls back or removes only
-its own fixture rows after verification; it never resets the demo database.
+## Implemented structure
 
-## Implementation order
+The completed vertical slice follows this structure:
 
-Implement the next vertical slice in this order:
-
-1. Add the two tables, entities, mapper queries, repository interface, and
-   rollback-safe MyBatis integration tests.
-2. Add `ActivityRegistrationService`, DTOs, and service tests for the state
-   machine and transaction rules.
-3. Add the authenticated controller endpoints and MockMvc boundary tests.
-4. Extend the live and Mock frontend adapters together, then add activity-card
-   registration controls and clear registered, waitlisted, and cancelled
-   feedback.
-5. Run relevant Maven tests, `./script/run_frontend_check.sh`, and browser
-   checks for student registration, administrator content review feedback, and
-   chat before committing the slice.
+1. MyBatis entities, mapper queries, repositories, and rollback-safe MySQL
+   integration tests own current rows, events, rosters, and metrics.
+2. `ActivityRegistrationService` owns capacity, cancellation, promotion,
+   roster authorization, check-in, and transaction boundaries.
+3. Activity-specific controllers expose attendee, organizer, and administrator
+   endpoints without routing activity logic through generic services.
+4. Live and Mock frontend adapters use the same response shapes and error
+   boundaries. The activity operations renderer owns roster, check-in, and CSV
+   presentation.
+5. The full Maven suite, frontend smoke check, and live browser regression
+   cover activity operations, administrator review, moderation feedback, and
+   chat.
 
 ## Next steps
 
-The next implementation task adds the registration persistence layer and its
-rollback-safe tests. It does not yet add frontend controls, notifications,
-roster management, or check-in.
+The activity registration and organizer operations slices are complete. The
+next roadmap task expands persistent notifications to the remaining social
+events and makes likes user-scoped and reversible.

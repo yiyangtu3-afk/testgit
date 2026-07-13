@@ -1,5 +1,5 @@
 import { mockStore, reportRanges, state } from "../state.js";
-import { nowTime } from "../utils/dom.js?v=20260712-activity-notifications-v1";
+import { nowTime } from "../utils/dom.js?v=20260712-activity-operations-v1";
 
 let mockAuditId = Date.now();
 let mockActivityId = Date.now();
@@ -91,6 +91,17 @@ function pushMockActivityNotification(recipientId, activity, type, title, body) 
     read: false,
     createdAt: new Date().toISOString()
   });
+}
+
+function requireOwnedMockActivity(activityId) {
+  const role = state.currentUser.role || "";
+  if (!role.includes("教师") && !role.includes("社团负责人")) {
+    throw new Error("只有教师或社团负责人可以管理活动");
+  }
+  const activity = mockStore.activities.find((item) => item.id === activityId);
+  if (!activity) throw new Error("活动不存在");
+  if (activity.organizerId !== state.currentUser.id) throw new Error("只能管理自己创建的活动");
+  return activity;
 }
 
 export const mockApi = {
@@ -426,6 +437,61 @@ export const mockApi = {
     pushMockAudit("活动", `${state.currentUser.name}提交活动“${created.title}”`);
     return created;
   },
+  async managedActivities() {
+    const role = state.currentUser.role || "";
+    if (!role.includes("教师") && !role.includes("社团负责人")) {
+      throw new Error("只有教师或社团负责人可以管理活动");
+    }
+    return mockStore.activities.filter((activity) => activity.organizerId === state.currentUser.id);
+  },
+  async activityRoster(activityId) {
+    const activity = requireOwnedMockActivity(activityId);
+    let waitlistPosition = 0;
+    const entries = Object.values(mockStore.activityRegistrations)
+      .filter((item) => item.activityId === activityId && item.status !== "cancelled")
+      .sort((first, second) => {
+        if (first.status === "waitlisted" && second.status !== "waitlisted") return 1;
+        if (first.status !== "waitlisted" && second.status === "waitlisted") return -1;
+        return String(first.waitlistedAt || first.registeredAt).localeCompare(
+          String(second.waitlistedAt || second.registeredAt)
+        );
+      })
+      .map((item) => {
+        const attendee = accountById(item.attendeeId);
+        return {
+          registrationId: item.id,
+          attendeeId: item.attendeeId,
+          attendeeName: attendee?.name || item.attendeeId,
+          status: item.status,
+          queuePosition: item.status === "waitlisted" ? ++waitlistPosition : 0,
+          registeredAt: item.registeredAt || null,
+          waitlistedAt: item.waitlistedAt || null,
+          checkedInAt: item.checkedInAt || null
+        };
+      });
+    return {
+      activityId,
+      title: activity.title,
+      capacity: Number(activity.capacity),
+      registeredCount: entries.filter((item) => item.status === "registered").length,
+      waitlistedCount: entries.filter((item) => item.status === "waitlisted").length,
+      checkedInCount: entries.filter((item) => item.status === "checked_in").length,
+      entries
+    };
+  },
+  async checkInActivityRegistration(activityId, registrationId) {
+    requireOwnedMockActivity(activityId);
+    const registration = Object.values(mockStore.activityRegistrations)
+      .find((item) => item.activityId === activityId && item.id === registrationId);
+    if (!registration) throw new Error("报名记录不存在");
+    if (registration.status === "checked_in") throw new Error("该参与者已签到");
+    if (registration.status !== "registered") throw new Error("只有已报名参与者可以签到");
+    registration.status = "checked_in";
+    registration.checkedInAt = new Date().toISOString();
+    pushMockAudit("活动", `${state.currentUser.name}完成活动现场签到`);
+    const roster = await this.activityRoster(activityId);
+    return roster.entries.find((item) => item.registrationId === registrationId);
+  },
   async activityRegistration(activityId) {
     return mockStore.activityRegistrations[`${activityId}:${state.currentUser.id}`] || null;
   },
@@ -437,7 +503,7 @@ export const mockApi = {
     const existing = mockStore.activityRegistrations[key];
     if (existing && ["registered", "waitlisted"].includes(existing.status)) throw new Error("你已报名该活动");
     const active = Object.values(mockStore.activityRegistrations).filter((item) => {
-      return item.activityId === activityId && item.status === "registered";
+      return item.activityId === activityId && ["registered", "checked_in"].includes(item.status);
     });
     const status = active.length < Number(activity.capacity) ? "registered" : "waitlisted";
     const registration = { id: existing?.id || `mock-registration-${Date.now()}`, activityId,
@@ -462,6 +528,7 @@ export const mockApi = {
     const key = `${activityId}:${state.currentUser.id}`;
     const registration = mockStore.activityRegistrations[key];
     if (!registration || registration.status === "cancelled") throw new Error("没有可取消的报名记录");
+    if (registration.status === "checked_in") throw new Error("已签到的报名不能取消");
     const previous = registration.status;
     registration.status = "cancelled";
     if (previous === "registered") {
@@ -551,6 +618,16 @@ export const mockApi = {
       今日消息: "436",
       动态总数: String(mockStore.posts.length),
       待审内容: String(pendingModeration)
+    };
+  },
+  async activityMetrics() {
+    if (!(state.currentUser.role || "").includes("管理员")) {
+      throw new Error("需要管理员账号查看活动指标");
+    }
+    const registrations = Object.values(mockStore.activityRegistrations);
+    return {
+      registrationCount: registrations.filter((item) => ["registered", "checked_in"].includes(item.status)).length,
+      checkedInCount: registrations.filter((item) => item.status === "checked_in").length
     };
   },
   async moderationItems() {

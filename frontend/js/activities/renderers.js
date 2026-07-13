@@ -1,8 +1,9 @@
 import { state } from "../state.js";
-import { isActivityOrganizer, isAdminUser, isStudentUser } from "../utils/auth.js?v=20260712-activity-notifications-v1";
-import { $ } from "../utils/dom.js?v=20260712-activity-notifications-v1";
-import { escapeHtml } from "../utils/format.js?v=20260712-activity-notifications-v1";
-import { activityFilterState } from "./filters.js?v=20260712-activity-notifications-v1";
+import { isActivityOrganizer, isAdminUser, isStudentUser } from "../utils/auth.js?v=20260712-activity-operations-v1";
+import { $ } from "../utils/dom.js?v=20260712-activity-operations-v1";
+import { escapeHtml } from "../utils/format.js?v=20260712-activity-operations-v1";
+import { activityFilterState } from "./filters.js?v=20260712-activity-operations-v1";
+import { renderActivityOperations } from "./operations-renderer.js?v=20260712-activity-operations-v1";
 
 const statusLabels = {
   draft: "需修改",
@@ -16,7 +17,7 @@ const statusLabels = {
 export function renderActivities() {
   $("#activityCreatorPanel").hidden = !isActivityOrganizer();
   renderActivityNotice();
-  renderActivitySubmissions();
+  renderActivityOperations();
   renderActivityFilters();
   $("#publishedActivityCount").textContent = String(state.activities.length);
   $("#activityList").innerHTML = state.activities.length
@@ -61,16 +62,6 @@ function renderActivityNotice() {
     ? `activity-feedback activity-feedback--${state.activityNotice.kind}`
     : "activity-feedback";
   notice.textContent = state.activityNotice ? state.activityNotice.message : "";
-}
-
-function renderActivitySubmissions() {
-  const submissions = state.activitySubmissions.filter((activity) => {
-    return activity.organizerId === state.currentUser.id;
-  });
-  $("#activitySubmissionPanel").hidden = submissions.length === 0;
-  $("#activitySubmissionList").innerHTML = submissions
-    .map((activity) => activityCard(activity, true))
-    .join("");
 }
 
 function renderActivityFilters() {
@@ -135,11 +126,14 @@ function activityCard(activity, showReview = false) {
 }
 
 function activityRegistrationMarkup(activity, registration) {
-  if (registration && ["registered", "waitlisted"].includes(registration.status)) {
-    const label = registration.status === "registered" ? "已报名" : `候补第 ${registration.queuePosition} 位`;
+  if (registration && ["registered", "waitlisted", "checked_in"].includes(registration.status)) {
+    const label = registration.status === "registered" ? "已报名"
+      : registration.status === "checked_in" ? "已签到"
+        : `候补第 ${registration.queuePosition} 位`;
     return `<div class="activity-registration activity-registration--${escapeHtml(registration.status)}">
       <strong>${escapeHtml(label)}</strong>
-      <button class="ghost-button" type="button" data-activity-registration="${escapeHtml(activity.id)}" data-action="cancel">取消报名</button>
+      ${registration.status === "checked_in" ? `<span>现场签到已完成</span>`
+        : `<button class="ghost-button" type="button" data-activity-registration="${escapeHtml(activity.id)}" data-action="cancel">取消报名</button>`}
     </div>`;
   }
   const label = activity.status === "full" ? "加入候补" : "立即报名";

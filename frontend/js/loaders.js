@@ -1,11 +1,11 @@
-import { api } from "./api/client.js?v=20260712-activity-notifications-v1";
+import { api } from "./api/client.js?v=20260712-activity-operations-v1";
 import {
   activityFilterState,
   rememberActivityCategories
-} from "./activities/filters.js?v=20260712-activity-notifications-v1";
+} from "./activities/filters.js?v=20260712-activity-operations-v1";
 import { state } from "./state.js";
-import { isAdminUser, isStudentUser } from "./utils/auth.js?v=20260712-activity-notifications-v1";
-import { normalizePost } from "./utils/format.js?v=20260712-activity-notifications-v1";
+import { isActivityOrganizer, isAdminUser, isStudentUser } from "./utils/auth.js?v=20260712-activity-operations-v1";
+import { normalizePost } from "./utils/format.js?v=20260712-activity-operations-v1";
 import {
   renderAdminAccessDenied,
   renderActivities,
@@ -19,9 +19,9 @@ import {
   renderPersonalPostManager,
   renderPendingActivities,
   renderSearchResults
-} from "./ui/renderers.js?v=20260712-activity-notifications-v1";
-import { activityNotificationState } from "./notifications/state.js?v=20260712-activity-notifications-v1";
-import { renderActivityNotifications } from "./notifications/renderers.js?v=20260712-activity-notifications-v1";
+} from "./ui/renderers.js?v=20260712-activity-operations-v1";
+import { activityNotificationState } from "./notifications/state.js?v=20260712-activity-operations-v1";
+import { renderActivityNotifications } from "./notifications/renderers.js?v=20260712-activity-operations-v1";
 
 export async function loadUsers(keyword = "") {
   state.users = await api.users(keyword);
@@ -107,7 +107,18 @@ export async function loadComments(postId) {
 
 export async function loadActivities() {
   const { filters } = activityFilterState();
-  state.activities = await api.activities(filters);
+  const [published, managed] = await Promise.all([
+    api.activities(filters),
+    isActivityOrganizer() ? api.managedActivities() : Promise.resolve([])
+  ]);
+  state.activities = published;
+  state.managedActivities = managed;
+  state.activitySubmissions = managed;
+  if (!isActivityOrganizer()) {
+    state.activityRosters = {};
+    state.expandedActivityRosterId = "";
+    state.activityOperationsNotice = null;
+  }
   rememberActivityCategories(state.activities);
   state.activityRegistrations = {};
   if (isStudentUser()) {
@@ -169,7 +180,12 @@ export async function loadPendingActivities() {
 }
 
 export async function loadMetrics() {
-  state.metrics = await api.metrics();
+  const [baseMetrics, activityMetrics] = await Promise.all([api.metrics(), api.activityMetrics()]);
+  state.metrics = {
+    ...baseMetrics,
+    活动报名: String(activityMetrics.registrationCount),
+    活动签到: String(activityMetrics.checkedInCount)
+  };
   renderMetrics();
 }
 

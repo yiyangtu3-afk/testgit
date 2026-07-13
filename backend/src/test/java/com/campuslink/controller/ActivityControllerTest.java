@@ -1,6 +1,7 @@
 package com.campuslink.controller;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -106,5 +107,23 @@ class ActivityControllerTest {
                 """))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.message").value("活动容量至少为1"));
+  }
+
+  @Test
+  void teacherReadsOwnPersistedActivities() throws Exception {
+    mockMvc.perform(post("/api/activities")
+            .header("Authorization", "Bearer teacher-token")
+            .contentType("application/json")
+            .content("""
+                {"title":"名单工作坊","description":"测试","category":"科技","location":"A201",
+                 "startsAt":"2026-08-01T09:00:00","endsAt":"2026-08-01T10:00:00","capacity":10}
+                """))
+        .andExpect(status().isCreated());
+
+    mockMvc.perform(get("/api/activities/managed")
+            .header("Authorization", "Bearer teacher-token"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].title").value("名单工作坊"))
+        .andExpect(jsonPath("$[0].organizerId").value("u-2001"));
   }
 }

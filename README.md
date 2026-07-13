@@ -18,7 +18,7 @@ Open the local demo in a browser:
 ```
 
 Then visit
-`http://127.0.0.1:5179/?v=20260712-activity-notifications-v1`.
+`http://127.0.0.1:5179/?v=20260712-activity-operations-v1`.
 
 The demo supports these flows:
 
@@ -59,6 +59,9 @@ The demo supports these flows:
 - Browse published campus activities from the activity workspace.
 - Switch to the teacher or club-leader account, submit an activity, and see
   its pending review state without supplying an organizer ID.
+- Open **我的活动运营** as the organizer, inspect the persisted registration
+  and waitlist roster, check in registered students, and export the roster as
+  CSV.
 - Switch to the administrator account, approve or reject pending activities,
   and provide a required reason for rejection.
 - See the activity-review workspace immediately when opening the administrator
@@ -69,7 +72,8 @@ The demo supports these flows:
 - Delete one or more audit records from the admin audit table.
 - Filter the admin report by **今日**, **本周**, or **全部**, then print a
   report card with preview rows, a CSV download, and a print preview action.
-- View admin metrics and live audit records.
+- View admin metrics and live audit records. The **活动报名** and **活动签到**
+  cards read real activity registration rows instead of display constants.
 
 The frontend tries `http://127.0.0.1:8080/api` first. If the Java API can't be
 reached, it falls back to the built-in mock data and shows **Mock** in the
@@ -119,8 +123,9 @@ the demo flows connected. The backend test suite covers the migrated service
 behavior for login, user search, friend requests, accepted friendships, chat
 messages, chat attachments, feed posts, comments, moderation, and audit
 records. Activity tests cover organizer permissions, review transitions,
-date/category filters, registration and waitlist promotion, persistent
-notifications, HTTP boundaries, MyBatis mapping, and rollback-safe history.
+date/category filters, registration and waitlist promotion, organizer rosters,
+transactional check-in, persistent notifications, HTTP boundaries, MyBatis
+mapping, and rollback-safe history.
 The suite also includes MockMvc controller tests for the auth, users, friends,
 chat, feed, activity notifications, and admin API boundary, plus direct
 WebSocket handler tests for chat and recipient-only activity notification
@@ -158,6 +163,13 @@ When signed in as the teacher, contacts with no direct conversation show
 to another user. Opening an empty conversation keeps the message list empty.
 This check used existing MySQL history and didn't reset or replace it.
 
+The activity operations acceptance used the same live Java API and existing
+MySQL history. The teacher account loaded three persisted activities, opened a
+roster with one registered and one waitlisted student, and generated the CSV
+export. The administrator console displayed five real occupied registrations
+and zero check-ins. The activity review workspace, feed moderation detail, and
+chat composer remained correctly laid out.
+
 ## Frontend structure
 
 The browser demo is still served as static files, but the JavaScript is split
@@ -169,8 +181,8 @@ The frontend uses this module layout:
 - `api`: Live API adapter and mock API fallback.
 - `auth`: Login, quick demo entry, logout, and demo account switching.
 - `chat`: Chat-specific rendering.
-- `activities`: Activity filters, list, registration, submission, status, and
-  admin review UI.
+- `activities`: Activity filters, list, registration, submission, organizer
+  roster, check-in, CSV export, status, and admin review UI.
 - `notifications`: Persistent activity notification state, rendering,
   read-all interaction, and WebSocket event handling.
 - `contacts`: Friend and contact workflows are wired through shared loaders and
@@ -260,14 +272,18 @@ The current backend exposes these API paths:
 - `POST /api/feed/{postId}/comments`
 - `GET /api/activities`
 - `POST /api/activities`
+- `GET /api/activities/managed`
 - `GET /api/activities/{activityId}/registrations/current`
 - `POST /api/activities/{activityId}/registrations`
 - `DELETE /api/activities/{activityId}/registrations/current`
+- `GET /api/activities/{activityId}/registrations/roster`
+- `POST /api/activities/{activityId}/registrations/{registrationId}/check-in`
 - `GET /api/activity-notifications`
 - `POST /api/activity-notifications/read-all`
 - `GET /api/admin/activities/pending`
 - `POST /api/admin/activities/{activityId}/reviews`
 - `GET /api/admin/metrics`
+- `GET /api/admin/activity-metrics`
 - `GET /api/admin/moderation`
 - `POST /api/admin/moderation/{itemId}/{decision}`
 - `DELETE /api/admin/moderation`
@@ -287,6 +303,14 @@ Student registration uses the authenticated bearer token and never accepts an
 attendee ID. The service locks an activity while it assigns capacity, writes a
 current registration and an append-only registration event in one transaction,
 and promotes the oldest waitlisted attendee when a registered student cancels.
+
+Organizer operations also use the bearer token. `GET /api/activities/managed`
+returns only activities created by the current teacher or club leader. Roster
+and check-in endpoints verify that the current user owns the activity. A
+check-in changes only `registered` to `checked_in`, stores `checked_in_at`, and
+appends the check-in event in the same transaction. The independent
+`GET /api/admin/activity-metrics` endpoint counts occupied and checked-in rows
+without adding activity rules to `AdminService`.
 
 The published activity list accepts optional `from`, `to`, and `category`
 query parameters. Dates use `YYYY-MM-DD`; both dates are inclusive and match
@@ -363,7 +387,8 @@ end-to-end slice now covers teacher or club-leader submission, pending status,
 administrator approval or rejection, and the published activity list while
 keeping activity rules outside the feed and generic admin services.
 
-The reviewed [`activity registration and waitlist design`](docs/activity-registration-design.md)
-defines the next slice: student registration, cancellation, capacity-safe
-waitlisting, and transactional promotion. Implementation starts with the
-activity-domain persistence layer and rollback-safe MySQL tests.
+The reviewed
+[`activity registration and waitlist design`](docs/activity-registration-design.md)
+records the completed registration, cancellation, waitlist, organizer roster,
+transactional check-in, CSV export, and real activity-metric boundaries. The
+next roadmap work moves to broader notification and social-integrity tasks.

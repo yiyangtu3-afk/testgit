@@ -90,6 +90,11 @@ public interface ActivityMapper {
       + " order by a.created_at, a.id")
   List<ActivityEntity> findPending();
 
+  @Select(ACTIVITY_SELECT
+      + " where a.organizer_id = #{organizerId}"
+      + " order by a.created_at desc, a.id desc")
+  List<ActivityEntity> findByOrganizer(@Param("organizerId") String organizerId);
+
   @Update("""
       update activities
       set status = #{status},

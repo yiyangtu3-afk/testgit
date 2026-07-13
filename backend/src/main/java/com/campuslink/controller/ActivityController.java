@@ -50,6 +50,12 @@ public class ActivityController {
     return activityService.create(organizer, request);
   }
 
+  @GetMapping("/managed")
+  public List<ActivityView> managed(
+      @RequestHeader(value = "Authorization", required = false) String authorization) {
+    return activityService.managed(authTokenService.requireUser(authorization));
+  }
+
   private LocalDate parseDate(String value) {
     if (value == null || value.isBlank()) {
       return null;

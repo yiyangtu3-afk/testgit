@@ -42,4 +42,24 @@ class ActivityRegistrationRepositoryIntegrationTest {
     assertThat(repository.findEvents(published.id())).extracting("eventType")
         .containsExactly("registered", "waitlisted", "cancelled", "promoted");
   }
+
+  @Test void organizerCheckInPersistsRosterTimestampAndEventWithinRollbackTransaction() {
+    var teacher = users.findById("u-2001").orElseThrow();
+    var admin = users.findById("u-2003").orElseThrow();
+    var student = users.findById("u-1001").orElseThrow();
+    var pending = activities.create(teacher, new CreateActivityRequest("签到事务测试", "验证签到名单",
+        "测试", "T202", LocalDateTime.of(2026, 9, 4, 9, 0),
+        LocalDateTime.of(2026, 9, 4, 11, 0), 10));
+    var published = activities.review(admin, pending.id(), new ReviewActivityRequest("approve", null));
+    var registration = registrations.register(student, published.id());
+
+    var checkedIn = registrations.checkIn(teacher, published.id(), registration.id());
+
+    assertThat(checkedIn.status()).isEqualTo("checked_in");
+    assertThat(checkedIn.attendeeName()).isEqualTo(student.name());
+    assertThat(checkedIn.checkedInAt()).isNotNull();
+    assertThat(repository.find(published.id(), student.id()).status()).isEqualTo("checked_in");
+    assertThat(repository.findEvents(published.id())).extracting("eventType")
+        .containsExactly("registered", "checked_in");
+  }
 }

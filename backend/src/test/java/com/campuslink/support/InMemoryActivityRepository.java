@@ -83,6 +83,13 @@ public final class InMemoryActivityRepository implements ActivityRepository {
   }
 
   @Override
+  public List<ActivityEntity> findByOrganizer(String organizerId) {
+    return activities.stream()
+        .filter(activity -> activity.organizerId().equals(organizerId))
+        .toList();
+  }
+
+  @Override
   public int updateReview(
       String activityId,
       String status,

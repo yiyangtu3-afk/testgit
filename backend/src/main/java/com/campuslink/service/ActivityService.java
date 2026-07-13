@@ -66,6 +66,11 @@ public class ActivityService {
     return activityRepository.findPending().stream().map(this::toView).toList();
   }
 
+  public List<ActivityView> managed(UserEntity organizer) {
+    requireOrganizer(organizer);
+    return activityRepository.findByOrganizer(organizer.id()).stream().map(this::toView).toList();
+  }
+
   @Transactional
   public ActivityView review(
       UserEntity reviewer,

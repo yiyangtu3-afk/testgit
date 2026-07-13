@@ -1,11 +1,15 @@
 package com.campuslink.service;
 
+import com.campuslink.dto.ActivityRegistrationDtos.ActivityMetricsView;
 import com.campuslink.dto.ActivityRegistrationDtos.RegistrationView;
+import com.campuslink.dto.ActivityRegistrationDtos.RosterEntryView;
+import com.campuslink.dto.ActivityRegistrationDtos.RosterView;
 import com.campuslink.entity.ActivityEntity;
 import com.campuslink.entity.ActivityRegistrationEntity;
 import com.campuslink.entity.DemoEntities.UserEntity;
 import com.campuslink.repository.ActivityRegistrationRepository;
 import com.campuslink.repository.ActivityRepository;
+import java.util.ArrayList;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -64,6 +68,63 @@ public class ActivityRegistrationService {
         "waitlisted".equals(registration.status()) ? registrations.queuePosition(registration.id()) : 0);
   }
 
+  public RosterView roster(UserEntity organizer, String activityId) {
+    requireOrganizer(organizer);
+    ActivityEntity activity = requireOwnedActivity(organizer, activityId, false);
+    var entries = new ArrayList<RosterEntryView>();
+    int waitlistPosition = 0;
+    int registeredCount = 0;
+    int waitlistedCount = 0;
+    int checkedInCount = 0;
+    for (var item : registrations.findRoster(activityId)) {
+      int queuePosition = 0;
+      if ("waitlisted".equals(item.status())) {
+        waitlistedCount++;
+        queuePosition = ++waitlistPosition;
+      } else if ("checked_in".equals(item.status())) {
+        checkedInCount++;
+      } else if ("registered".equals(item.status())) {
+        registeredCount++;
+      }
+      entries.add(new RosterEntryView(item.registrationId(), item.attendeeId(), item.attendeeName(),
+          item.status(), queuePosition, item.registeredAt(), item.waitlistedAt(), item.checkedInAt()));
+    }
+    return new RosterView(activity.id(), activity.title(), activity.capacity(), registeredCount,
+        waitlistedCount, checkedInCount, entries);
+  }
+
+  public ActivityMetricsView metrics(UserEntity administrator) {
+    requireAdministrator(administrator);
+    return new ActivityMetricsView(registrations.countAllOccupied(), registrations.countAllCheckedIn());
+  }
+
+  @Transactional
+  public RosterEntryView checkIn(UserEntity organizer, String activityId, String registrationId) {
+    requireOrganizer(organizer);
+    requireOwnedActivity(organizer, activityId, true);
+    ActivityRegistrationEntity registration = registrations.findByIdForUpdate(activityId, registrationId);
+    if (registration == null) {
+      throw new IllegalArgumentException("报名记录不存在");
+    }
+    if ("checked_in".equals(registration.status())) {
+      throw new ConflictException("该参与者已签到");
+    }
+    if (!"registered".equals(registration.status())) {
+      throw new ConflictException("只有已报名参与者可以签到");
+    }
+    if (registrations.updateStatus(registration.id(), "checked_in") != 1) {
+      throw new ConflictException("签到状态更新失败");
+    }
+    registrations.addEvent(registration.id(), activityId, registration.attendeeId(), organizer.id(),
+        "checked_in", "registered", "checked_in");
+    return registrations.findRoster(activityId).stream()
+        .filter(item -> item.registrationId().equals(registrationId))
+        .findFirst()
+        .map(item -> new RosterEntryView(item.registrationId(), item.attendeeId(), item.attendeeName(),
+            item.status(), 0, item.registeredAt(), item.waitlistedAt(), item.checkedInAt()))
+        .orElseThrow(() -> new IllegalStateException("签到结果读取失败"));
+  }
+
   @Transactional
   public RegistrationView cancel(UserEntity attendee, String activityId) {
     requireStudent(attendee);
@@ -72,6 +133,9 @@ public class ActivityRegistrationService {
     ActivityRegistrationEntity registration = registrations.findForUpdate(activityId, attendee.id());
     if (registration == null || "cancelled".equals(registration.status())) {
       throw new ConflictException("没有可取消的报名记录");
+    }
+    if ("checked_in".equals(registration.status())) {
+      throw new ConflictException("已签到的报名不能取消");
     }
     String previous = registration.status();
     registrations.updateStatus(registration.id(), "cancelled");
@@ -101,6 +165,27 @@ public class ActivityRegistrationService {
     if (!attendee.role().contains("学生")) {
       throw new ForbiddenException("只有学生可以报名活动");
     }
+  }
+
+  private void requireOrganizer(UserEntity user) {
+    if (!user.role().contains("教师") && !user.role().contains("社团负责人")) {
+      throw new ForbiddenException("只有教师或社团负责人可以管理活动");
+    }
+  }
+
+  private void requireAdministrator(UserEntity user) {
+    if (!user.role().contains("管理员")) {
+      throw new ForbiddenException("需要管理员账号查看活动指标");
+    }
+  }
+
+  private ActivityEntity requireOwnedActivity(UserEntity organizer, String activityId, boolean lock) {
+    ActivityEntity activity = (lock ? activities.findByIdForUpdate(activityId) : activities.findById(activityId))
+        .orElseThrow(() -> new IllegalArgumentException("活动不存在"));
+    if (!activity.organizerId().equals(organizer.id())) {
+      throw new ForbiddenException("只能管理自己创建的活动");
+    }
+    return activity;
   }
 
   private void requireOpen(ActivityEntity activity) {

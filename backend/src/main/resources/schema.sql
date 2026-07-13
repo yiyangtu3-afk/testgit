@@ -171,6 +171,7 @@ create table if not exists activity_registrations (
   status varchar(20) not null,
   registered_at datetime null,
   waitlisted_at datetime null,
+  checked_in_at datetime(6) null,
   cancelled_at datetime null,
   created_at timestamp not null default current_timestamp,
   updated_at timestamp not null default current_timestamp on update current_timestamp,
@@ -179,6 +180,22 @@ create table if not exists activity_registrations (
   key idx_activity_registrations_waitlist (activity_id, status, waitlisted_at, id),
   key idx_activity_registrations_attendee (attendee_id, updated_at)
 );
+
+set @activity_registration_check_in_exists = (
+  select count(*)
+  from information_schema.columns
+  where table_schema = database()
+    and table_name = 'activity_registrations'
+    and column_name = 'checked_in_at'
+);
+set @activity_registration_check_in_migration = if(
+  @activity_registration_check_in_exists = 0,
+  'alter table activity_registrations add column checked_in_at datetime(6) null after waitlisted_at',
+  'select 1'
+);
+prepare add_activity_registration_check_in from @activity_registration_check_in_migration;
+execute add_activity_registration_check_in;
+deallocate prepare add_activity_registration_check_in;
 
 create table if not exists activity_registration_events (
   id varchar(32) primary key,

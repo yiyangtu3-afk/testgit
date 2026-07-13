@@ -1,6 +1,8 @@
 package com.campuslink.controller;
 
 import com.campuslink.dto.ActivityRegistrationDtos.RegistrationView;
+import com.campuslink.dto.ActivityRegistrationDtos.RosterView;
+import com.campuslink.dto.ActivityRegistrationDtos.RosterEntryView;
 import com.campuslink.entity.DemoEntities.UserEntity;
 import com.campuslink.service.ActivityRegistrationService;
 import com.campuslink.service.AuthTokenService;
@@ -49,5 +51,20 @@ public class ActivityRegistrationController {
       @PathVariable String activityId,
       @RequestHeader(value = "Authorization", required = false) String authorization) {
     return service.cancel(authTokens.requireUser(authorization), activityId);
+  }
+
+  @GetMapping("/roster")
+  public RosterView roster(
+      @PathVariable String activityId,
+      @RequestHeader(value = "Authorization", required = false) String authorization) {
+    return service.roster(authTokens.requireUser(authorization), activityId);
+  }
+
+  @PostMapping("/{registrationId}/check-in")
+  public RosterEntryView checkIn(
+      @PathVariable String activityId,
+      @PathVariable String registrationId,
+      @RequestHeader(value = "Authorization", required = false) String authorization) {
+    return service.checkIn(authTokens.requireUser(authorization), activityId, registrationId);
   }
 }

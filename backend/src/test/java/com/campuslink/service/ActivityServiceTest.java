@@ -102,6 +102,19 @@ class ActivityServiceTest {
   }
 
   @Test
+  void organizerReadsOnlyOwnPersistedActivities() {
+    UserEntity teacher = new UserEntity("u-teacher", "陈老师", "教师", "1", "online");
+    UserEntity leader = new UserEntity("u-leader", "王社长", "社团负责人", "2", "online");
+    service.create(teacher, validRequest());
+    service.create(leader, validRequest());
+
+    assertThat(service.managed(teacher))
+        .singleElement()
+        .extracting("organizerId", "title")
+        .containsExactly("u-teacher", "校园编程工作坊");
+  }
+
+  @Test
   void administratorCannotCreateActivity() {
     UserEntity admin = new UserEntity("u-admin", "教务管理员", "管理员", "13800000004", "online");
 

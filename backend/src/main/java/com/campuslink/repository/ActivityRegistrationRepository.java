@@ -2,6 +2,7 @@ package com.campuslink.repository;
 
 import com.campuslink.entity.ActivityRegistrationEntity;
 import com.campuslink.entity.ActivityRegistrationEventEntity;
+import com.campuslink.entity.ActivityRosterEntryEntity;
 import java.util.List;
 
 public interface ActivityRegistrationRepository {
@@ -10,9 +11,15 @@ public interface ActivityRegistrationRepository {
 
   ActivityRegistrationEntity find(String activityId, String attendeeId);
 
+  ActivityRegistrationEntity findByIdForUpdate(String activityId, String registrationId);
+
   int countOccupied(String activityId);
 
   int countWaitlisted(String activityId);
+
+  int countAllOccupied();
+
+  int countAllCheckedIn();
 
   int queuePosition(String registrationId);
 
@@ -26,4 +33,6 @@ public interface ActivityRegistrationRepository {
       String eventType, String fromStatus, String toStatus);
 
   List<ActivityRegistrationEventEntity> findEvents(String activityId);
+
+  List<ActivityRosterEntryEntity> findRoster(String activityId);
 }

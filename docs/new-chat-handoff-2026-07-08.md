@@ -4,6 +4,10 @@
 **普通用户审核状态反馈**、窄窗口聊天滚动修复、动态可见范围真实过滤和
 好友聊天访问控制。
 
+> **Note:** 本文保留可信基线的历史约束。活动阶段的最新完成状态、验证记录
+> 和下一项任务以
+> [`phase-two-activity-handoff.md`](phase-two-activity-handoff.md) 为准。
+
 ## 当前基线
 
 当前前端基线保留管理员审核工作台和普通用户审核状态反馈，不保留后来
@@ -13,13 +17,13 @@
 当前静态资源版本是：
 
 ```text
-20260710-conversation-previews-v1
+20260712-activity-operations-v1
 ```
 
 当前本地验证地址是：
 
 ```text
-http://127.0.0.1:5179/?v=20260710-conversation-previews-v1
+http://127.0.0.1:5179/?v=20260712-activity-operations-v1
 ```
 
 ## 已完成内容
@@ -212,10 +216,10 @@ scrollTop 从 1541.5 变到 1181.5
 
 ## 建议下一步
 
-可信基线已完成。下一步进入校园活动报名闭环，先完成活动数据模型、状态机、
-权限矩阵和测试用例设计，再实现教师或社团负责人创建活动、管理员审核发布的
-第一条可演示链路。详细边界见
-[`phase-two-activity-handoff.md`](phase-two-activity-handoff.md)。
+校园活动报名闭环已经完成。下一步进入通知与社交完整性，优先把好友申请、动态
+评论和点赞结果接入持久化通知，并把点赞改为按用户记录的可取消操作。最新边界
+见 [`phase-two-activity-handoff.md`](phase-two-activity-handoff.md) 和
+[`resume-project-roadmap.md`](resume-project-roadmap.md)。
 
 ## 可直接复制到下个对话的提示词
 
@@ -233,16 +237,13 @@ backend/AGENTS.md。项目路径是 /Users/linus_k/Documents/test。不要重置
 - docs/phase-two-activity-handoff.md
 - docs/resume-project-roadmap.md
 
-可信基线已完成，当前稳定提交为 f06b09d Add transactional workflow
-safeguards，已推送到 GitHub main。下一阶段是“校园活动报名闭环”；请先完成
-活动数据模型、状态机、权限矩阵和测试用例设计，再实现“创建活动到管理员
-审核发布”的第一条后端垂直切片。活动逻辑必须放在独立领域模块，不能塞进
-FeedService 或 AdminService。
+可信基线和校园活动报名闭环已经完成并推送到 GitHub `main`。下一阶段是
+“通知与社交完整性”；优先把好友申请、动态评论和点赞结果接入持久化通知，
+并把点赞改为按用户记录的可取消操作。活动逻辑必须继续保留在独立领域模块，
+不能塞进 FeedService 或 AdminService。
 
-当前基线已经回退到“普通用户审核状态反馈完成”之后，并额外修复了窄窗口
-下林一与周同学聊天内容不能上下滑动的问题。当前静态资源版本是
-20260710-conversation-previews-v1，本地验证地址是：
-http://127.0.0.1:5179/?v=20260710-conversation-previews-v1
+当前静态资源版本是 `20260712-activity-operations-v1`，本地验证地址是：
+http://127.0.0.1:5179/?v=20260712-activity-operations-v1
 
 当前保留的功能：
 - 管理员后台有“待审核内容”工作台，位于指标卡片下方、审计记录上方。

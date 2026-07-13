@@ -1,6 +1,7 @@
 package com.campuslink.controller;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -70,5 +71,31 @@ class ActivityRegistrationControllerTest {
     mockMvc.perform(post("/api/activities/{activityId}/registrations", activityId)
         .header("Authorization", "Bearer teacher-token"))
         .andExpect(status().isForbidden()).andExpect(jsonPath("$.message").value("只有学生可以报名活动"));
+  }
+
+  @Test void organizerReadsRosterWithoutClientOrganizerId() throws Exception {
+    mockMvc.perform(post("/api/activities/{activityId}/registrations", activityId)
+        .header("Authorization", "Bearer student-token"))
+        .andExpect(status().isCreated());
+
+    mockMvc.perform(get("/api/activities/{activityId}/registrations/roster", activityId)
+        .header("Authorization", "Bearer teacher-token"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.activityId").value(activityId))
+        .andExpect(jsonPath("$.registeredCount").value(1))
+        .andExpect(jsonPath("$.entries[0].attendeeId").value("u-student"));
+  }
+
+  @Test void organizerChecksInRegistrationWithoutClientActorId() throws Exception {
+    mockMvc.perform(post("/api/activities/{activityId}/registrations", activityId)
+        .header("Authorization", "Bearer student-token"))
+        .andExpect(status().isCreated());
+
+    mockMvc.perform(post("/api/activities/{activityId}/registrations/{registrationId}/check-in",
+            activityId, "registration-1")
+        .header("Authorization", "Bearer teacher-token"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("checked_in"))
+        .andExpect(jsonPath("$.checkedInAt").isNotEmpty());
   }
 }

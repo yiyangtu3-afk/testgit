@@ -1,6 +1,6 @@
 import { API_BASE, state } from "../state.js";
-import { setApiMode } from "../ui/status.js?v=20260712-activity-notifications-v1";
-import { mockApi } from "./mock-api.js?v=20260712-activity-notifications-v1";
+import { setApiMode } from "../ui/status.js?v=20260712-activity-operations-v1";
+import { mockApi } from "./mock-api.js?v=20260712-activity-operations-v1";
 
 class ApiUnavailableError extends Error {
   constructor(cause) {
@@ -204,6 +204,24 @@ export const api = {
       () => mockApi.createActivity(activity)
     );
   },
+  managedActivities() {
+    return withApi(
+      () => request("/activities/managed"),
+      () => mockApi.managedActivities()
+    );
+  },
+  activityRoster(activityId) {
+    return withApi(
+      () => request(`/activities/${activityId}/registrations/roster`),
+      () => mockApi.activityRoster(activityId)
+    );
+  },
+  checkInActivityRegistration(activityId, registrationId) {
+    return withApi(
+      () => request(`/activities/${activityId}/registrations/${registrationId}/check-in`, { method: "POST" }),
+      () => mockApi.checkInActivityRegistration(activityId, registrationId)
+    );
+  },
   activityRegistration(activityId) {
     return withApi(
       () => request(`/activities/${activityId}/registrations/current`),
@@ -251,6 +269,9 @@ export const api = {
   },
   metrics() {
     return withApi(() => request("/admin/metrics"), () => mockApi.metrics());
+  },
+  activityMetrics() {
+    return withApi(() => request("/admin/activity-metrics"), () => mockApi.activityMetrics());
   },
   auditEvents() {
     return withApi(() => request("/admin/audit-events"), () => mockApi.auditEvents());

@@ -1,20 +1,20 @@
 # CampusLink 阶段二活动报名交接
 
 本文交接 CampusLink 的稳定基线和下一阶段工作。活动创建与审核、学生报名与
-候补、时间与类别筛选，以及持久化通知与 WebSocket 推送已经完成；下一项进入
-组织者名单、签到、导出与真实管理指标，不要重做已完成的聊天、动态、内容审核
-和活动报名链路。
+候补、时间与类别筛选、持久化通知、组织者名单、签到、CSV 导出，以及真实
+活动管理指标已经完成。阶段二闭环已全部交付；下一项进入阶段三的通知与社交
+完整性，不要重做已完成的聊天、动态、内容审核和活动报名链路。
 
 ## 稳定基线
 
-本轮实现继承 `f6da8af Add persistent activity notifications`。远程
+本轮实现继承 `bd753e1 Fix conversation unread count scope`。远程
 仓库是 `https://github.com/yiyangtu3-afk/testgit.git`，使用 `main` 分支；最新
 活动实现提交以 `main` 的最新提交为准。
 
-静态前端版本为 `20260712-activity-notifications-v1`，本地地址为：
+静态前端版本为 `20260712-activity-operations-v1`，本地地址为：
 
 ```text
-http://127.0.0.1:5179/?v=20260712-activity-notifications-v1
+http://127.0.0.1:5179/?v=20260712-activity-operations-v1
 ```
 
 后端本地地址为：
@@ -115,6 +115,24 @@ http://127.0.0.1:8080
 - 用户离线时产生的通知会在下次登录后从 Java API 恢复；live API 错误不会
   回退到 Mock 通知。
 
+## 组织者活动运营闭环
+
+阶段二最后一项使用现有活动领域边界完成，没有把名单、签到或指标加入动态和
+通用管理员服务。
+
+- `GET /api/activities/managed` 只返回当前教师或社团负责人创建的活动。
+- `GET /api/activities/{activityId}/registrations/roster` 校验当前账号是活动
+  组织者，并返回参与者姓名、状态、候补位置和时间记录。
+- `POST /api/activities/{activityId}/registrations/{registrationId}/check-in`
+  只允许组织者把 `registered` 变为 `checked_in`，重复签到或候补签到返回
+  `409`。
+- `checked_in_at` 通过幂等 `schema.sql` 迁移加入现有 MySQL 表；签到状态和
+  追加式事件在同一 `@Transactional` 方法中写入。
+- `GET /api/admin/activity-metrics` 只允许管理员读取真实占位报名数和签到数，
+  并由独立 `ActivityOperationsAdminController` 暴露。
+- 前端 **我的活动运营** 从 Java API 恢复历史活动和名单，支持现场签到与
+  CSV 导出。Mock API 使用相同权限、状态和响应结构。
+
 ## 当前验证记录
 
 后端稳定点和本轮前端改动已完成以下自动检查。
@@ -179,12 +197,24 @@ http://127.0.0.1:8080
     会话都显示 **暂无消息** 且没有未读徽标，打开空会话后消息数为 `0`，控制台
     无错误。测试和验收都保留本地 MySQL 历史数据；本轮没有前端代码改动，
     前端版本保持不变。
+19. 2026 年 7 月 12 日完成活动运营闭环：教师和社团负责人可以读取自己创建的
+    持久化活动，展开报名、签到与候补名单，确认现场签到并导出 CSV。签到将
+    `registered`、`checked_in_at` 和追加式 `checked_in` 事件放在同一事务；
+    MyBatis 真实数据库测试使用 `@Transactional` 与 `@Rollback`。管理员通过
+    独立 `/api/admin/activity-metrics` 读取真实报名和签到数量，活动逻辑没有
+    进入 `AdminService`。完整 Maven 测试 107 个全部通过，无失败、错误或
+    跳过；Mockito/Byte Buddy 仅输出未来 JDK 动态代理兼容性警告。前端检查
+    通过，浏览器在 Java API 模式读取本地 MySQL 的 3 个教师活动，打开包含
+    1 个待签到和 1 个候补学生的名单并生成 CSV；管理员指标显示 5 个占位报名、
+    0 个签到。管理员活动审核、动态审核详情和聊天页均完成回归，页面无覆盖。
+    前端版本升级为 `20260712-activity-operations-v1`，共享 `state.js` 导入仍无
+    查询参数。
 
 ## 下一项工作
 
-下一项实现组织者报名名单、签到和导出，并把管理员活动报名与签到指标改为真实
-数据。必须继续从 bearer token 解析组织者身份，限制组织者只能管理自己的活动，
-签到与事件历史的跨表写入使用事务，并为 MyBatis 变更保留可回滚集成测试。
+阶段二已经完成。下一项进入阶段三，优先把好友申请、动态评论和点赞结果接入
+持久化通知，并把点赞改为按用户记录的可取消操作。继续保持 bearer token
+身份边界、真实 API 错误不回退 Mock、跨表写入事务和可回滚 MyBatis 集成测试。
 
 ## 必读文件
 

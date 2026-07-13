@@ -111,6 +111,9 @@ function runActivityRendererCheck() {
     '  "#activityNotice": { hidden: true, className: "", textContent: "" },',
     '  "#activitySubmissionPanel": { hidden: true },',
     '  "#activitySubmissionList": { innerHTML: "" },',
+    '  "#managedActivityCount": { textContent: "" },',
+    '  "#activityOperationsNotice": { hidden: true, className: "", textContent: "" },',
+    '  "#activityRosterPanel": { hidden: true, innerHTML: "" },',
     '  "#activityFilterFrom": { value: "" },',
     '  "#activityFilterTo": { value: "" },',
     '  "#activityFilterCategory": { value: "", innerHTML: "" },',
@@ -124,6 +127,9 @@ function runActivityRendererCheck() {
     'state.currentUser = { id: "u-2001", name: "陈老师", role: "教师账号" };',
     `state.activities = [{ id: "activity-xss", title: ${JSON.stringify(payload)}, description: ${JSON.stringify(payload)}, category: "科技", location: "A201", startsAt: "2026-08-01T09:00:00", endsAt: "2026-08-01T11:00:00", capacity: 20, organizerId: "u-2001", organizerName: "陈老师", status: "published", reviewDecision: "approved" }];`,
     'state.activitySubmissions = [];',
+    'state.managedActivities = [];',
+    'state.activityRosters = {};',
+    'state.expandedActivityRosterId = "";',
     'delete state.activityFilters;',
     'delete state.activityCategories;',
     'const { renderActivities, renderPendingActivities } = await import("./frontend/js/activities/renderers.js");',
@@ -322,6 +328,48 @@ function runMockActivityNotificationWorkflowCheck() {
   }
 }
 
+function runMockActivityOperationsCheck() {
+  const script = [
+    'const { state } = await import("./frontend/js/state.js");',
+    'const { mockApi } = await import("./frontend/js/api/mock-api.js");',
+    'state.currentUser = { id: "u-2001", name: "陈老师", role: "教师账号" };',
+    'const created = await mockApi.createActivity({ title: "名单测试", description: "测试", category: "科技", location: "A201", startsAt: "2026-10-01T09:00", endsAt: "2026-10-01T11:00", capacity: 2 });',
+    'state.currentUser = { id: "u-2003", name: "教务管理员", role: "管理员账号" };',
+    'await mockApi.reviewActivity(created.id, "approve", null);',
+    'state.currentUser = { id: "u-1001", name: "林一", role: "学生账号" };',
+    'await mockApi.registerActivity(created.id);',
+    'state.currentUser = { id: "u-2001", name: "陈老师", role: "教师账号" };',
+    'const managed = await mockApi.managedActivities();',
+    'const before = await mockApi.activityRoster(created.id);',
+    'const checkedIn = await mockApi.checkInActivityRegistration(created.id, before.entries[0].registrationId);',
+    'const after = await mockApi.activityRoster(created.id);',
+    'state.currentUser = { id: "u-2003", name: "教务管理员", role: "管理员账号" };',
+    'const metrics = await mockApi.activityMetrics();',
+    'process.stdout.write(JSON.stringify({ managedIds: managed.map((item) => item.id), before, checkedIn, after, metrics }));'
+  ].join("\n");
+  try {
+    const output = JSON.parse(execFileSync(
+      process.execPath,
+      ["--input-type=module", "--eval", script],
+      { cwd: root, encoding: "utf8" }
+    ));
+    if (!output.managedIds.includes("activity-mock-1") && output.managedIds.length === 0) {
+      failures.push("mock activity operations: expected organizer managed activity list");
+    }
+    if (output.before.registeredCount !== 1 || output.before.entries[0]?.attendeeName !== "林一") {
+      failures.push("mock activity operations: expected persisted roster with attendee name");
+    }
+    if (output.checkedIn.status !== "checked_in" || output.after.checkedInCount !== 1) {
+      failures.push("mock activity operations: expected organizer check-in transition");
+    }
+    if (output.metrics.registrationCount < 1 || output.metrics.checkedInCount < 1) {
+      failures.push("mock activity operations: expected real registration and check-in metrics");
+    }
+  } catch (error) {
+    failures.push(`Mock activity operations check failed: ${String(error.message || error)}`);
+  }
+}
+
 function checkVersionedModuleImports() {
   const bareImports = [...files.js.matchAll(/(?:from|import)\s*["']([^"']+\.js)["']/g)]
     .map((match) => match[1])
@@ -348,6 +396,7 @@ runActivityNotificationRendererCheck();
 runMockActivityWorkflowCheck();
 runMockActivityFilterCheck();
 runMockActivityNotificationWorkflowCheck();
+runMockActivityOperationsCheck();
 checkVersionedModuleImports();
 
 if (files.appEntry.split("\n").length > 20) {
@@ -444,6 +493,9 @@ if (files.html.indexOf('id="moderationPanel"') > files.html.indexOf('id="auditTa
   ["activity-form", "activity submission form styles"],
   ["activity-card", "activity card styles"],
   ["activity-review-panel", "activity admin review styles"],
+  ["activity-operation-card", "organizer activity operation card styles"],
+  ["activity-roster-panel", "activity roster panel styles"],
+  ["activity-roster-row", "activity roster table styles"],
   ["notification-stage", "activity notification stage styles"],
   ["notification-card", "activity notification card styles"],
   ["notification-card--unread", "activity notification unread styles"],
@@ -482,6 +534,11 @@ expectIncludes("css", ".realtime-mode", "chat realtime status styles");
   ["cancelActivityRegistration(activityId)", "activity cancellation adapter"],
   ["activityNotifications()", "activity notification list adapter"],
   ["markAllActivityNotificationsRead()", "activity notification read-all adapter"],
+  ["managedActivities()", "organizer managed activity adapter"],
+  ["activityRoster(activityId)", "activity roster adapter"],
+  ["checkInActivityRegistration(activityId, registrationId)", "activity check-in adapter"],
+  ["activityMetrics()", "activity metrics adapter"],
+  ["activityRosterToCsv(roster)", "activity roster CSV converter"],
   ["活动通知暂时无法加载", "activity notification load failure feedback"],
   ["activityFilters", "activity filter state"],
   ["filterActivities", "activity filter event"],
@@ -489,6 +546,9 @@ expectIncludes("css", ".realtime-mode", "chat realtime status styles");
   ["活动已提交审核", "activity pending feedback"],
   ["data-review-activity", "activity review action binding"],
   ["data-activity-registration", "activity registration action binding"],
+  ["data-open-activity-roster", "activity roster open action"],
+  ["data-check-in-registration", "activity check-in action"],
+  ["data-export-activity-roster", "activity roster export action"],
   ["拒绝活动时必须填写原因", "activity rejection reason guard"],
   ["personalPosts()", "personal posts adapter"],
   ["filter(isCurrentUserPost)", "personal post manager filters to current user"],
@@ -550,6 +610,8 @@ expectIncludes("css", ".realtime-mode", "chat realtime status styles");
   ["renderModerationItems()", "moderation renderer"]
 ].forEach(([needle, label]) => expectIncludes("js", needle, label));
 
+expectIncludes("html", "我的活动运营", "organizer activity operations title");
+
 if (files.js.indexOf("moderationWorkbenchMarkup()") > files.js.indexOf("Audit Log")) {
   failures.push("admin layout: expected pending content workbench to render before audit log");
 }
@@ -560,8 +622,8 @@ expectMatch(
   "admin layout: expected independent review workspaces to use normal document flow"
 );
 
-expectIncludes("html", "20260712-activity-notifications-v1", "HTML escaping cache-busting version");
-expectIncludes("appEntry", "20260712-activity-notifications-v1", "root app imports current HTML escaping module version");
+expectIncludes("html", "20260712-activity-operations-v1", "HTML escaping cache-busting version");
+expectIncludes("appEntry", "20260712-activity-operations-v1", "root app imports current HTML escaping module version");
 
 expectIncludes("js", "setRealtimeMode", "chat realtime status updater");
 expectIncludes("js", "HEARTBEAT_INTERVAL_MS", "chat realtime heartbeat interval");
@@ -588,6 +650,8 @@ expectIncludes("js", "heartbeat.pong", "chat realtime heartbeat pong");
   ["adminNotice", "admin operation notice state"],
   ["reportExport", "report export state"],
   ["activitySubmissions", "activity submission state"],
+  ["managedActivities", "managed activity state"],
+  ["activityRosters", "activity roster state"],
   ["pendingActivities", "pending activity state"],
   ["activityNotifications", "activity notification state"],
   ["activityNotificationUnreadCount", "activity notification unread state"],
@@ -681,7 +745,11 @@ expectMatch("js", /await loadFriends\(\)/, "chat websocket friend refresh");
   ['@PostMapping("/conversations/{peerId}/messages")', "backend message route"],
   ['@RequestMapping("/api/feed")', "backend feed route group"],
   ['@RequestMapping("/api/activities")', "backend activity route group"],
+  ['@GetMapping("/managed")', "backend managed activity route"],
+  ['@GetMapping("/roster")', "backend activity roster route"],
+  ['@PostMapping("/{registrationId}/check-in")', "backend activity check-in route"],
   ['@RequestMapping("/api/admin/activities")', "backend activity admin route group"],
+  ['@GetMapping("/activity-metrics")', "backend real activity metrics route"],
   ['@RequestMapping("/api/activity-notifications")', "backend activity notification route group"],
   ['@GetMapping("/personal-posts")', "backend personal post list route"],
   ['@PatchMapping("/personal-posts/{postId}")', "backend personal post update route"],
@@ -744,6 +812,7 @@ expectMatch("backend", /friendRepository\.areFriends\(currentUserId, peerId\)/, 
   ["m-demo-post-9001", "MySQL demo pending moderation seed"],
   ["u-2004", "MySQL demo club leader account"],
   ["create table if not exists activity_notifications", "MySQL activity notification schema"],
+  ["checked_in_at datetime(6)", "MySQL activity check-in timestamp"],
   ["on duplicate key update", "idempotent MySQL demo seed data"]
 ].forEach(([needle, label]) => expectIncludes("resources", needle, label));
 

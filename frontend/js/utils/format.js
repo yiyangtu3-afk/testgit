@@ -73,6 +73,28 @@ export function reportToCsv(report) {
   return rows.map((row) => row.map(csvCell).join(",")).join("\n");
 }
 
+export function activityRosterToCsv(roster) {
+  const statusLabels = {
+    registered: "已报名",
+    waitlisted: "候补",
+    checked_in: "已签到"
+  };
+  const rows = [
+    ["活动", "报名ID", "用户ID", "姓名", "状态", "候补顺序", "报名时间", "签到时间"],
+    ...(roster.entries || []).map((entry) => [
+      roster.title,
+      entry.registrationId,
+      entry.attendeeId,
+      entry.attendeeName,
+      statusLabels[entry.status] || entry.status,
+      entry.queuePosition || "",
+      entry.registeredAt || entry.waitlistedAt || "",
+      entry.checkedInAt || ""
+    ])
+  ];
+  return rows.map((row) => row.map(csvCell).join(",")).join("\n");
+}
+
 export function exportSummary(report) {
   const metricCount = Object.keys(report.metrics || {}).length;
   const moderationCount = (report.moderation || []).length;

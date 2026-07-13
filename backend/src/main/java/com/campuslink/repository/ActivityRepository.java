@@ -33,6 +33,8 @@ public interface ActivityRepository {
 
   List<ActivityEntity> findPending();
 
+  List<ActivityEntity> findByOrganizer(String organizerId);
+
   int updateReview(
       String activityId,
       String status,

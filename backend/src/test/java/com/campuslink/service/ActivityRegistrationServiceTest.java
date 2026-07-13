@@ -82,6 +82,63 @@ class ActivityRegistrationServiceTest {
         .isInstanceOf(ConflictException.class).hasMessage("你已报名该活动");
   }
 
+  @Test void organizerCanReadActiveRosterWithWaitlistPositions() {
+    var teacher = user("u-teacher", "教师");
+    service.register(user("u-one", "学生"), activityId);
+    service.register(user("u-two", "学生"), activityId);
+
+    var roster = service.roster(teacher, activityId);
+
+    assertThat(roster.activityId()).isEqualTo(activityId);
+    assertThat(roster.registeredCount()).isEqualTo(1);
+    assertThat(roster.waitlistedCount()).isEqualTo(1);
+    assertThat(roster.checkedInCount()).isZero();
+    assertThat(roster.entries()).extracting("attendeeId", "status", "queuePosition")
+        .containsExactly(
+            org.assertj.core.groups.Tuple.tuple("u-one", "registered", 0),
+            org.assertj.core.groups.Tuple.tuple("u-two", "waitlisted", 1));
+  }
+
+  @Test void organizerChecksInRegisteredAttendeeAndRecordsEvent() {
+    var teacher = user("u-teacher", "教师");
+    service.register(user("u-one", "学生"), activityId);
+    String registrationId = service.roster(teacher, activityId).entries().getFirst().registrationId();
+
+    var checkedIn = service.checkIn(teacher, activityId, registrationId);
+
+    assertThat(checkedIn.status()).isEqualTo("checked_in");
+    assertThat(checkedIn.checkedInAt()).isNotNull();
+    assertThat(service.roster(teacher, activityId).checkedInCount()).isEqualTo(1);
+    assertThat(registrations.findEvents(activityId)).extracting("eventType")
+        .containsExactly("registered", "checked_in");
+  }
+
+  @Test void administratorReadsRealRegistrationAndCheckInMetrics() {
+    var teacher = user("u-teacher", "教师");
+    service.register(user("u-one", "学生"), activityId);
+    String registrationId = service.roster(teacher, activityId).entries().getFirst().registrationId();
+    service.checkIn(teacher, activityId, registrationId);
+
+    var metrics = service.metrics(user("u-admin", "管理员"));
+
+    assertThat(metrics.registrationCount()).isEqualTo(1);
+    assertThat(metrics.checkedInCount()).isEqualTo(1);
+  }
+
+  @Test void anotherOrganizerCannotReadOrCheckInTheRoster() {
+    var owner = user("u-teacher", "教师");
+    var otherTeacher = user("u-other-teacher", "教师");
+    service.register(user("u-one", "学生"), activityId);
+    String registrationId = service.roster(owner, activityId).entries().getFirst().registrationId();
+
+    assertThatThrownBy(() -> service.roster(otherTeacher, activityId))
+        .isInstanceOf(ForbiddenException.class)
+        .hasMessage("只能管理自己创建的活动");
+    assertThatThrownBy(() -> service.checkIn(otherTeacher, activityId, registrationId))
+        .isInstanceOf(ForbiddenException.class)
+        .hasMessage("只能管理自己创建的活动");
+  }
+
   private UserEntity user(String id, String role) {
     return new UserEntity(id, id, role, "13800000000", "online");
   }

@@ -2,6 +2,7 @@ package com.campuslink.repository;
 
 import com.campuslink.entity.ActivityRegistrationEntity;
 import com.campuslink.entity.ActivityRegistrationEventEntity;
+import com.campuslink.entity.ActivityRosterEntryEntity;
 import com.campuslink.mapper.ActivityRegistrationMapper;
 import java.util.List;
 import java.util.UUID;
@@ -27,6 +28,11 @@ public class MyBatisActivityRegistrationRepository implements ActivityRegistrati
   }
 
   @Override
+  public ActivityRegistrationEntity findByIdForUpdate(String activityId, String registrationId) {
+    return mapper.findByIdForUpdate(activityId, registrationId);
+  }
+
+  @Override
   public int countOccupied(String activityId) {
     return mapper.countOccupied(activityId);
   }
@@ -34,6 +40,16 @@ public class MyBatisActivityRegistrationRepository implements ActivityRegistrati
   @Override
   public int countWaitlisted(String activityId) {
     return mapper.countWaitlisted(activityId);
+  }
+
+  @Override
+  public int countAllOccupied() {
+    return mapper.countAllOccupied();
+  }
+
+  @Override
+  public int countAllCheckedIn() {
+    return mapper.countAllCheckedIn();
   }
 
   @Override
@@ -68,6 +84,11 @@ public class MyBatisActivityRegistrationRepository implements ActivityRegistrati
   @Override
   public List<ActivityRegistrationEventEntity> findEvents(String activityId) {
     return mapper.findEvents(activityId);
+  }
+
+  @Override
+  public List<ActivityRosterEntryEntity> findRoster(String activityId) {
+    return mapper.findRoster(activityId);
   }
 
   private String newId() {

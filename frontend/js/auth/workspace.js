@@ -1,11 +1,11 @@
 import { mockStore, state } from "../state.js";
-import { api } from "../api/client.js?v=20260712-activity-notifications-v1";
-import { accountById, pushMockAudit } from "../api/mock-api.js?v=20260712-activity-notifications-v1";
-import { $ } from "../utils/dom.js?v=20260712-activity-notifications-v1";
-import { setApiMode, setRealtimeMode, setStatus } from "../ui/status.js?v=20260712-activity-notifications-v1";
-import { renderAccountSwitch, renderAttachmentTray, renderExportPanel, renderIdentity, renderMessages } from "../ui/renderers.js?v=20260712-activity-notifications-v1";
-import { loadActivities, loadActivityNotifications, loadAdminData, loadConversationPreviews, loadFeed, loadFriendRequests, loadFriends, loadMessages, loadUnreadCounts, loadUsers } from "../loaders.js?v=20260712-activity-notifications-v1";
-import { connectChatRealtime, disconnectChatRealtime } from "../chat/realtime.js?v=20260712-activity-notifications-v1";
+import { api } from "../api/client.js?v=20260712-activity-operations-v1";
+import { accountById, pushMockAudit } from "../api/mock-api.js?v=20260712-activity-operations-v1";
+import { $ } from "../utils/dom.js?v=20260712-activity-operations-v1";
+import { setApiMode, setRealtimeMode, setStatus } from "../ui/status.js?v=20260712-activity-operations-v1";
+import { renderAccountSwitch, renderAttachmentTray, renderExportPanel, renderIdentity, renderMessages } from "../ui/renderers.js?v=20260712-activity-operations-v1";
+import { loadActivities, loadActivityNotifications, loadAdminData, loadConversationPreviews, loadFeed, loadFriendRequests, loadFriends, loadMessages, loadUnreadCounts, loadUsers } from "../loaders.js?v=20260712-activity-operations-v1";
+import { connectChatRealtime, disconnectChatRealtime } from "../chat/realtime.js?v=20260712-activity-operations-v1";
 
 export async function bootstrapWorkspace() {
   renderAccountSwitch();
@@ -44,6 +44,10 @@ export async function switchAccount(userId) {
   state.pendingActivities = [];
   state.activityNotice = null;
   state.activityReviewNotice = null;
+  state.managedActivities = [];
+  state.activityRosters = {};
+  state.expandedActivityRosterId = "";
+  state.activityOperationsNotice = null;
   state.activityNotifications = [];
   state.activityNotificationUnreadCount = 0;
   state.activityNotificationNotice = null;
@@ -90,6 +94,10 @@ export function logout() {
   state.expandedPostId = null;
   state.activities = [];
   state.activitySubmissions = [];
+  state.managedActivities = [];
+  state.activityRosters = {};
+  state.expandedActivityRosterId = "";
+  state.activityOperationsNotice = null;
   state.pendingActivities = [];
   state.activityNotice = null;
   state.activityReviewNotice = null;

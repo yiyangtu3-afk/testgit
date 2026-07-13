@@ -2,6 +2,7 @@ package com.campuslink.support;
 
 import com.campuslink.entity.ActivityRegistrationEntity;
 import com.campuslink.entity.ActivityRegistrationEventEntity;
+import com.campuslink.entity.ActivityRosterEntryEntity;
 import com.campuslink.repository.ActivityRegistrationRepository;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -19,6 +20,10 @@ public final class InMemoryActivityRegistrationRepository implements ActivityReg
     return registrations.stream().filter(item -> item.activityId().equals(activityId)
         && item.attendeeId().equals(attendeeId)).findFirst().orElse(null);
   }
+  @Override public ActivityRegistrationEntity findByIdForUpdate(String activityId, String registrationId) {
+    return registrations.stream().filter(item -> item.activityId().equals(activityId)
+        && item.id().equals(registrationId)).findFirst().orElse(null);
+  }
   @Override public int countOccupied(String activityId) {
     return (int) registrations.stream().filter(item -> item.activityId().equals(activityId)
         && ("registered".equals(item.status()) || "checked_in".equals(item.status()))).count();
@@ -26,6 +31,14 @@ public final class InMemoryActivityRegistrationRepository implements ActivityReg
   @Override public int countWaitlisted(String activityId) {
     return (int) registrations.stream().filter(item -> item.activityId().equals(activityId)
         && "waitlisted".equals(item.status())).count();
+  }
+  @Override public int countAllOccupied() {
+    return (int) registrations.stream()
+        .filter(item -> "registered".equals(item.status()) || "checked_in".equals(item.status()))
+        .count();
+  }
+  @Override public int countAllCheckedIn() {
+    return (int) registrations.stream().filter(item -> "checked_in".equals(item.status())).count();
   }
   @Override public int queuePosition(String registrationId) {
     var current = registrations.stream().filter(item -> item.id().equals(registrationId)).findFirst().orElseThrow();
@@ -44,7 +57,7 @@ public final class InMemoryActivityRegistrationRepository implements ActivityReg
     LocalDateTime now = LocalDateTime.of(2026, 7, 11, 9, registrations.size());
     var item = new ActivityRegistrationEntity("registration-" + (registrations.size() + 1), activityId,
         attendeeId, status, "registered".equals(status) ? now : null,
-        "waitlisted".equals(status) ? now : null, null, now);
+        "waitlisted".equals(status) ? now : null, null, null, now);
     registrations.add(item);
     return item;
   }
@@ -56,6 +69,7 @@ public final class InMemoryActivityRegistrationRepository implements ActivityReg
         registrations.set(index, new ActivityRegistrationEntity(current.id(), current.activityId(),
             current.attendeeId(), status, "registered".equals(status) ? now : current.registeredAt(),
             "waitlisted".equals(status) ? now : current.waitlistedAt(),
+            "checked_in".equals(status) ? now : current.checkedInAt(),
             "cancelled".equals(status) ? now : null, current.createdAt()));
         return 1;
       }
@@ -70,5 +84,16 @@ public final class InMemoryActivityRegistrationRepository implements ActivityReg
   }
   @Override public List<ActivityRegistrationEventEntity> findEvents(String activityId) {
     return events.stream().filter(item -> item.activityId().equals(activityId)).toList();
+  }
+  @Override public List<ActivityRosterEntryEntity> findRoster(String activityId) {
+    return registrations.stream()
+        .filter(item -> item.activityId().equals(activityId))
+        .filter(item -> !"cancelled".equals(item.status()))
+        .sorted(Comparator.comparingInt((ActivityRegistrationEntity item) ->
+                "waitlisted".equals(item.status()) ? 1 : 0)
+            .thenComparing(item -> item.waitlistedAt() == null ? item.createdAt() : item.waitlistedAt()))
+        .map(item -> new ActivityRosterEntryEntity(item.id(), item.activityId(), item.attendeeId(),
+            item.attendeeId(), item.status(), item.registeredAt(), item.waitlistedAt(), item.checkedInAt()))
+        .toList();
   }
 }

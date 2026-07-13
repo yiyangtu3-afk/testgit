@@ -2,6 +2,7 @@ package com.campuslink.mapper;
 
 import com.campuslink.entity.ActivityRegistrationEntity;
 import com.campuslink.entity.ActivityRegistrationEventEntity;
+import com.campuslink.entity.ActivityRosterEntryEntity;
 import java.util.List;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
@@ -15,7 +16,7 @@ public interface ActivityRegistrationMapper {
   @Select("""
       select id, activity_id as activityId, attendee_id as attendeeId, status,
              registered_at as registeredAt, waitlisted_at as waitlistedAt,
-             cancelled_at as cancelledAt, created_at as createdAt
+             checked_in_at as checkedInAt, cancelled_at as cancelledAt, created_at as createdAt
       from activity_registrations
       where activity_id = #{activityId} and attendee_id = #{attendeeId}
       for update
@@ -26,12 +27,23 @@ public interface ActivityRegistrationMapper {
   @Select("""
       select id, activity_id as activityId, attendee_id as attendeeId, status,
              registered_at as registeredAt, waitlisted_at as waitlistedAt,
-             cancelled_at as cancelledAt, created_at as createdAt
+             checked_in_at as checkedInAt, cancelled_at as cancelledAt, created_at as createdAt
       from activity_registrations
       where activity_id = #{activityId} and attendee_id = #{attendeeId}
       """)
   ActivityRegistrationEntity find(
       @Param("activityId") String activityId, @Param("attendeeId") String attendeeId);
+
+  @Select("""
+      select id, activity_id as activityId, attendee_id as attendeeId, status,
+             registered_at as registeredAt, waitlisted_at as waitlistedAt,
+             checked_in_at as checkedInAt, cancelled_at as cancelledAt, created_at as createdAt
+      from activity_registrations
+      where activity_id = #{activityId} and id = #{registrationId}
+      for update
+      """)
+  ActivityRegistrationEntity findByIdForUpdate(
+      @Param("activityId") String activityId, @Param("registrationId") String registrationId);
 
   @Select("""
       select count(*) from activity_registrations
@@ -44,6 +56,12 @@ public interface ActivityRegistrationMapper {
       where activity_id = #{activityId} and status = 'waitlisted'
       """)
   int countWaitlisted(@Param("activityId") String activityId);
+
+  @Select("select count(*) from activity_registrations where status in ('registered', 'checked_in')")
+  int countAllOccupied();
+
+  @Select("select count(*) from activity_registrations where status = 'checked_in'")
+  int countAllCheckedIn();
 
   @Select("""
       select count(*)
@@ -59,7 +77,7 @@ public interface ActivityRegistrationMapper {
   @Select("""
       select id, activity_id as activityId, attendee_id as attendeeId, status,
              registered_at as registeredAt, waitlisted_at as waitlistedAt,
-             cancelled_at as cancelledAt, created_at as createdAt
+             checked_in_at as checkedInAt, cancelled_at as cancelledAt, created_at as createdAt
       from activity_registrations
       where activity_id = #{activityId} and status = 'waitlisted'
       order by waitlisted_at, id limit 1 for update
@@ -83,6 +101,7 @@ public interface ActivityRegistrationMapper {
       set status = #{status},
           registered_at = if(#{status} = 'registered', current_timestamp, registered_at),
           waitlisted_at = if(#{status} = 'waitlisted', current_timestamp, waitlisted_at),
+          checked_in_at = if(#{status} = 'checked_in', current_timestamp, checked_in_at),
           cancelled_at = if(#{status} = 'cancelled', current_timestamp, null)
       where id = #{registrationId}
       """)
@@ -109,4 +128,18 @@ public interface ActivityRegistrationMapper {
       order by created_at, id
       """)
   List<ActivityRegistrationEventEntity> findEvents(@Param("activityId") String activityId);
+
+  @Select("""
+      select r.id as registrationId, r.activity_id as activityId,
+             r.attendee_id as attendeeId, u.name as attendeeName, r.status,
+             r.registered_at as registeredAt, r.waitlisted_at as waitlistedAt,
+             r.checked_in_at as checkedInAt
+      from activity_registrations r
+      join users u on u.id = r.attendee_id
+      where r.activity_id = #{activityId}
+        and r.status in ('registered', 'waitlisted', 'checked_in')
+      order by case when r.status = 'waitlisted' then 1 else 0 end,
+               coalesce(r.waitlisted_at, r.registered_at), r.id
+      """)
+  List<ActivityRosterEntryEntity> findRoster(@Param("activityId") String activityId);
 }

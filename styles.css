@@ -1222,6 +1222,173 @@ select:focus {
   border-color: var(--line-strong);
 }
 
+.activity-submissions {
+  border-color: var(--line-strong);
+}
+
+.activity-operation-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 20px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface-strong);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.activity-operation-card.is-open {
+  border-color: var(--ink);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
+}
+
+.activity-operation-copy h4,
+.activity-roster-head h4 {
+  margin: 8px 0 0;
+  font-size: 19px;
+}
+
+.activity-operation-copy > p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.activity-operation-actions {
+  display: grid;
+  justify-items: end;
+  gap: 10px;
+}
+
+.activity-operation-actions > span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.activity-roster-panel {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid var(--ink);
+  border-radius: 20px;
+  background: #f7f7f7;
+}
+
+.activity-roster-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.activity-roster-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--white);
+}
+
+.activity-roster-metrics span {
+  padding: 14px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.activity-roster-metrics span + span {
+  border-left: 1px solid var(--line);
+}
+
+.activity-roster-metrics strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--ink);
+  font-size: 22px;
+}
+
+.activity-roster-table {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--white);
+}
+
+.activity-roster-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.1fr) minmax(100px, 0.65fr) minmax(120px, 0.75fr) minmax(110px, 0.6fr);
+  align-items: center;
+  gap: 12px;
+  min-height: 62px;
+  padding: 10px 14px;
+}
+
+.activity-roster-row + .activity-roster-row {
+  border-top: 1px solid var(--line);
+}
+
+.activity-roster-row--head {
+  min-height: 42px;
+  background: var(--fill);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.activity-roster-row > span {
+  display: grid;
+  justify-items: start;
+  gap: 4px;
+  min-width: 0;
+  font-size: 13px;
+}
+
+.activity-roster-row small {
+  color: var(--muted);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.activity-roster-status {
+  display: inline-flex;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--ink);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.activity-roster-status--checked_in {
+  background: var(--black);
+  color: var(--white);
+}
+
+.activity-roster-status--waitlisted {
+  background: #fff4cc;
+  color: #6a5211;
+}
+
+.activity-roster-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 120px;
+  color: var(--muted);
+}
+
+.activity-roster-loading span {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+
 .activity-section-head {
   display: flex;
   align-items: center;
@@ -1837,7 +2004,7 @@ select:focus {
 
 .metric-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 12px;
 }
 
@@ -2617,6 +2784,35 @@ select:focus {
     padding-left: 0;
     border-top: 1px solid var(--line);
     border-left: 0;
+  }
+
+  .activity-operation-card {
+    grid-template-columns: 1fr;
+  }
+
+  .activity-operation-actions {
+    justify-items: start;
+  }
+
+  .activity-roster-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .activity-roster-metrics span:nth-child(3) {
+    border-top: 1px solid var(--line);
+    border-left: 0;
+  }
+
+  .activity-roster-metrics span:nth-child(4) {
+    border-top: 1px solid var(--line);
+  }
+
+  .activity-roster-table {
+    overflow-x: auto;
+  }
+
+  .activity-roster-row {
+    min-width: 620px;
   }
 
   .activity-header-note {

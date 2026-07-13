@@ -69,6 +69,11 @@ public class MyBatisActivityRepository implements ActivityRepository {
   }
 
   @Override
+  public List<ActivityEntity> findByOrganizer(String organizerId) {
+    return activityMapper.findByOrganizer(organizerId);
+  }
+
+  @Override
   public int updateReview(
       String activityId,
       String status,
