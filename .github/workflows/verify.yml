@@ -53,3 +53,20 @@ jobs:
           mvn -f backend/pom.xml
           -DargLine=-javaagent:${HOME}/.m2/repository/net/bytebuddy/byte-buddy-agent/1.17.5/byte-buddy-agent-1.17.5.jar
           test
+
+  compose-demo:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Start the Compose demo
+        run: docker compose up --build --wait
+
+      - name: Check the API health endpoint
+        run: curl --fail --silent http://127.0.0.1:8080/api/database/health
+
+      - name: Stop the Compose demo
+        if: always()
+        run: docker compose down

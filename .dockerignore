@@ -1,0 +1,5 @@
+.git
+.github
+backend/target
+node_modules
+**/.DS_Store

@@ -298,6 +298,11 @@ http://127.0.0.1:8080
     在推送到 `main`、面向 `main` 的拉取请求和手动触发时启动临时 MySQL 8.4 服务，
     再运行 `./script/run_frontend_check.sh` 和带显式 Byte Buddy agent 的完整 Maven
     测试。该服务仅属于 CI，不会连接、重置、重种或清理开发者本地 MySQL 历史数据。
+30. 2026 年 7 月 15 日完成 Docker Compose 演示：`compose.yml` 启动未发布到主机的
+    MySQL 8.4、API 和静态前端；容器数据库使用独立命名卷，保留容器演示数据而不触碰
+    本地 MySQL。API 和前端按健康顺序启动，公开
+    `/api/database/health` 同时作为 API 健康检查。GitHub Actions 新增 Compose
+    构建、启动等待和健康接口请求，提供有 Docker runner 的运行级验证。
 
 ## 下一项工作
 
@@ -306,10 +311,11 @@ http://127.0.0.1:8080
 token 确认当前收件人，并验证 `social.friend.requested`、通知发送者、申请目标
 与 `pending` 状态；前端只用返回的申请 ID 定位已有待处理申请卡片，复用同意、
 拒绝流程。真实仪表盘指标已不含展示性固定数字，签名 JWT、过期、服务端注销和
-Spring Security 安全链与 GitHub Actions 验证已经落地。CI 使用临时 MySQL 8.4
-服务运行前端检查和完整测试；由于当前机器没有可用 Docker 运行时，下一项在 Docker
-可用后使用 Testcontainers MySQL 扩展 MyBatis、事务和权限集成测试，同时保持真实
-API 错误不回退 Mock、跨表写入事务和可回滚 MyBatis 集成测试。
+Spring Security 安全链、GitHub Actions 验证与 Docker Compose 演示已经落地。CI
+在临时 MySQL 8.4 服务上运行完整测试，并在 Docker runner 构建和启动 Compose
+演示；本机 MySQL 历史数据不受影响。由于当前机器没有可用 Docker 运行时，下一项在
+Docker 可用后使用 Testcontainers MySQL 扩展 MyBatis、事务和权限集成测试，同时保持
+真实 API 错误不回退 Mock、跨表写入事务和可回滚 MyBatis 集成测试。
 
 ## 必读文件
 

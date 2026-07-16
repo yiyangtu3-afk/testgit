@@ -180,14 +180,31 @@ don't remain in existing demo history. Chat repository coverage verifies
 that unread counts include only messages addressed to the current user, still
 count newly received messages, and clear after the read cursor advances.
 
+## Docker Compose demo
+
+With Docker Compose available, you can start the browser demo, API, and an
+isolated MySQL 8.4 database with one command. This database is a Docker named
+volume, not your local MySQL server.
+
+```bash
+docker compose up --build
+```
+
+Open `http://127.0.0.1:5179/?v=20260715-signed-jwt-logout-v1`, then confirm the
+API with `curl -fsS http://127.0.0.1:8080/api/database/health`. The Compose
+guide explains startup, health checks, persistence, and safe shutdown in
+[`docs/compose-demo.md`](docs/compose-demo.md). The repository doesn't publish
+a public online demo URL without explicit authorization.
+
 ## Continuous integration
 
 GitHub Actions runs [the verification workflow](.github/workflows/verify.yml)
 on pushes and pull requests targeting `main`, and you can also start it
 manually. The workflow starts a disposable MySQL 8.4 service, runs
 `./script/run_frontend_check.sh`, then runs the complete Maven suite with the
-explicit Byte Buddy agent. It never connects to, resets, or seeds a developer's
-local MySQL history.
+explicit Byte Buddy agent. It also builds and starts the Compose demo, waits
+for its health checks, and calls the public health endpoint. It never connects
+to, resets, or seeds a developer's local MySQL history.
 
 ## Local live API acceptance
 
