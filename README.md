@@ -18,14 +18,16 @@ Open the local demo in a browser:
 ```
 
 Then visit
-`http://127.0.0.1:5179/?v=20260715-notification-actions-v1`.
+`http://127.0.0.1:5179/?v=20260715-friend-request-actions-v1`.
 
 ## Current handoff
 
 The current functional stable point is
-`98c2dad Add notification read and target actions` on `main`. The next planned
-slice is an actionable, traceable entry for friend-request notifications. Start
-from [`docs/new-chat-handoff-2026-07-08.md`](docs/new-chat-handoff-2026-07-08.md)
+`98c2dad Add notification read and target actions` on `main`. Friend-request
+notifications now include a safe **处理申请** entry: the server resolves the
+notification to the current recipient's pending request before the existing
+accept or reject controls are shown. Start from
+[`docs/new-chat-handoff-2026-07-08.md`](docs/new-chat-handoff-2026-07-08.md)
 for the complete handoff, constraints, and local verification commands.
 
 The demo supports these flows:
@@ -39,6 +41,9 @@ The demo supports these flows:
 - Switch demo accounts to review incoming friend requests and accept or reject
   them from the recipient account. The requester receives a persistent result
   notification for either decision.
+- Open a **新的好友申请** notification to locate and highlight the recipient's
+  pending request, then use the existing **同意** or **拒绝** action. The API
+  never accepts a requester or recipient identity from this notification flow.
 - View accepted friends in the contacts list and open chats from that list.
 - See the latest message preview for every accepted friend without loading each
   conversation's complete history or changing its read state.
@@ -326,6 +331,7 @@ The current backend exposes these API paths:
 - `POST /api/social-notifications/read-all`
 - `POST /api/social-notifications/{notificationId}/read`
 - `GET /api/social-notifications/{notificationId}/post-target`
+- `GET /api/social-notifications/{notificationId}/friend-request-target`
 - `GET /api/admin/activities/pending`
 - `POST /api/admin/activities/{activityId}/reviews`
 - `GET /api/admin/metrics`

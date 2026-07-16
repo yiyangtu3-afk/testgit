@@ -10,8 +10,10 @@ import com.campuslink.config.GlobalExceptionHandler;
 import com.campuslink.entity.DemoEntities.UserEntity;
 import com.campuslink.repository.AuthSessionRepository;
 import com.campuslink.repository.FeedRepository;
+import com.campuslink.repository.FriendRepository;
 import com.campuslink.repository.UserRepository;
 import com.campuslink.service.AuthTokenService;
+import com.campuslink.service.FriendRequestNotificationTargetService;
 import com.campuslink.service.SocialNotificationService;
 import com.campuslink.service.SocialNotificationTargetService;
 import com.campuslink.support.InMemorySocialNotificationRepository;
@@ -54,9 +56,17 @@ class SocialNotificationControllerTest {
         (proxy, method, arguments) -> "findPostIdByCommentId".equals(method.getName())
             ? Optional.of(42L)
             : Optional.empty());
+    FriendRepository friends = (FriendRepository) Proxy.newProxyInstance(
+        getClass().getClassLoader(),
+        new Class<?>[] { FriendRepository.class },
+        (proxy, method, arguments) -> "findRequestForRecipient".equals(method.getName())
+            ? Optional.of(new com.campuslink.entity.DemoEntities.FriendRequestEntity(
+                "friend-request-1", other.id(), author.id(), "pending"))
+            : Optional.empty());
     mockMvc = MockMvcBuilders.standaloneSetup(new SocialNotificationController(
             service,
             new SocialNotificationTargetService(notifications, feed),
+            new FriendRequestNotificationTargetService(notifications, friends),
             new AuthTokenService(sessions, users)))
         .setControllerAdvice(new GlobalExceptionHandler())
         .build();
@@ -115,6 +125,17 @@ class SocialNotificationControllerTest {
             .header("Authorization", "Bearer author-token"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.postId").value(42));
+  }
+
+  @Test
+  void authenticatedRecipientResolvesOwnPendingFriendRequestNotification() throws Exception {
+    var notification = notifications.create("u-author", "u-other", "friend-request-1",
+        "social.friend.requested", "新的好友申请", "周同学向你发送了好友申请。");
+
+    mockMvc.perform(get("/api/social-notifications/{notificationId}/friend-request-target", notification.id())
+            .header("Authorization", "Bearer author-token"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.requestId").value("friend-request-1"));
   }
 
   @Test

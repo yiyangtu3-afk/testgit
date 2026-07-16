@@ -1,6 +1,6 @@
-import { $ } from "../utils/dom.js?v=20260715-notification-actions-v1";
-import { escapeHtml } from "../utils/format.js?v=20260715-notification-actions-v1";
-import { activityNotificationState, socialNotificationState } from "./state.js?v=20260715-notification-actions-v1";
+import { $ } from "../utils/dom.js?v=20260715-friend-request-actions-v1";
+import { escapeHtml } from "../utils/format.js?v=20260715-friend-request-actions-v1";
+import { activityNotificationState, socialNotificationState } from "./state.js?v=20260715-friend-request-actions-v1";
 
 const typeLabels = {
   "activity.review.approved": "审核通过",
@@ -61,6 +61,8 @@ function notificationActionMarkup(notification, isActivity) {
     actions.push(`<button class="small-button" type="button" data-open-activity-notification="${escapeHtml(notification.id)}" data-activity-id="${escapeHtml(notification.activityId)}">查看活动</button>`);
   } else if (notification.type.startsWith("social.post.")) {
     actions.push(`<button class="small-button" type="button" data-open-social-notification="${escapeHtml(notification.id)}">查看动态</button>`);
+  } else if (notification.type === "social.friend.requested") {
+    actions.push(`<button class="small-button" type="button" data-open-friend-request-notification="${escapeHtml(notification.id)}">处理申请</button>`);
   }
   if (!notification.read) {
     actions.push(`<button class="small-button" type="button" data-mark-notification="${escapeHtml(notification.id)}" data-notification-kind="${isActivity ? "activity" : "social"}">标为已读</button>`);

@@ -3,9 +3,9 @@
 本文交接 CampusLink 的稳定基线和下一阶段工作。活动创建与审核、学生报名与
 候补、时间与类别筛选、持久化通知、组织者名单、签到、CSV 导出，以及真实
 活动管理指标已经完成。阶段二闭环已全部交付；阶段三的按用户点赞、作者通知、
-好友申请通知、评论通知、社交通知实时推送和通知操作切片也已完成。下一项为
-好友申请类通知补齐可追溯的操作入口，不要重做已完成的聊天、动态、内容审核和
-活动报名链路。
+好友申请通知、评论通知、社交通知实时推送和通知操作切片也已完成。好友申请类
+通知的可追溯操作入口已经完成，不要重做已完成的聊天、动态、内容审核和活动
+报名链路。
 
 ## 稳定基线
 
@@ -14,10 +14,10 @@
 `https://github.com/yiyangtu3-afk/testgit.git`，使用 `main` 分支；后续仅文档
 交接提交可能更新，不应被误判为新的功能基线。
 
-静态前端版本为 `20260715-notification-actions-v1`，本地地址为：
+静态前端版本为 `20260715-friend-request-actions-v1`，本地地址为：
 
 ```text
-http://127.0.0.1:5179/?v=20260715-notification-actions-v1
+http://127.0.0.1:5179/?v=20260715-friend-request-actions-v1
 ```
 
 后端本地地址为：
@@ -259,14 +259,23 @@ http://127.0.0.1:8080
     MockMvc、前端 Mock 行为和渲染 smoke 均通过；显式 Byte Buddy agent 下完整
     Maven 测试 127 个通过。前端版本升级为
     `20260715-notification-actions-v1`，共享 `state.js` 导入仍无查询参数。
+25. 2026 年 7 月 15 日完成好友申请通知处理入口：通知中心的
+    **处理申请** 只向 `social.friend.requested` 显示。新目标接口先以 bearer
+    token 锁定当前收件人，再同时校验通知归属、发送者、申请 ID 和 `pending`
+    状态；前端只使用服务端返回的申请 ID 高亮已有待处理申请并复用 **同意**、
+    **拒绝**。Mock 行为、MockMvc、`@Transactional`/`@Rollback` MySQL 集成测试
+    和前端 smoke 均通过；显式 Byte Buddy agent 下完整 Maven 测试 128 个通过。
+    前端版本升级为 `20260715-friend-request-actions-v1`，共享 `state.js` 导入
+    仍无查询参数。
 
 ## 下一项工作
 
 阶段二和阶段三点赞、好友申请、评论通知、实时推送和通知操作切片已经完成。
-下一项为好友申请类通知补齐可追溯的操作入口。应从当前收件人的
-`social.friend.requested` 通知安全定位到其待处理申请，并复用已有同意、拒绝
-流程；不得相信前端传来的申请人或收件人身份。继续保持 bearer token 身份边界、
-真实 API 错误不回退 Mock、跨表写入事务和可回滚 MyBatis 集成测试。
+`GET /api/social-notifications/{notificationId}/friend-request-target` 从 bearer
+token 确认当前收件人，并验证 `social.friend.requested`、通知发送者、申请目标
+与 `pending` 状态；前端只用返回的申请 ID 定位已有待处理申请卡片，复用同意、
+拒绝流程。下一项为动态、评论和活动的真实统计与筛选；继续保持真实 API 错误不
+回退 Mock、跨表写入事务和可回滚 MyBatis 集成测试。
 
 ## 必读文件
 

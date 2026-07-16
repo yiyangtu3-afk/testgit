@@ -1,9 +1,9 @@
-import { api } from "../api/client.js?v=20260715-notification-actions-v1";
+import { api } from "../api/client.js?v=20260715-friend-request-actions-v1";
 import { state } from "../state.js";
-import { $ } from "../utils/dom.js?v=20260715-notification-actions-v1";
-import { validPhone } from "../utils/format.js?v=20260715-notification-actions-v1";
-import { setLoginBusy, setStatus } from "../ui/status.js?v=20260715-notification-actions-v1";
-import { enterWorkspace } from "./workspace.js?v=20260715-notification-actions-v1";
+import { $ } from "../utils/dom.js?v=20260715-friend-request-actions-v1";
+import { validPhone } from "../utils/format.js?v=20260715-friend-request-actions-v1";
+import { setLoginBusy, setStatus } from "../ui/status.js?v=20260715-friend-request-actions-v1";
+import { enterWorkspace } from "./workspace.js?v=20260715-friend-request-actions-v1";
 
 export async function sendLoginCode() {
   const phone = $("#phoneInput").value.trim();

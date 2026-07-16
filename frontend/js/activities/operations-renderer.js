@@ -1,7 +1,7 @@
 import { state } from "../state.js";
-import { isActivityOrganizer } from "../utils/auth.js?v=20260715-notification-actions-v1";
-import { $ } from "../utils/dom.js?v=20260715-notification-actions-v1";
-import { escapeHtml } from "../utils/format.js?v=20260715-notification-actions-v1";
+import { isActivityOrganizer } from "../utils/auth.js?v=20260715-friend-request-actions-v1";
+import { $ } from "../utils/dom.js?v=20260715-friend-request-actions-v1";
+import { escapeHtml } from "../utils/format.js?v=20260715-friend-request-actions-v1";
 
 const activityStatusLabels = {
   draft: "需修改",

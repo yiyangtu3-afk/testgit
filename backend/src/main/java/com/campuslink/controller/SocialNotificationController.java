@@ -1,8 +1,10 @@
 package com.campuslink.controller;
 
 import com.campuslink.dto.SocialNotificationDtos.NotificationSummary;
+import com.campuslink.dto.SocialNotificationDtos.FriendRequestTarget;
 import com.campuslink.dto.SocialNotificationDtos.PostTarget;
 import com.campuslink.service.AuthTokenService;
+import com.campuslink.service.FriendRequestNotificationTargetService;
 import com.campuslink.service.SocialNotificationService;
 import com.campuslink.service.SocialNotificationTargetService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,14 +20,17 @@ public class SocialNotificationController {
 
   private final SocialNotificationService notifications;
   private final SocialNotificationTargetService targets;
+  private final FriendRequestNotificationTargetService friendRequestTargets;
   private final AuthTokenService authTokens;
 
   public SocialNotificationController(
       SocialNotificationService notifications,
       SocialNotificationTargetService targets,
+      FriendRequestNotificationTargetService friendRequestTargets,
       AuthTokenService authTokens) {
     this.notifications = notifications;
     this.targets = targets;
+    this.friendRequestTargets = friendRequestTargets;
     this.authTokens = authTokens;
   }
 
@@ -53,5 +58,13 @@ public class SocialNotificationController {
       @PathVariable String notificationId,
       @RequestHeader(value = "Authorization", required = false) String authorization) {
     return targets.postTarget(authTokens.requireUserId(authorization), notificationId);
+  }
+
+  @GetMapping("/{notificationId}/friend-request-target")
+  public FriendRequestTarget friendRequestTarget(
+      @PathVariable String notificationId,
+      @RequestHeader(value = "Authorization", required = false) String authorization) {
+    return friendRequestTargets.pendingRequestTarget(
+        authTokens.requireUserId(authorization), notificationId);
   }
 }

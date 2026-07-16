@@ -1,9 +1,11 @@
 package com.campuslink.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.campuslink.CampusLinkApplication;
 import com.campuslink.service.FriendService;
+import com.campuslink.service.FriendRequestNotificationTargetService;
 import com.campuslink.service.SocialNotificationService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +23,7 @@ class FriendNotificationRepositoryIntegrationTest {
 
   @Autowired FriendService friends;
   @Autowired SocialNotificationService notifications;
+  @Autowired FriendRequestNotificationTargetService friendRequestTargets;
 
   @Test
   void requestAcceptanceAndNotificationsRollBackTogether() {
@@ -30,7 +33,19 @@ class FriendNotificationRepositoryIntegrationTest {
         .findFirst()
         .orElseThrow();
 
+    var receivedNotification = notifications.summary("u-2002").items().stream()
+        .filter(notification -> notification.type().equals("social.friend.requested"))
+        .filter(notification -> notification.targetId().equals(request.id()))
+        .findFirst()
+        .orElseThrow();
+    assertThat(friendRequestTargets.pendingRequestTarget("u-2002", receivedNotification.id()).requestId())
+        .isEqualTo(request.id());
+
     friends.acceptFriendRequest(request.id(), "u-2002");
+
+    assertThatThrownBy(() -> friendRequestTargets.pendingRequestTarget("u-2002", receivedNotification.id()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("该好友申请已处理");
 
     assertThat(notifications.summary("u-2002").items()).anySatisfy(notification -> {
       assertThat(notification.targetId()).isEqualTo(request.id());

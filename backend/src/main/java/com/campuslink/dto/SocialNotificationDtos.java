@@ -23,4 +23,7 @@ public final class SocialNotificationDtos {
 
   public record PostTarget(Long postId) {
   }
+
+  public record FriendRequestTarget(String requestId) {
+  }
 }

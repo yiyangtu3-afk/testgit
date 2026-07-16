@@ -1,5 +1,5 @@
 import { mockStore, reportRanges, state } from "../state.js";
-import { nowTime } from "../utils/dom.js?v=20260715-notification-actions-v1";
+import { nowTime } from "../utils/dom.js?v=20260715-friend-request-actions-v1";
 
 let mockAuditId = Date.now();
 let mockActivityId = Date.now();
@@ -735,6 +735,22 @@ export const mockApi = {
     ));
     if (!post) throw new Error("关联动态不存在");
     return { postId: Number(post[0]) };
+  },
+  async socialNotificationFriendRequestTarget(notificationId) {
+    const notification = mockStore.socialNotifications.find((item) => (
+      item.id === notificationId && item.recipientId === state.currentUser.id
+    ));
+    if (!notification || notification.type !== "social.friend.requested") {
+      throw new Error("该通知未关联好友申请");
+    }
+    const request = mockStore.friendRequests.find((item) => (
+      item.id === notification.targetId
+      && item.toUserId === state.currentUser.id
+      && item.fromUserId === notification.actorId
+    ));
+    if (!request) throw new Error("关联好友申请不存在");
+    if (request.status !== "pending") throw new Error("该好友申请已处理");
+    return { requestId: request.id };
   },
   async metrics() {
     const pendingModeration = mockStore.moderationItems.filter((item) => item.status === "pending").length;

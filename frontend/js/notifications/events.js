@@ -1,10 +1,10 @@
-import { api } from "../api/client.js?v=20260715-notification-actions-v1";
-import { $ } from "../utils/dom.js?v=20260715-notification-actions-v1";
-import { renderActivityNotifications } from "./renderers.js?v=20260715-notification-actions-v1";
-import { activityNotificationState, socialNotificationState } from "./state.js?v=20260715-notification-actions-v1";
+import { api } from "../api/client.js?v=20260715-friend-request-actions-v1";
+import { $ } from "../utils/dom.js?v=20260715-friend-request-actions-v1";
+import { renderActivityNotifications } from "./renderers.js?v=20260715-friend-request-actions-v1";
+import { activityNotificationState, socialNotificationState } from "./state.js?v=20260715-friend-request-actions-v1";
 import { state } from "../state.js";
-import { loadActivities, loadFeed } from "../loaders.js?v=20260715-notification-actions-v1";
-import { switchTab } from "../ui/shell.js?v=20260715-notification-actions-v1";
+import { loadActivities, loadFeed, loadFriendRequests } from "../loaders.js?v=20260715-friend-request-actions-v1";
+import { switchTab } from "../ui/shell.js?v=20260715-friend-request-actions-v1";
 
 export function bindActivityNotificationEvents() {
   $("#markAllActivityNotifications").addEventListener("click", markAllRead);
@@ -28,6 +28,11 @@ async function handleNotificationAction(event) {
   const socialButton = event.target.closest("[data-open-social-notification]");
   if (socialButton) {
     await openSocialNotification(socialButton.dataset.openSocialNotification);
+    return;
+  }
+  const friendRequestButton = event.target.closest("[data-open-friend-request-notification]");
+  if (friendRequestButton) {
+    await openFriendRequestNotification(friendRequestButton.dataset.openFriendRequestNotification);
   }
 }
 
@@ -89,6 +94,25 @@ async function openSocialNotification(notificationId) {
     notificationState.notice = {
       kind: "error",
       message: error.message || "关联动态暂时无法打开，请稍后重试。"
+    };
+    renderActivityNotifications();
+  }
+}
+
+async function openFriendRequestNotification(notificationId) {
+  const notificationState = socialNotificationState();
+  try {
+    const target = await api.socialNotificationFriendRequestTarget(notificationId);
+    await markNotification("social", notificationId);
+    state.notificationFriendRequestFocusId = target.requestId;
+    switchTab("chat");
+    await loadFriendRequests();
+    document.querySelector(`[data-friend-request-id="${CSS.escape(target.requestId)}"]`)
+      ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  } catch (error) {
+    notificationState.notice = {
+      kind: "error",
+      message: error.message || "待处理好友申请暂时无法打开，请稍后重试。"
     };
     renderActivityNotifications();
   }

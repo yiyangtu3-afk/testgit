@@ -1,6 +1,6 @@
 import { mockStore, state } from "../state.js";
-import { $ } from "../utils/dom.js?v=20260715-notification-actions-v1";
-import { escapeHtml } from "../utils/format.js?v=20260715-notification-actions-v1";
+import { $ } from "../utils/dom.js?v=20260715-friend-request-actions-v1";
+import { escapeHtml } from "../utils/format.js?v=20260715-friend-request-actions-v1";
 
 export function renderSearchResults() {
   $("#resultList").innerHTML = state.users
@@ -50,7 +50,7 @@ export function renderFriendRequests() {
       const requestId = escapeHtml(request.id);
       const name = escapeHtml(user.name || request.userId);
       return `
-        <article class="friend-request-row">
+        <article class="friend-request-row${state.notificationFriendRequestFocusId === request.id ? " is-notification-target" : ""}" data-friend-request-id="${requestId}">
           <span class="avatar">${escapeHtml((user.name || "?").slice(0, 1))}</span>
           <div class="request-copy">
             <strong>${name}</strong>

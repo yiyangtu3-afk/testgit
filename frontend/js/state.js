@@ -49,6 +49,7 @@ export const state = {
   socialNotificationUnreadCount: 0,
   socialNotificationNotice: null,
   notificationPostFocusId: null,
+  notificationFriendRequestFocusId: "",
   metrics: {},
   moderationItems: [],
   moderationFilter: "all",

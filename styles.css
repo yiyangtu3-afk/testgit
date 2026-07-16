@@ -1552,6 +1552,7 @@ select:focus {
 
 .activity-card.is-notification-target,
 .activity-operation-card.is-notification-target,
+.friend-request-row.is-notification-target,
 .feed-card--notification-target {
   border-color: var(--ink);
   box-shadow: 0 0 0 3px rgba(20, 20, 22, 0.09), 0 12px 28px rgba(0, 0, 0, 0.08);
