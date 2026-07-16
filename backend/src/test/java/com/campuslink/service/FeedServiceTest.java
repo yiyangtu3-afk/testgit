@@ -65,6 +65,23 @@ class FeedServiceTest {
     assertThat(comment.body()).isEqualTo("新评论");
     assertThat(comment.moderationStatus()).isEqualTo("pending");
     assertThat(feedRepository.findPost(1L)).get().extracting(PostEntity::comments).isEqualTo(0);
+    assertThat(notifications.summary("u-1001").items()).isEmpty();
+  }
+
+  @Test
+  void commentingOnAnotherUsersPostNotifiesTheAuthor() {
+    CommentView comment = feedService.publishComment(1L, "u-1002", "这条动态很有帮助");
+
+    assertThat(notifications.summary("u-1001").items())
+        .singleElement()
+        .satisfies(notification -> {
+          assertThat(notification.targetId()).isEqualTo(String.valueOf(comment.id()));
+          assertThat(notification.type()).isEqualTo("social.post.commented");
+          assertThat(notification.title()).isEqualTo("动态收到新评论");
+          assertThat(notification.body()).contains("陈老师");
+          assertThat(notification.body()).contains("这条动态很有帮助");
+          assertThat(notification.read()).isFalse();
+        });
   }
 
   @Test
@@ -271,7 +288,8 @@ class FeedServiceTest {
 
     @Override
     public CommentEntity saveComment(Long postId, String authorId, String body) {
-      CommentEntity comment = new CommentEntity((long) comments.size() + 1, "林一", body, "09:30", "pending");
+      String author = "u-1002".equals(authorId) ? "陈老师" : "林一";
+      CommentEntity comment = new CommentEntity((long) comments.size() + 1, author, body, "09:30", "pending");
       comments.add(comment);
       return comment;
     }

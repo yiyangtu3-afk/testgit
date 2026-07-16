@@ -33,6 +33,21 @@ public class SocialNotificationService {
         actorName + "赞了你的动态。");
   }
 
+  public void recordPostCommented(
+      String recipientId,
+      String actorId,
+      String actorName,
+      Long commentId,
+      String commentBody) {
+    notifications.create(
+        recipientId,
+        actorId,
+        String.valueOf(commentId),
+        "social.post.commented",
+        "动态收到新评论",
+        actorName + "评论了你的动态：" + commentPreview(commentBody));
+  }
+
   public void recordFriendRequestReceived(
       String recipientId, String actorId, String actorName, String requestId) {
     notifications.create(
@@ -75,5 +90,10 @@ public class SocialNotificationService {
         notification.body(),
         notification.readAt() != null,
         notification.createdAt());
+  }
+
+  private String commentPreview(String body) {
+    String normalized = body.replaceAll("\\s+", " ").trim();
+    return normalized.length() <= 60 ? normalized : normalized.substring(0, 60) + "…";
   }
 }

@@ -1,6 +1,6 @@
 import { API_BASE, state } from "../state.js";
-import { setApiMode } from "../ui/status.js?v=20260715-friend-notifications-v1";
-import { mockApi } from "./mock-api.js?v=20260715-friend-notifications-v1";
+import { setApiMode } from "../ui/status.js?v=20260715-comment-notifications-v1";
+import { mockApi } from "./mock-api.js?v=20260715-comment-notifications-v1";
 
 class ApiUnavailableError extends Error {
   constructor(cause) {

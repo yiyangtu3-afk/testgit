@@ -1,5 +1,5 @@
 import { state } from "../state.js";
-import { $ } from "../utils/dom.js?v=20260715-friend-notifications-v1";
+import { $ } from "../utils/dom.js?v=20260715-comment-notifications-v1";
 
 export function renderIdentity() {
   $("#currentUser").textContent = state.currentUser.name;

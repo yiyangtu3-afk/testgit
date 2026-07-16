@@ -18,7 +18,7 @@ Open the local demo in a browser:
 ```
 
 Then visit
-`http://127.0.0.1:5179/?v=20260715-friend-notifications-v1`.
+`http://127.0.0.1:5179/?v=20260715-comment-notifications-v1`.
 
 The demo supports these flows:
 
@@ -50,9 +50,11 @@ The demo supports these flows:
   register while a slot is available, see a waitlist state when full, and
   cancel a current registration.
 - Receive persistent in-app notifications for activity state changes, new post
-  likes, and friend-request results. The notification rail combines unread
-  counts, and the unified notification center supports marking activity and
-  social items as read.
+  likes, new comments, and friend-request results. A post author receives a
+  comment notification when another user submits a comment for review; that
+  comment remains outside the public feed until moderation approves it. The
+  notification rail combines unread counts, and the unified notification
+  center supports marking activity and social items as read.
 - Switch online and invisible presence states.
 - Publish a campus feed post.
 - Like a post once per signed-in user, see the current-user liked state, and
@@ -124,7 +126,7 @@ mvn test
 On this machine, Microsoft JDK 21 can't let Mockito self-attach its Byte Buddy
 agent. The verified full run passes an explicit `-javaagent` through Maven's
 `argLine`; without it, Mockito-based tests fail during test setup rather than
-on application behavior. The July 15 run completed all 117 tests with the
+on application behavior. The July 15 run completed all 119 tests with the
 explicit agent and only printed the JVM class-sharing warning.
 
 The smoke test is dependency-free. It checks the static page, styles, frontend
@@ -135,12 +137,12 @@ messages, chat attachments, feed posts, comments, moderation, and audit
 records. Activity tests cover organizer permissions, review transitions,
 date/category filters, registration and waitlist promotion, organizer rosters,
 transactional check-in, persistent notifications, user-scoped post likes,
-friend-request outcomes, HTTP boundaries, MyBatis mapping, and rollback-safe
-history.
+comment and friend-request outcomes, HTTP boundaries, MyBatis mapping, and
+rollback-safe history.
 The suite also includes MockMvc controller tests for the auth, users, friends,
 chat, feed, activity notifications, social notifications, and admin API
 boundaries, plus direct WebSocket handler tests for chat and recipient-only
-activity notification events. The full suite currently contains 117 tests.
+activity notification events. The full suite currently contains 119 tests.
 Repository integration tests use transactions that roll back, so test rows
 don't remain in existing demo history. Chat repository coverage verifies
 that unread counts include only messages addressed to the current user, still

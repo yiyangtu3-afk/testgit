@@ -1,5 +1,5 @@
 import { mockStore, reportRanges, state } from "../state.js";
-import { nowTime } from "../utils/dom.js?v=20260715-friend-notifications-v1";
+import { nowTime } from "../utils/dom.js?v=20260715-comment-notifications-v1";
 
 let mockAuditId = Date.now();
 let mockActivityId = Date.now();
@@ -113,6 +113,20 @@ function pushMockPostLikeNotification(post) {
     type: "social.post.liked",
     title: "动态收到新点赞",
     body: `${state.currentUser.name}赞了你的动态。`,
+    read: false,
+    createdAt: new Date().toISOString()
+  });
+}
+
+function pushMockPostCommentNotification(post, comment) {
+  const preview = String(comment.body || "").replace(/\s+/g, " ").trim();
+  mockStore.socialNotifications.unshift({
+    id: `social-notification-mock-${++mockSocialNotificationId}`,
+    recipientId: post.authorId,
+    targetId: String(comment.id),
+    type: "social.post.commented",
+    title: "动态收到新评论",
+    body: `${comment.author}评论了你的动态：${preview.length <= 60 ? preview : `${preview.slice(0, 60)}…`}`,
     read: false,
     createdAt: new Date().toISOString()
   });
@@ -434,6 +448,10 @@ export const mockApi = {
     });
   },
   async publishComment(postId, body) {
+    const post = mockStore.posts.find((item) => item.id === postId);
+    if (!post) {
+      throw new Error("动态不存在");
+    }
     const comment = {
       id: Date.now(),
       author: state.currentUser.name,
@@ -442,23 +460,23 @@ export const mockApi = {
       moderationStatus: "pending"
     };
     mockStore.comments[postId] = [comment, ...(mockStore.comments[postId] || [])];
-    const post = mockStore.posts.find((item) => item.id === postId);
-    if (post) {
-      mockStore.moderationItems.unshift({
-        id: `mod-${Date.now()}`,
-        type: "comment",
-        targetId: comment.id,
-        postId,
-        title: moderationTitle("comment", comment.body),
-        author: comment.author,
-        body: comment.body,
-        status: "pending",
-        reason: "动态评论发布审核",
-        submittedAt: submittedAt(),
-        time: comment.time
-      });
-      pushMockAudit("动态", `${state.currentUser.name}评论${post.author}的动态`);
+    mockStore.moderationItems.unshift({
+      id: `mod-${Date.now()}`,
+      type: "comment",
+      targetId: comment.id,
+      postId,
+      title: moderationTitle("comment", comment.body),
+      author: comment.author,
+      body: comment.body,
+      status: "pending",
+      reason: "动态评论发布审核",
+      submittedAt: submittedAt(),
+      time: comment.time
+    });
+    if (post.authorId && post.authorId !== state.currentUser.id) {
+      pushMockPostCommentNotification(post, comment);
     }
+    pushMockAudit("动态", `${state.currentUser.name}评论${post.author}的动态`);
     return comment;
   },
   async activities(filters = {}) {

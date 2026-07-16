@@ -1,11 +1,11 @@
-import { api } from "./api/client.js?v=20260715-friend-notifications-v1";
+import { api } from "./api/client.js?v=20260715-comment-notifications-v1";
 import {
   activityFilterState,
   rememberActivityCategories
-} from "./activities/filters.js?v=20260715-friend-notifications-v1";
+} from "./activities/filters.js?v=20260715-comment-notifications-v1";
 import { state } from "./state.js";
-import { isActivityOrganizer, isAdminUser, isStudentUser } from "./utils/auth.js?v=20260715-friend-notifications-v1";
-import { normalizePost } from "./utils/format.js?v=20260715-friend-notifications-v1";
+import { isActivityOrganizer, isAdminUser, isStudentUser } from "./utils/auth.js?v=20260715-comment-notifications-v1";
+import { normalizePost } from "./utils/format.js?v=20260715-comment-notifications-v1";
 import {
   renderAdminAccessDenied,
   renderActivities,
@@ -19,9 +19,9 @@ import {
   renderPersonalPostManager,
   renderPendingActivities,
   renderSearchResults
-} from "./ui/renderers.js?v=20260715-friend-notifications-v1";
-import { activityNotificationState, socialNotificationState } from "./notifications/state.js?v=20260715-friend-notifications-v1";
-import { renderActivityNotifications } from "./notifications/renderers.js?v=20260715-friend-notifications-v1";
+} from "./ui/renderers.js?v=20260715-comment-notifications-v1";
+import { activityNotificationState, socialNotificationState } from "./notifications/state.js?v=20260715-comment-notifications-v1";
+import { renderActivityNotifications } from "./notifications/renderers.js?v=20260715-comment-notifications-v1";
 
 export async function loadUsers(keyword = "") {
   state.users = await api.users(keyword);

@@ -182,10 +182,13 @@ function runActivityNotificationRendererCheck() {
     'delete state.activityNotifications;',
     'delete state.activityNotificationUnreadCount;',
     'delete state.activityNotificationNotice;',
-    'const { activityNotificationState } = await import("./frontend/js/notifications/state.js");',
+    'const { activityNotificationState, socialNotificationState } = await import("./frontend/js/notifications/state.js");',
     'const notificationState = activityNotificationState();',
     `notificationState.items = [{ id: "notification-xss", activityId: "activity-1", type: "activity.review.rejected", title: ${JSON.stringify(payload)}, body: ${JSON.stringify(payload)}, read: false, createdAt: "2026-07-12T12:00:00" }];`,
     'notificationState.unreadCount = 1;',
+    'const socialState = socialNotificationState();',
+    `socialState.items = [{ id: "comment-notification-xss", targetId: "comment-1", type: "social.post.commented", title: ${JSON.stringify(payload)}, body: ${JSON.stringify(payload)}, read: false, createdAt: "2026-07-12T12:01:00" }];`,
+    'socialState.unreadCount = 1;',
     'const { renderActivityNotifications } = await import("./frontend/js/notifications/renderers.js");',
     'renderActivityNotifications();',
     'process.stdout.write(JSON.stringify({ html: globalThis.elements["#activityNotificationList"].innerHTML, badge: globalThis.elements["#activityNotificationBadge"].textContent, hidden: globalThis.elements["#activityNotificationBadge"].hidden }));'
@@ -199,8 +202,11 @@ function runActivityNotificationRendererCheck() {
     if (output.html.includes(payload) || !output.html.includes("&lt;img")) {
       failures.push("activity notification renderer: expected title and body to be escaped");
     }
-    if (!output.html.includes("notification-card--unread") || output.badge !== "1" || output.hidden) {
+    if (!output.html.includes("notification-card--unread") || output.badge !== "2" || output.hidden) {
       failures.push("activity notification renderer: expected visible unread state and navigation badge");
+    }
+    if (!output.html.includes("动态评论")) {
+      failures.push("comment notification renderer: expected rendered comment notification label");
     }
   } catch (error) {
     failures.push(`Activity notification renderer check failed: ${String(error.message || error)}`);
@@ -446,6 +452,46 @@ function runMockFriendNotificationWorkflowCheck() {
   }
 }
 
+function runMockCommentNotificationWorkflowCheck() {
+  const script = [
+    'const { state } = await import("./frontend/js/state.js");',
+    'const { mockApi } = await import("./frontend/js/api/mock-api.js");',
+    'state.currentUser = { id: "u-1001", name: "林一", role: "学生账号" };',
+    'const submitted = await mockApi.publishComment(1, "评论通知行为测试");',
+    'const visible = await mockApi.comments(1);',
+    'state.currentUser = { id: "u-2001", name: "陈老师", role: "教师账号" };',
+    'const received = await mockApi.socialNotifications();',
+    'await mockApi.publishComment(1, "作者自己的评论");',
+    'const afterOwnComment = await mockApi.socialNotifications();',
+    'const read = await mockApi.markAllSocialNotificationsRead();',
+    'process.stdout.write(JSON.stringify({ submitted, visible, received, afterOwnComment, read }));'
+  ].join("\n");
+  try {
+    const output = JSON.parse(execFileSync(
+      process.execPath,
+      ["--input-type=module", "--eval", script],
+      { cwd: root, encoding: "utf8" }
+    ));
+    if (output.submitted.moderationStatus !== "pending"
+        || output.visible.some((comment) => comment.id === output.submitted.id)) {
+      failures.push("mock comment notifications: expected submitted comment to remain outside the public list");
+    }
+    if (output.received.items[0]?.type !== "social.post.commented"
+        || !output.received.items[0]?.body.includes("林一")
+        || output.received.unreadCount !== 1) {
+      failures.push("mock comment notifications: expected post author to receive one unread comment notification");
+    }
+    if (output.afterOwnComment.items.length !== 1) {
+      failures.push("mock comment notifications: expected authors not to notify themselves");
+    }
+    if (output.read.unreadCount !== 0 || output.read.items.some((item) => !item.read)) {
+      failures.push("mock comment notifications: expected comment notification read-all state");
+    }
+  } catch (error) {
+    failures.push(`Mock comment notification workflow check failed: ${String(error.message || error)}`);
+  }
+}
+
 function checkVersionedModuleImports() {
   const bareImports = [...files.js.matchAll(/(?:from|import)\s*["']([^"']+\.js)["']/g)]
     .map((match) => match[1])
@@ -475,6 +521,7 @@ runMockActivityNotificationWorkflowCheck();
 runMockActivityOperationsCheck();
 runMockSocialLikeWorkflowCheck();
 runMockFriendNotificationWorkflowCheck();
+runMockCommentNotificationWorkflowCheck();
 checkVersionedModuleImports();
 
 if (files.appEntry.split("\n").length > 20) {
@@ -617,6 +664,7 @@ expectIncludes("css", ".realtime-mode", "chat realtime status styles");
   ["social.friend.requested", "friend request notification label"],
   ["social.friend.accepted", "friend acceptance notification label"],
   ["social.friend.rejected", "friend rejection notification label"],
+  ["social.post.commented", "post comment notification label"],
   ["managedActivities()", "organizer managed activity adapter"],
   ["activityRoster(activityId)", "activity roster adapter"],
   ["checkInActivityRegistration(activityId, registrationId)", "activity check-in adapter"],
@@ -707,8 +755,8 @@ expectMatch(
   "admin layout: expected independent review workspaces to use normal document flow"
 );
 
-expectIncludes("html", "20260715-friend-notifications-v1", "HTML escaping cache-busting version");
-expectIncludes("appEntry", "20260715-friend-notifications-v1", "root app imports current HTML escaping module version");
+expectIncludes("html", "20260715-comment-notifications-v1", "HTML escaping cache-busting version");
+expectIncludes("appEntry", "20260715-comment-notifications-v1", "root app imports current HTML escaping module version");
 
 expectIncludes("js", "setRealtimeMode", "chat realtime status updater");
 expectIncludes("js", "HEARTBEAT_INTERVAL_MS", "chat realtime heartbeat interval");

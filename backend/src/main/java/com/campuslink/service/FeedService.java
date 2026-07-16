@@ -106,7 +106,13 @@ public class FeedService {
     moderationRepository.create("comment", comment.id(), postId, "动态评论发布审核");
     PostEntity post = feedRepository.findPost(postId)
         .orElseThrow(() -> new IllegalArgumentException("动态不存在"));
-    auditService.addAudit("动态", userService.userName(currentUserId) + "评论" + post.author() + "的动态");
+    String actorName = userService.userName(currentUserId);
+    String authorId = feedRepository.findPostAuthorId(postId)
+        .orElseThrow(() -> new IllegalArgumentException("动态不存在"));
+    if (!authorId.equals(currentUserId)) {
+      notifications.recordPostCommented(authorId, currentUserId, actorName, comment.id(), body);
+    }
+    auditService.addAudit("动态", actorName + "评论" + post.author() + "的动态");
     return DemoMapper.toCommentView(comment);
   }
 

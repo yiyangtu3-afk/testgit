@@ -1,0 +1,43 @@
+package com.campuslink.repository;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import com.campuslink.CampusLinkApplication;
+import com.campuslink.service.FeedService;
+import com.campuslink.service.SocialNotificationService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.Rollback;
+import org.springframework.transaction.annotation.Transactional;
+
+@SpringBootTest(
+    classes = CampusLinkApplication.class,
+    webEnvironment = SpringBootTest.WebEnvironment.NONE,
+    properties = "spring.sql.init.mode=never")
+@Transactional
+@Rollback
+class FeedCommentNotificationRepositoryIntegrationTest {
+
+  @Autowired FeedService feed;
+  @Autowired SocialNotificationService notifications;
+
+  @Test
+  void commentModerationAuditAndAuthorNotificationRollBackTogether() {
+    var post = feed.publish("u-1001", "评论通知事务回滚测试动态", "全校可见");
+
+    var comment = feed.publishComment(post.id(), "u-2001", "请补充活动时间说明。");
+
+    assertThat(comment.moderationStatus()).isEqualTo("pending");
+    assertThat(feed.comments(post.id())).isEmpty();
+    assertThat(notifications.summary("u-1001").items().stream()
+        .filter(notification -> notification.targetId().equals(String.valueOf(comment.id()))))
+        .singleElement()
+        .satisfies(notification -> {
+          assertThat(notification.type()).isEqualTo("social.post.commented");
+          assertThat(notification.title()).isEqualTo("动态收到新评论");
+          assertThat(notification.body()).contains("陈老师");
+          assertThat(notification.read()).isFalse();
+        });
+  }
+}

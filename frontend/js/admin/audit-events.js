@@ -1,7 +1,7 @@
-import { api } from "../api/client.js?v=20260715-friend-notifications-v1";
+import { api } from "../api/client.js?v=20260715-comment-notifications-v1";
 import { API_BASE, state } from "../state.js";
-import { isAdminUser } from "../utils/auth.js?v=20260715-friend-notifications-v1";
-import { loadAdminData } from "../loaders.js?v=20260715-friend-notifications-v1";
+import { isAdminUser } from "../utils/auth.js?v=20260715-comment-notifications-v1";
+import { loadAdminData } from "../loaders.js?v=20260715-comment-notifications-v1";
 
 export async function bindAdminAuditEvents(event) {
   const toggleAll = event.target.closest("[data-toggle-all-audit-events]");
