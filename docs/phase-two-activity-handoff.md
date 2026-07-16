@@ -294,6 +294,10 @@ http://127.0.0.1:8080
     安全集成测试覆盖公开登录、无令牌、无效令牌、有效 JWT 和学生管理员拒绝；
     显式 Byte Buddy agent 下完整 Maven `137` 个测试通过，仅输出 JVM
     class-sharing 警告。
+29. 2026 年 7 月 15 日完成 GitHub Actions 验证：`.github/workflows/verify.yml`
+    在推送到 `main`、面向 `main` 的拉取请求和手动触发时启动临时 MySQL 8.4 服务，
+    再运行 `./script/run_frontend_check.sh` 和带显式 Byte Buddy agent 的完整 Maven
+    测试。该服务仅属于 CI，不会连接、重置、重种或清理开发者本地 MySQL 历史数据。
 
 ## 下一项工作
 
@@ -302,9 +306,10 @@ http://127.0.0.1:8080
 token 确认当前收件人，并验证 `social.friend.requested`、通知发送者、申请目标
 与 `pending` 状态；前端只用返回的申请 ID 定位已有待处理申请卡片，复用同意、
 拒绝流程。真实仪表盘指标已不含展示性固定数字，签名 JWT、过期、服务端注销和
-Spring Security 安全链已经落地；下一项使用 Testcontainers MySQL 扩展 MyBatis、
-事务和权限集成测试，再继续持续集成与交付，同时保持真实 API 错误不回退 Mock、
-跨表写入事务和可回滚 MyBatis 集成测试。
+Spring Security 安全链与 GitHub Actions 验证已经落地。CI 使用临时 MySQL 8.4
+服务运行前端检查和完整测试；由于当前机器没有可用 Docker 运行时，下一项在 Docker
+可用后使用 Testcontainers MySQL 扩展 MyBatis、事务和权限集成测试，同时保持真实
+API 错误不回退 Mock、跨表写入事务和可回滚 MyBatis 集成测试。
 
 ## 必读文件
 

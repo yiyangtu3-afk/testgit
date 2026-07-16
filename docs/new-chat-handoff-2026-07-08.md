@@ -266,9 +266,10 @@ scrollTop 从 1541.5 变到 1181.5
 ## 建议下一步
 
 校园活动报名闭环、按用户点赞、好友申请、评论、实时通知、单条已读、动态目标
-跳转、好友申请通知的处理入口、真实仪表盘指标、签名 JWT 注销边界和 Spring
-Security 安全链已经完成。下一步继续阶段四，使用 Testcontainers MySQL 覆盖
-MyBatis、事务和权限集成测试，再推进持续集成交付。最新边界见
+跳转、好友申请通知的处理入口、真实仪表盘指标、签名 JWT 注销边界、Spring
+Security 安全链和 GitHub Actions 验证已经完成。持续集成在临时 MySQL 8.4 服务上
+运行前端检查和完整后端测试，不会访问本地历史数据。当前机器没有可用 Docker
+运行时，因此 Testcontainers MySQL 集成测试留待 Docker 可用时补齐。最新边界见
 [`phase-two-activity-handoff.md`](phase-two-activity-handoff.md) 和
 [`resume-project-roadmap.md`](resume-project-roadmap.md)。
 
@@ -291,9 +292,10 @@ git reset --hard、git clean，也不要删除或清理未跟踪文件。
 当前功能稳定提交是 `98c2dad Add notification read and target actions`，已推送到
 GitHub `main`。可信基线、校园活动报名闭环、按用户点赞、好友申请、评论通知、
 社交通知实时推送、单条已读、动态目标跳转、好友申请通知处理入口、真实仪表盘
-指标、签名 JWT 注销边界和 Spring Security 安全链已经完成。下一项使用
-Testcontainers MySQL 覆盖 MyBatis、事务和权限集成测试，再做持续集成交付；不要
-重做已完成链路。活动逻辑必须继续保留在独立领域模块，
+指标、签名 JWT 注销边界、Spring Security 安全链和 GitHub Actions 验证已经完成。
+GitHub Actions 使用临时 MySQL 8.4 服务运行前端检查与完整后端测试；当前机器
+没有可用 Docker 运行时，下一项待 Docker 可用后使用 Testcontainers MySQL 覆盖
+MyBatis、事务和权限集成测试。不要重做已完成链路。活动逻辑必须继续保留在独立领域模块，
 不能塞进 `FeedService` 或 `AdminService`。
 
 当前静态资源版本是 `20260715-signed-jwt-logout-v1`，本地验证地址是：

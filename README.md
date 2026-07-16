@@ -180,6 +180,15 @@ don't remain in existing demo history. Chat repository coverage verifies
 that unread counts include only messages addressed to the current user, still
 count newly received messages, and clear after the read cursor advances.
 
+## Continuous integration
+
+GitHub Actions runs [the verification workflow](.github/workflows/verify.yml)
+on pushes and pull requests targeting `main`, and you can also start it
+manually. The workflow starts a disposable MySQL 8.4 service, runs
+`./script/run_frontend_check.sh`, then runs the complete Maven suite with the
+explicit Byte Buddy agent. It never connects to, resets, or seeds a developer's
+local MySQL history.
+
 ## Local live API acceptance
 
 On July 11, 2026, the browser acceptance flow confirmed that a teacher can

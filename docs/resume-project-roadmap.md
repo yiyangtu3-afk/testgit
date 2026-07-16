@@ -123,7 +123,8 @@ HTTP 接口和学生活动卡片操作；定向 MyBatis 回滚集成测试已覆
    服务端注销和角色授权。无状态安全链统一保护 `/api/**`，登录与健康检查除外，
    管理员路径要求 `ROLE_ADMIN`。
 2. 使用 Testcontainers MySQL 编写 MyBatis、事务和权限集成测试。
-3. 添加 GitHub Actions，在每次提交和拉取请求中运行检查与测试。
+3. [x] 添加 GitHub Actions，在推送、拉取请求和手动触发时使用临时 MySQL 8.4
+   服务运行前端检查和带显式 Byte Buddy agent 的完整后端测试。
 4. 提供 Docker Compose 一键启动、健康检查、API 文档和在线演示说明。
 5. 使用 Actuator 和 Micrometer 展示健康状态、核心指标和请求诊断信息。
 
@@ -135,7 +136,8 @@ HTTP 接口和学生活动卡片操作；定向 MyBatis 回滚集成测试已覆
 
 ## 下一步
 
-阶段三已完成，阶段四的签名 JWT、令牌过期、服务端注销、角色授权与 Spring
-Security 安全链已经落地。下一项使用 Testcontainers MySQL 扩展 MyBatis、事务和
-权限集成测试，再推进持续集成和可复现交付。每个可演示小阶段都更新 README 和
-本路线的完成状态。
+阶段三已完成，阶段四的签名 JWT、令牌过期、服务端注销、角色授权、Spring
+Security 安全链与 GitHub Actions 验证已经落地。CI 在临时 MySQL 8.4 服务上运行，
+不会触碰本地历史数据。当前机器没有可用 Docker 运行时，下一项待 Docker 可用后使用
+Testcontainers MySQL 扩展 MyBatis、事务和权限集成测试，再推进可复现交付。每个可
+演示小阶段都更新 README 和本路线的完成状态。
