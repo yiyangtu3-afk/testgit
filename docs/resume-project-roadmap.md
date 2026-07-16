@@ -136,7 +136,7 @@ HTTP 接口和学生活动卡片操作；定向 MyBatis 回滚集成测试已覆
 后端 API、MySQL 历史数据或已完成业务规则。迁移从独立 `frontend-vue/` 目录开始，
 旧版继续作为可演示基线；只有每个领域完成等价验证后才能考虑切换入口。
 
-1. [ ] 初始化 Vue 3、Vite、Vue Router 和 Pinia，并建立 HTTP、Mock 与认证边界。
+1. [x] 初始化 Vue 3、Vite、Vue Router 和 Pinia，并建立 HTTP、Mock 与认证边界。
 2. [ ] 依次迁移应用壳、聊天、动态、活动、通知和管理员模块。
 3. [ ] 保持 Java API 不可达才回退 Mock、JWT 身份边界、实时通知和 XSS 转义语义。
 4. [ ] 新旧版本逐项验收后，经明确确认才切换默认入口。
@@ -152,6 +152,7 @@ Vue 前端迁移完成后，再评估 AI 辅助审核。该能力必须保持人
 ## 下一步
 
 阶段一至阶段四已经完成；CI 在临时 MySQL 8.4 服务上运行完整测试，并在 Docker
-runner 验证 Compose 健康接口，本机 MySQL 历史数据不受影响。下一项是阶段五的第一
-个 Vue 切片：在不替换旧静态入口的前提下，建立 `frontend-vue/`、Vite、Vue Router、
-Pinia、认证与 API/Mock 边界。每个可演示小阶段都更新 README 和本路线的完成状态。
+runner 验证 Compose 健康接口，本机 MySQL 历史数据不受影响。阶段五的第一 Vue
+认证切片已经完成：`frontend-vue/` 包含 Vite、Vue Router、Pinia、认证与 API/Mock
+边界，旧静态入口保持不变。下一项是应用壳、导航和统一状态提示。每个可演示小阶段
+都更新 README 和本路线的完成状态。

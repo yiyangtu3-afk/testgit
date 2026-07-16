@@ -11,8 +11,9 @@
 状态单例。当前可用版本和业务基线见
 [`new-chat-handoff-2026-07-08.md`](new-chat-handoff-2026-07-08.md)。
 
-当前迁移尚未开始。不要把本交接文档当作“已使用 Vue”的声明，也不要删除、移动或
-重写旧静态入口。
+第一切片已经完成：`frontend-vue/` 现在包含独立的 Vue 3、Vite、Vue Router 和
+Pinia 应用，以及最小认证闭环。根目录静态入口和 `frontend/js/` 仍是功能基线和
+默认演示入口；不要删除、移动、替换或重写它们。
 
 ## 目标架构
 
@@ -63,22 +64,24 @@ Pinia，也不要让组件直接散落 `fetch` 调用。
 - 不重置、重种、清空或清理本地 MySQL 历史数据；不运行 `git reset --hard`、
   `git clean`，也不删除未跟踪文件。
 
-## 第一阶段：脚手架、认证与 API 边界
+## 第一阶段：脚手架、认证与 API 边界（已完成）
 
 第一阶段只建立 Vue 工程和最小可验证闭环，不替换根目录 `index.html`，不迁移聊天、
 动态、活动、通知或管理员页面。
 
-1. 在 `frontend-vue/` 初始化 Vue 3、Vite、Vue Router 和 Pinia。保留旧前端所有
-   文件及其运行脚本。
-2. 配置 Vite 开发服务器使用独立端口，并将 `/api` 和 `/ws` 代理到
-   `http://127.0.0.1:8080`。新应用通过相对路径访问代理，不需要为此修改后端 CORS。
-3. 实现统一 HTTP 客户端、`ApiUnavailableError` 等价边界、当前 token 注入和 API/Mock
-   模式状态。网络异常与 HTTP 失败必须在这里明确区分。
-4. 实现会话 Pinia store 和 Vue 登录/快速进入最小页面，覆盖验证码登录、演示登录、
-   登出、令牌保存与 API/Mock 状态反馈。
-5. 为新 API 适配和会话 store 编写单元测试；构建通过后，以 Java API 和 Mock 两种
-   模式分别验证登录。额外验证 Java API 的 `401`、`403` 和 `500` 不会触发 Mock。
-6. 提交并推送这一切片。只有在该阶段验证完成后，才开始迁移下一个领域。
+1. 在 `frontend-vue/` 初始化 Vue 3、Vite、Vue Router 和 Pinia，同时保留旧前端的
+   所有文件和运行脚本。
+2. 将 Vite 固定在 `127.0.0.1:5180`，并把 `/api` 和 `/ws` 代理到
+   `http://127.0.0.1:8080`。所有新请求使用相对路径，因此没有修改后端 CORS。
+3. 将 HTTP 调用集中到 `services/api/`。`ApiUnavailableError` 只表示网络层不可达；
+   `ApiHttpError` 保留 API 的 `4xx` 和 `5xx` 失败，绝不回退 Mock。
+4. 新增 Pinia 会话 store，持久化 token 与用户信息，并提供验证码登录、演示登录、
+   注销和 Java API/Mock 状态反馈。受保护请求通过 bearer token 注入认证头。
+5. 新增 API 边界和会话 store 单元测试。测试覆盖 Mock 登录、token 注入，以及
+   `401`、`403`、`500` 不触发 Mock。
+6. `npm test`、`npm run build` 和旧版 `./script/run_frontend_check.sh` 已通过。
+   通过 Vite 代理验证了本地 Java API 的验证码登录、演示登录和注销，均返回 `200`。
+   本阶段未重置、重种或清理本机 MySQL 历史数据。
 
 ## 后续迁移顺序
 

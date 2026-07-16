@@ -324,6 +324,14 @@ http://127.0.0.1:8080
     静态前端仍是功能基线，迁移将从独立 `frontend-vue/` 目录开始，并行保留旧入口，
     先建立 Vite、Vue Router、Pinia、认证与 API/Mock 边界。此交接不改变运行代码、
     前端版本、后端或本机 MySQL 数据；详见 `docs/vue-migration-handoff.md`。
+34. 2026 年 7 月 15 日完成 Vue 第一认证切片：新增独立 `frontend-vue/`，使用
+    Vue 3、Vite、Vue Router 和 Pinia。Vite 在 `5179` 旧版之外使用 `5180`，以
+    相对路径代理 `/api` 和 `/ws` 到 Java API。统一 HTTP 边界只把网络层不可达映射
+    为 `ApiUnavailableError`；`401`、`403` 和 `500` 保留为真实 HTTP 失败，不会
+    回退 Mock。Pinia 会话保存 bearer token 和用户，覆盖验证码登录、演示登录和
+    注销。新 Vue 单元测试 6 项、生产构建和旧版前端检查通过；通过 Vite 代理验证
+    本地 MySQL API 的验证码登录、演示登录和注销均返回 `200`；未重置、重种或清理
+    本机 MySQL 历史数据。
 
 ## 下一项工作
 
@@ -335,9 +343,10 @@ token 确认当前收件人，并验证 `social.friend.requested`、通知发送
 Spring Security 安全链、GitHub Actions 验证、Docker Compose 演示与 Testcontainers
 MySQL 集成测试以及 Actuator/Micrometer 可观察性已经落地。CI
 在临时 MySQL 8.4 服务上运行完整测试，并在 Docker runner 构建和启动 Compose
-演示；本机 MySQL 历史数据不受影响。阶段四已完成；下一项是 Vue 前端渐进迁移的
-脚手架、认证与 API/Mock 边界，旧静态前端必须继续可演示。后续 AI 辅助审核仍需重新
-评估，并继续保持真实 API 错误不回退 Mock、跨表写入事务和可回滚 MyBatis 集成测试。
+演示；本机 MySQL 历史数据不受影响。Vue 第一认证切片已完成，旧静态前端继续作为
+可演示基线。下一项是 Vue 应用壳、导航和统一状态提示；不要迁移聊天、动态、活动、
+通知或管理员页面。后续 AI 辅助审核仍需重新评估，并继续保持真实 API 错误不回退
+Mock、跨表写入事务和可回滚 MyBatis 集成测试。
 
 ## 必读文件
 

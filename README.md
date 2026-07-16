@@ -30,11 +30,13 @@ accept or reject controls are shown. Start from
 [`docs/new-chat-handoff-2026-07-08.md`](docs/new-chat-handoff-2026-07-08.md)
 for the complete handoff, constraints, and local verification commands.
 
-The next planned work is an incremental Vue 3 and Vite migration. It has not
-started: the current static frontend remains the functional baseline while a
-separate `frontend-vue/` application is introduced and verified feature by
-feature. See [`docs/vue-migration-handoff.md`](docs/vue-migration-handoff.md)
-for the migration boundary and first slice.
+The Vue 3 migration is underway in the separate `frontend-vue/` application.
+Its first slice provides the Vite proxy, Vue Router, Pinia session store, and
+the verification-code, demo-login, and logout loop. The root static frontend
+remains the functional baseline and default demo entry; no business workspace
+has moved to Vue yet. See
+[`docs/vue-migration-handoff.md`](docs/vue-migration-handoff.md) for the
+completed slice and next boundary.
 
 The demo supports these flows:
 
@@ -154,6 +156,21 @@ Run the lightweight frontend checks before handing off a change:
 ```bash
 ./script/run_frontend_check.sh
 ```
+
+Run the Vue slice independently from the repository root:
+
+```bash
+cd frontend-vue
+npm install
+npm test
+npm run build
+npm run dev
+```
+
+Vite listens on `http://127.0.0.1:5180` and proxies `/api` and `/ws` to the
+local Java API. The Vue client uses relative proxy paths. It shows Java API
+mode when the API responds and uses Mock only when the request cannot reach the
+API; HTTP `4xx` and `5xx` responses remain visible failures.
 
 Run the backend JUnit suite from the backend directory:
 
