@@ -1,9 +1,9 @@
-import { api } from "../api/client.js?v=20260713-social-like-notifications-v1";
-import { loadActivities, loadPendingActivities } from "../loaders.js?v=20260713-social-like-notifications-v1";
+import { api } from "../api/client.js?v=20260715-friend-notifications-v1";
+import { loadActivities, loadPendingActivities } from "../loaders.js?v=20260715-friend-notifications-v1";
 import { state } from "../state.js";
-import { $ } from "../utils/dom.js?v=20260713-social-like-notifications-v1";
-import { activityRosterToCsv } from "../utils/format.js?v=20260713-social-like-notifications-v1";
-import { renderActivities, renderPendingActivities } from "./renderers.js?v=20260713-social-like-notifications-v1";
+import { $ } from "../utils/dom.js?v=20260715-friend-notifications-v1";
+import { activityRosterToCsv } from "../utils/format.js?v=20260715-friend-notifications-v1";
+import { renderActivities, renderPendingActivities } from "./renderers.js?v=20260715-friend-notifications-v1";
 
 export function bindActivityEvents() {
   $("#activityForm").addEventListener("submit", submitActivity);

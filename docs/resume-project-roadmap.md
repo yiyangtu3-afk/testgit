@@ -5,8 +5,8 @@
 
 ## 当前基线
 
-当前前端版本为 `20260713-social-like-notifications-v1`，本地验证地址为
-`http://127.0.0.1:5179/?v=20260713-social-like-notifications-v1`。当前基线保留
+当前前端版本为 `20260715-friend-notifications-v1`，本地验证地址为
+`http://127.0.0.1:5179/?v=20260715-friend-notifications-v1`。当前基线保留
 管理员审核工作台、普通用户审核反馈、普通文件附件卡片、窄窗口聊天
 滚动修复，以及真实的动态可见范围过滤。详细约束见
 [`new-chat-handoff-2026-07-08.md`](new-chat-handoff-2026-07-08.md)。
@@ -92,11 +92,13 @@ HTTP 接口和学生活动卡片操作；定向 MyBatis 回滚集成测试已覆
 3. [x] 将点赞改为按用户记录的可取消操作，避免重复累加。
 4. 为动态、评论和活动补充真实统计和筛选，不再使用展示性硬编码数据。
 
-点赞子项已经完成。`post_likes` 以动态和当前用户组成唯一键，点赞接口返回
-`likedByCurrentUser` 并支持再次点击取消。`SocialNotificationService` 和独立的
-MyBatis Repository、Mapper、Controller 保存点赞通知；前端 **站内通知**
-按时间合并活动和社交通知，并合并未读计数与全部已读操作。历史
-`posts.likes` 作为兼容计数继续保留，种子启动不再覆盖真实点赞总数。
+点赞和好友申请子项已经完成。`post_likes` 以动态和当前用户组成唯一键，点赞
+接口返回 `likedByCurrentUser` 并支持再次点击取消。`SocialNotificationService`
+和独立的 MyBatis Repository、Mapper、Controller 保存点赞、好友申请和处理
+结果通知；前端 **站内通知** 按时间合并活动和社交通知，并合并未读计数与
+全部已读操作。好友申请创建、同意和拒绝分别在同一事务内写入申请状态、好友
+关系或聊天系统消息、审计记录和相应通知。历史 `posts.likes` 作为兼容计数继续
+保留，种子启动不再覆盖真实点赞总数。
 
 ## 阶段四：安全、测试与交付
 
@@ -116,6 +118,6 @@ MyBatis Repository、Mapper、Controller 保存点赞通知；前端 **站内通
 
 ## 下一步
 
-下一项继续阶段三，把好友申请结果接入现有社交通知模块，再补动态评论通知。
-完成持久化与未读边界后，再把社交通知扩展到 WebSocket。每个可演示小阶段都
-更新 README 和本路线的完成状态。
+下一项继续阶段三，为动态评论补充持久化作者通知。完成评论的持久化与未读
+边界后，再把社交通知扩展到 WebSocket。每个可演示小阶段都更新 README 和
+本路线的完成状态。

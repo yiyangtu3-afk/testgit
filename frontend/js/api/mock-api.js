@@ -1,5 +1,5 @@
 import { mockStore, reportRanges, state } from "../state.js";
-import { nowTime } from "../utils/dom.js?v=20260713-social-like-notifications-v1";
+import { nowTime } from "../utils/dom.js?v=20260715-friend-notifications-v1";
 
 let mockAuditId = Date.now();
 let mockActivityId = Date.now();
@@ -118,6 +118,23 @@ function pushMockPostLikeNotification(post) {
   });
 }
 
+function pushMockFriendRequestNotification(recipientId, actor, request, type) {
+  const accepted = type === "social.friend.accepted";
+  const requested = type === "social.friend.requested";
+  mockStore.socialNotifications.unshift({
+    id: `social-notification-mock-${++mockSocialNotificationId}`,
+    recipientId,
+    targetId: request.id,
+    type,
+    title: requested ? "新的好友申请" : accepted ? "好友申请已同意" : "好友申请未通过",
+    body: requested
+      ? `${actor.name}向你发送了好友申请。`
+      : `${actor.name}${accepted ? "已同意" : "拒绝"}你的好友申请。`,
+    read: false,
+    createdAt: new Date().toISOString()
+  });
+}
+
 function requireOwnedMockActivity(activityId) {
   const role = state.currentUser.role || "";
   if (!role.includes("教师") && !role.includes("社团负责人")) {
@@ -172,17 +189,19 @@ export const mockApi = {
     const existing = mockStore.friendRequests.find((item) => {
       return item.fromUserId === state.currentUser.id && item.toUserId === userId;
     });
+    const request = existing || {
+      id: `fr-${Date.now()}`,
+      fromUserId: state.currentUser.id,
+      toUserId: userId,
+      status: "pending"
+    };
     if (existing) {
       existing.status = "pending";
     } else {
-      mockStore.friendRequests.unshift({
-        id: `fr-${Date.now()}`,
-        fromUserId: state.currentUser.id,
-        toUserId: userId,
-        status: "pending"
-      });
+      mockStore.friendRequests.unshift(request);
     }
     const user = accountById(userId);
+    pushMockFriendRequestNotification(userId, state.currentUser, request, "social.friend.requested");
     pushMockAudit("好友", `${state.currentUser.name}向${user ? user.name : userId}发送好友申请`);
     return { userId, status: "pending" };
   },
@@ -219,6 +238,12 @@ export const mockApi = {
       mockStore.conversations[request.fromUserId].push(acceptedMessage);
       mockStore.conversations[request.toUserId].push(acceptedMessage);
     }
+    pushMockFriendRequestNotification(
+      request.fromUserId,
+      state.currentUser,
+      request,
+      request.status === "accepted" ? "social.friend.accepted" : "social.friend.rejected"
+    );
     pushMockAudit("好友", `${state.currentUser.name}${request.status === "accepted" ? "同意" : "拒绝"}${requester ? requester.name : request.fromUserId}的好友申请`);
     return normalizeFriendRequest(request);
   },

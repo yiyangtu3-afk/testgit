@@ -18,7 +18,7 @@ Open the local demo in a browser:
 ```
 
 Then visit
-`http://127.0.0.1:5179/?v=20260713-social-like-notifications-v1`.
+`http://127.0.0.1:5179/?v=20260715-friend-notifications-v1`.
 
 The demo supports these flows:
 
@@ -26,9 +26,11 @@ The demo supports these flows:
   code automatically when the code field is empty.
 - Enter the workspace instantly through the quick demo button.
 - Switch demo accounts or log out to return to the login screen.
-- Search demo users and send a friend request.
+- Search demo users and send a friend request. The recipient receives a
+  persistent **新的好友申请** notification.
 - Switch demo accounts to review incoming friend requests and accept or reject
-  them from the recipient account.
+  them from the recipient account. The requester receives a persistent result
+  notification for either decision.
 - View accepted friends in the contacts list and open chats from that list.
 - See the latest message preview for every accepted friend without loading each
   conversation's complete history or changing its read state.
@@ -47,9 +49,10 @@ The demo supports these flows:
 - Filter published activities by an inclusive start-date range and category,
   register while a slot is available, see a waitlist state when full, and
   cancel a current registration.
-- Receive persistent in-app notifications for activity state changes and new
-  post likes. The notification rail combines unread counts, and the unified
-  notification center supports marking activity and social items as read.
+- Receive persistent in-app notifications for activity state changes, new post
+  likes, and friend-request results. The notification rail combines unread
+  counts, and the unified notification center supports marking activity and
+  social items as read.
 - Switch online and invisible presence states.
 - Publish a campus feed post.
 - Like a post once per signed-in user, see the current-user liked state, and
@@ -121,7 +124,7 @@ mvn test
 On this machine, Microsoft JDK 21 can't let Mockito self-attach its Byte Buddy
 agent. The verified full run passes an explicit `-javaagent` through Maven's
 `argLine`; without it, Mockito-based tests fail during test setup rather than
-on application behavior. The July 13 run completed all 114 tests with the
+on application behavior. The July 15 run completed all 117 tests with the
 explicit agent and only printed the JVM class-sharing warning.
 
 The smoke test is dependency-free. It checks the static page, styles, frontend
@@ -132,11 +135,12 @@ messages, chat attachments, feed posts, comments, moderation, and audit
 records. Activity tests cover organizer permissions, review transitions,
 date/category filters, registration and waitlist promotion, organizer rosters,
 transactional check-in, persistent notifications, user-scoped post likes,
-HTTP boundaries, MyBatis mapping, and rollback-safe history.
+friend-request outcomes, HTTP boundaries, MyBatis mapping, and rollback-safe
+history.
 The suite also includes MockMvc controller tests for the auth, users, friends,
 chat, feed, activity notifications, social notifications, and admin API
 boundaries, plus direct WebSocket handler tests for chat and recipient-only
-activity notification events. The full suite currently contains 114 tests.
+activity notification events. The full suite currently contains 117 tests.
 Repository integration tests use transactions that roll back, so test rows
 don't remain in existing demo history. Chat repository coverage verifies
 that unread counts include only messages addressed to the current user, still

@@ -33,13 +33,15 @@ public class MyBatisFriendRepository implements FriendRepository {
   }
 
   @Override
-  public void upsertFriendRequest(String fromUserId, String toUserId, String status) {
+  public FriendRequestEntity upsertFriendRequest(String fromUserId, String toUserId, String status) {
     String existingRequestId = friendMapper.findExistingRequestId(fromUserId, toUserId);
     if (existingRequestId != null) {
       updateRequestStatus(existingRequestId, status);
-      return;
+      return new FriendRequestEntity(existingRequestId, fromUserId, toUserId, status);
     }
-    friendMapper.createFriendRequest("fr-" + System.currentTimeMillis(), fromUserId, toUserId, status);
+    String requestId = "fr-" + System.currentTimeMillis();
+    friendMapper.createFriendRequest(requestId, fromUserId, toUserId, status);
+    return new FriendRequestEntity(requestId, fromUserId, toUserId, status);
   }
 
   @Override

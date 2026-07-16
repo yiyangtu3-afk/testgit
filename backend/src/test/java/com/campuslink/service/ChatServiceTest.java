@@ -282,7 +282,8 @@ class ChatServiceTest {
     }
 
     @Override
-    public void upsertFriendRequest(String fromUserId, String toUserId, String status) {
+    public FriendRequestEntity upsertFriendRequest(String fromUserId, String toUserId, String status) {
+      return new FriendRequestEntity("friend-request", fromUserId, toUserId, status);
     }
 
     @Override

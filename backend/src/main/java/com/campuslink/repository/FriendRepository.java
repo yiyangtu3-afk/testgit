@@ -12,7 +12,7 @@ public interface FriendRepository {
 
   void addFriendship(String firstUserId, String secondUserId);
 
-  void upsertFriendRequest(String fromUserId, String toUserId, String status);
+  FriendRequestEntity upsertFriendRequest(String fromUserId, String toUserId, String status);
 
   List<FriendRequestEntity> findRequestsForUser(String userId);
 

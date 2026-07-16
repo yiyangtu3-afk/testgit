@@ -1,6 +1,6 @@
-import { $ } from "../utils/dom.js?v=20260713-social-like-notifications-v1";
-import { escapeHtml } from "../utils/format.js?v=20260713-social-like-notifications-v1";
-import { activityNotificationState, socialNotificationState } from "./state.js?v=20260713-social-like-notifications-v1";
+import { $ } from "../utils/dom.js?v=20260715-friend-notifications-v1";
+import { escapeHtml } from "../utils/format.js?v=20260715-friend-notifications-v1";
+import { activityNotificationState, socialNotificationState } from "./state.js?v=20260715-friend-notifications-v1";
 
 const typeLabels = {
   "activity.review.approved": "审核通过",
@@ -8,7 +8,10 @@ const typeLabels = {
   "activity.registration.registered": "报名成功",
   "activity.registration.waitlisted": "进入候补",
   "activity.registration.promoted": "候补递补",
-  "social.post.liked": "动态点赞"
+  "social.post.liked": "动态点赞",
+  "social.friend.requested": "好友申请",
+  "social.friend.accepted": "好友已添加",
+  "social.friend.rejected": "好友申请结果"
 };
 
 export function renderActivityNotifications() {

@@ -33,6 +33,33 @@ public class SocialNotificationService {
         actorName + "赞了你的动态。");
   }
 
+  public void recordFriendRequestReceived(
+      String recipientId, String actorId, String actorName, String requestId) {
+    notifications.create(
+        recipientId,
+        actorId,
+        requestId,
+        "social.friend.requested",
+        "新的好友申请",
+        actorName + "向你发送了好友申请。");
+  }
+
+  public void recordFriendRequestResolved(
+      String recipientId,
+      String actorId,
+      String actorName,
+      String requestId,
+      String status) {
+    boolean accepted = "accepted".equals(status);
+    notifications.create(
+        recipientId,
+        actorId,
+        requestId,
+        accepted ? "social.friend.accepted" : "social.friend.rejected",
+        accepted ? "好友申请已同意" : "好友申请未通过",
+        actorName + (accepted ? "已同意" : "拒绝") + "你的好友申请。");
+  }
+
   @Transactional
   public NotificationSummary markAllRead(String recipientId) {
     notifications.markAllRead(recipientId);

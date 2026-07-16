@@ -408,6 +408,44 @@ function runMockSocialLikeWorkflowCheck() {
   }
 }
 
+function runMockFriendNotificationWorkflowCheck() {
+  const script = [
+    'const { state } = await import("./frontend/js/state.js");',
+    'const { mockApi } = await import("./frontend/js/api/mock-api.js");',
+    'state.currentUser = { id: "u-1001", name: "林一", role: "学生账号" };',
+    'await mockApi.sendFriendRequest("u-2004");',
+    'state.currentUser = { id: "u-2004", name: "王社长", role: "社团负责人" };',
+    'const received = await mockApi.socialNotifications();',
+    'const request = (await mockApi.friendRequests()).find((item) => item.fromUserId === "u-1001");',
+    'await mockApi.resolveFriendRequest(request.id, "reject");',
+    'state.currentUser = { id: "u-1001", name: "林一", role: "学生账号" };',
+    'const resolved = await mockApi.socialNotifications();',
+    'const read = await mockApi.markAllSocialNotificationsRead();',
+    'process.stdout.write(JSON.stringify({ received, resolved, read }));'
+  ].join("\n");
+  try {
+    const output = JSON.parse(execFileSync(
+      process.execPath,
+      ["--input-type=module", "--eval", script],
+      { cwd: root, encoding: "utf8" }
+    ));
+    if (output.received.items[0]?.type !== "social.friend.requested"
+        || !output.received.items[0]?.body.includes("林一")) {
+      failures.push("mock friend notifications: expected recipient to receive a friend request notification");
+    }
+    if (output.resolved.items[0]?.type !== "social.friend.rejected"
+        || !output.resolved.items[0]?.body.includes("王社长")
+        || output.resolved.unreadCount !== 1) {
+      failures.push("mock friend notifications: expected requester to receive a rejection result notification");
+    }
+    if (output.read.unreadCount !== 0 || output.read.items.some((item) => !item.read)) {
+      failures.push("mock friend notifications: expected requester to mark friend notification read");
+    }
+  } catch (error) {
+    failures.push(`Mock friend notification workflow check failed: ${String(error.message || error)}`);
+  }
+}
+
 function checkVersionedModuleImports() {
   const bareImports = [...files.js.matchAll(/(?:from|import)\s*["']([^"']+\.js)["']/g)]
     .map((match) => match[1])
@@ -436,6 +474,7 @@ runMockActivityFilterCheck();
 runMockActivityNotificationWorkflowCheck();
 runMockActivityOperationsCheck();
 runMockSocialLikeWorkflowCheck();
+runMockFriendNotificationWorkflowCheck();
 checkVersionedModuleImports();
 
 if (files.appEntry.split("\n").length > 20) {
@@ -575,6 +614,9 @@ expectIncludes("css", ".realtime-mode", "chat realtime status styles");
   ["markAllActivityNotificationsRead()", "activity notification read-all adapter"],
   ["socialNotifications()", "social notification list adapter"],
   ["markAllSocialNotificationsRead()", "social notification read-all adapter"],
+  ["social.friend.requested", "friend request notification label"],
+  ["social.friend.accepted", "friend acceptance notification label"],
+  ["social.friend.rejected", "friend rejection notification label"],
   ["managedActivities()", "organizer managed activity adapter"],
   ["activityRoster(activityId)", "activity roster adapter"],
   ["checkInActivityRegistration(activityId, registrationId)", "activity check-in adapter"],
@@ -665,8 +707,8 @@ expectMatch(
   "admin layout: expected independent review workspaces to use normal document flow"
 );
 
-expectIncludes("html", "20260713-social-like-notifications-v1", "HTML escaping cache-busting version");
-expectIncludes("appEntry", "20260713-social-like-notifications-v1", "root app imports current HTML escaping module version");
+expectIncludes("html", "20260715-friend-notifications-v1", "HTML escaping cache-busting version");
+expectIncludes("appEntry", "20260715-friend-notifications-v1", "root app imports current HTML escaping module version");
 
 expectIncludes("js", "setRealtimeMode", "chat realtime status updater");
 expectIncludes("js", "HEARTBEAT_INTERVAL_MS", "chat realtime heartbeat interval");

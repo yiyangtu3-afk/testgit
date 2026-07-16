@@ -17,24 +17,30 @@ public class FriendService {
   private final ChatRepository chatRepository;
   private final UserService userService;
   private final AuditService auditService;
+  private final SocialNotificationService notifications;
 
   public FriendService(
       FriendRepository friendRepository,
       ChatRepository chatRepository,
       UserService userService,
-      AuditService auditService) {
+      AuditService auditService,
+      SocialNotificationService notifications) {
     this.friendRepository = friendRepository;
     this.chatRepository = chatRepository;
     this.userService = userService;
     this.auditService = auditService;
+    this.notifications = notifications;
   }
 
+  @Transactional
   public FriendRequestResponse createFriendRequest(String fromUserId, String toUserId) {
     String activeUserId = userService.activeUserId(fromUserId);
     if (areFriends(activeUserId, toUserId)) {
       return new FriendRequestResponse(toUserId, "accepted");
     }
-    updateFriendRequest(activeUserId, toUserId, "pending");
+    FriendRequestEntity request = updateFriendRequest(activeUserId, toUserId, "pending");
+    notifications.recordFriendRequestReceived(
+        toUserId, activeUserId, userService.userName(activeUserId), request.id());
     auditService.addAudit("好友", userService.userName(activeUserId) + "向" + userService.userName(toUserId) + "发送好友申请");
     return new FriendRequestResponse(toUserId, "pending");
   }
@@ -68,13 +74,26 @@ public class FriendService {
         activeUserId,
         "我们已经是好友了，之后可以直接在这里沟通。",
         List.of());
+    notifications.recordFriendRequestResolved(
+        request.fromUserId(),
+        activeUserId,
+        userService.userName(activeUserId),
+        request.id(),
+        request.status());
     auditService.addAudit("好友", userService.userName(activeUserId) + "同意" + userService.userName(request.fromUserId()) + "的好友申请");
     return toFriendRequestView(request, activeUserId);
   }
 
+  @Transactional
   public FriendRequestView rejectFriendRequest(String requestId, String currentUserId) {
     String activeUserId = userService.activeUserId(currentUserId);
     FriendRequestEntity request = resolveFriendRequest(requestId, activeUserId, "rejected");
+    notifications.recordFriendRequestResolved(
+        request.fromUserId(),
+        activeUserId,
+        userService.userName(activeUserId),
+        request.id(),
+        request.status());
     auditService.addAudit("好友", userService.userName(activeUserId) + "拒绝" + userService.userName(request.fromUserId()) + "的好友申请");
     return toFriendRequestView(request, activeUserId);
   }
@@ -87,8 +106,8 @@ public class FriendService {
     friendRepository.addFriendship(firstUserId, secondUserId);
   }
 
-  private void updateFriendRequest(String fromUserId, String toUserId, String status) {
-    friendRepository.upsertFriendRequest(fromUserId, toUserId, status);
+  private FriendRequestEntity updateFriendRequest(String fromUserId, String toUserId, String status) {
+    return friendRepository.upsertFriendRequest(fromUserId, toUserId, status);
   }
 
   private FriendRequestEntity resolveFriendRequest(String requestId, String currentUserId, String status) {

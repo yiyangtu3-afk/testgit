@@ -12,6 +12,7 @@ import com.campuslink.entity.DemoEntities.UserEntity;
 import com.campuslink.repository.ChatRepository;
 import com.campuslink.repository.FriendRepository;
 import com.campuslink.repository.UserRepository;
+import com.campuslink.support.InMemorySocialNotificationRepository;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -24,6 +25,8 @@ class FriendServiceTest {
 
   private final InMemoryFriendRepository friends = new InMemoryFriendRepository();
   private final InMemoryChatRepository chat = new InMemoryChatRepository();
+  private final SocialNotificationService notifications = new SocialNotificationService(
+      new InMemorySocialNotificationRepository());
   private final FriendService friendService = new FriendService(
       friends,
       chat,
@@ -31,7 +34,8 @@ class FriendServiceTest {
           new UserEntity("u-1001", "林一", "学生账号", "13800000001", "online"),
           new UserEntity("u-2001", "陈老师", "教师", "13800000002", "online"),
           new UserEntity("u-2002", "周同学", "学生", "13800000003", "offline")))),
-      new AuditService(new TestAuditRepository()));
+      new AuditService(new TestAuditRepository()),
+      notifications);
 
   @Test
   void createFriendRequestStoresPendingRequest() {
@@ -41,6 +45,21 @@ class FriendServiceTest {
     assertThat(friends.findRequestsForUser("u-2002"))
         .extracting(FriendRequestEntity::fromUserId)
         .containsExactly("u-1001");
+  }
+
+  @Test
+  void createFriendRequestNotifiesOnlyItsRecipient() {
+    friendService.createFriendRequest("u-1001", "u-2002");
+
+    assertThat(notifications.summary("u-2002").items())
+        .singleElement()
+        .satisfies(notification -> {
+          assertThat(notification.type()).isEqualTo("social.friend.requested");
+          assertThat(notification.title()).isEqualTo("新的好友申请");
+          assertThat(notification.body()).contains("林一");
+          assertThat(notification.read()).isFalse();
+        });
+    assertThat(notifications.summary("u-1001").items()).isEmpty();
   }
 
   @Test
@@ -62,6 +81,30 @@ class FriendServiceTest {
     assertThat(result.status()).isEqualTo("accepted");
     assertThat(friends.areFriends("u-1001", "u-2002")).isTrue();
     assertThat(chat.findMessages("u-2002", "u-1001")).hasSize(1);
+    assertThat(notifications.summary("u-2002").items())
+        .singleElement()
+        .satisfies(notification -> {
+          assertThat(notification.type()).isEqualTo("social.friend.accepted");
+          assertThat(notification.title()).isEqualTo("好友申请已同意");
+          assertThat(notification.body()).contains("林一");
+        });
+  }
+
+  @Test
+  void rejectFriendRequestNotifiesTheOriginalRequester() {
+    friends.upsertFriendRequest("u-2002", "u-1001", "pending");
+    String requestId = friends.findRequestsForUser("u-1001").getFirst().id();
+
+    FriendRequestView result = friendService.rejectFriendRequest(requestId, "u-1001");
+
+    assertThat(result.status()).isEqualTo("rejected");
+    assertThat(notifications.summary("u-2002").items())
+        .singleElement()
+        .satisfies(notification -> {
+          assertThat(notification.type()).isEqualTo("social.friend.rejected");
+          assertThat(notification.title()).isEqualTo("好友申请未通过");
+          assertThat(notification.body()).contains("林一");
+        });
   }
 
   private static final class InMemoryChatRepository implements ChatRepository {
@@ -152,15 +195,19 @@ class FriendServiceTest {
     }
 
     @Override
-    public void upsertFriendRequest(String fromUserId, String toUserId, String status) {
+    public FriendRequestEntity upsertFriendRequest(String fromUserId, String toUserId, String status) {
       for (int index = 0; index < requests.size(); index++) {
         FriendRequestEntity request = requests.get(index);
         if (request.fromUserId().equals(fromUserId) && request.toUserId().equals(toUserId)) {
-          requests.set(index, new FriendRequestEntity(request.id(), fromUserId, toUserId, status));
-          return;
+          FriendRequestEntity updated = new FriendRequestEntity(request.id(), fromUserId, toUserId, status);
+          requests.set(index, updated);
+          return updated;
         }
       }
-      requests.add(new FriendRequestEntity("fr-" + (requests.size() + 1), fromUserId, toUserId, status));
+      FriendRequestEntity created = new FriendRequestEntity(
+          "fr-" + (requests.size() + 1), fromUserId, toUserId, status);
+      requests.add(created);
+      return created;
     }
 
     @Override
