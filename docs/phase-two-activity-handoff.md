@@ -306,6 +306,13 @@ http://127.0.0.1:8080
     本地 MySQL。API 和前端按健康顺序启动，公开
     `/api/database/health` 同时作为 API 健康检查。GitHub Actions 新增 Compose
     构建、启动等待和健康接口请求，提供有 Docker runner 的运行级验证。
+31. 2026 年 7 月 15 日完成 Testcontainers MySQL 集成测试：`mysql:8.4` 临时容器在
+    Spring 上下文创建前启动，并复用现有 `schema.sql`、`data.sql` 初始化。新的
+    `@Transactional`、`@Rollback` 测试验证 MyBatis 动态可见范围查询、好友申请同意
+    后的跨表关系与通知写入，以及 JWT 学生账号访问普通 API、拒绝管理员 API 的边界。
+    Testcontainers 升级到 `1.21.4`，兼容 Docker Engine 29；临时容器会在测试结束后
+    停止，绝不连接、重置、重种或清理开发者本机 MySQL 历史数据。显式 Byte Buddy
+    agent 下完整 Maven `140` 个测试通过，仅输出 JVM class-sharing 警告。
 
 ## 下一项工作
 
@@ -314,11 +321,12 @@ http://127.0.0.1:8080
 token 确认当前收件人，并验证 `social.friend.requested`、通知发送者、申请目标
 与 `pending` 状态；前端只用返回的申请 ID 定位已有待处理申请卡片，复用同意、
 拒绝流程。真实仪表盘指标已不含展示性固定数字，签名 JWT、过期、服务端注销和
-Spring Security 安全链、GitHub Actions 验证与 Docker Compose 演示已经落地。CI
+Spring Security 安全链、GitHub Actions 验证、Docker Compose 演示与 Testcontainers
+MySQL 集成测试已经落地。CI
 在临时 MySQL 8.4 服务上运行完整测试，并在 Docker runner 构建和启动 Compose
-演示；本机 MySQL 历史数据不受影响。由于当前机器没有可用 Docker 运行时，下一项在
-Docker 可用后使用 Testcontainers MySQL 扩展 MyBatis、事务和权限集成测试，同时保持
-真实 API 错误不回退 Mock、跨表写入事务和可回滚 MyBatis 集成测试。
+演示；本机 MySQL 历史数据不受影响。下一项为使用 Actuator 和 Micrometer 展示健康
+状态、核心指标和请求诊断信息，同时保持真实 API 错误不回退 Mock、跨表写入事务和
+可回滚 MyBatis 集成测试。
 
 ## 必读文件
 

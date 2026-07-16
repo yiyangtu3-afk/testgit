@@ -149,7 +149,7 @@ mvn test
 On this machine, Microsoft JDK 21 can't reliably let Mockito self-attach its
 Byte Buddy agent. The verified full run passes an explicit `-javaagent` through
 Maven's `argLine`; without it, Mockito-based tests can fail during test setup
-rather than on application behavior. The July 15 run completed all 137 tests
+rather than on application behavior. The July 15 run completed all 140 tests
 with the explicit agent and only printed the JVM class-sharing warning:
 
 ```bash
@@ -173,8 +173,12 @@ The suite also includes MockMvc controller tests for the auth, users, friends,
 chat, feed, activity notifications, social notifications, and admin API
 boundaries, plus direct WebSocket handler tests for chat and recipient-only
 activity and social notification events, plus the Spring Security API chain.
-The full suite currently contains 137
-tests.
+The full suite currently contains 140 tests. `TestcontainersMySqlIntegrationTest`
+starts an isolated `mysql:8.4` container and initializes it from the existing
+`schema.sql` and `data.sql` files. It verifies MyBatis visibility filtering,
+the transactional friend-acceptance and notification writes, and the JWT
+student/admin authorization boundary. The container is stopped after the test;
+it never opens or changes the developer's local MySQL history.
 Repository integration tests use transactions that roll back, so test rows
 don't remain in existing demo history. Chat repository coverage verifies
 that unread counts include only messages addressed to the current user, still
