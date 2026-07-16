@@ -26,6 +26,10 @@
 http://127.0.0.1:5179/?v=20260715-notification-actions-v1
 ```
 
+当前功能稳定提交为 `98c2dad Add notification read and target actions`，已推送到
+`main`。后续仅文档交接提交可能比该提交更新；开始功能开发时，以此提交的行为和
+本文的约束为准。
+
 ## 已完成内容
 
 当前基线包含以下已完成工作。
@@ -177,7 +181,18 @@ scrollTop 从 1541.5 变到 1181.5
 
 ## 当前验证记录
 
-已完成以下验证。
+截至 2026-07-15，当前功能稳定点已完成以下验证：
+
+1. `./script/run_frontend_check.sh` 通过。
+2. 显式加载 Byte Buddy agent 的完整 Maven 测试通过，`127` 个测试无失败、
+   错误或跳过；仅有 JVM class-sharing 兼容性警告。
+3. 本地前端地址和 `http://127.0.0.1:8080/api/database/health` 都返回 `200`。
+4. 通知单条已读、活动/动态目标定位、管理员后台、动态审核反馈和聊天页完成
+   回归检查；Java API 模式读取的是本地 MySQL 历史数据，不会回退 Mock。
+
+### 可信基线历史验收
+
+下列内容保留以说明既有约束。
 
 1. 运行前端检查：
 
@@ -215,8 +230,7 @@ scrollTop 从 1541.5 变到 1181.5
 
 继续工作前必须遵守以下约束。
 
-- 当前仓库 `git status --short` 显示大量未跟踪文件。这是已知状态。
-  不要运行 `git reset --hard`、`git clean`，也不要删除未跟踪文件。
+- 不要运行 `git reset --hard`、`git clean`，也不要删除或清理未跟踪文件。
 - 不要给 `frontend/js/state.js` 的导入添加版本查询参数。多个模块必须
   共享同一个状态单例。
 - 修改前端后至少运行：
@@ -246,8 +260,8 @@ scrollTop 从 1541.5 变到 1181.5
 
 ```text
 请先阅读并遵循仓库中的 AGENTS.md：根目录 AGENTS.md、frontend/AGENTS.md、
-backend/AGENTS.md。项目路径是 /Users/linus_k/Documents/test。不要重置或
-清理未跟踪文件，当前仓库可能整体显示为未跟踪状态。
+backend/AGENTS.md。项目路径是 /Users/linus_k/Documents/test。不要执行
+git reset --hard、git clean，也不要删除或清理未跟踪文件。
 
 请优先阅读：
 - docs/new-chat-handoff-2026-07-08.md
@@ -256,10 +270,11 @@ backend/AGENTS.md。项目路径是 /Users/linus_k/Documents/test。不要重置
 - docs/phase-two-activity-handoff.md
 - docs/resume-project-roadmap.md
 
-可信基线、校园活动报名闭环、按用户点赞、好友申请、评论通知、社交通知实时
-推送、单条已读和目标跳转已经完成并推送到 GitHub `main`。下一项为好友申请类
-通知补齐可追溯的操作入口。活动逻辑必须继续保留在独立领域模块，不能塞进 `FeedService` 或
-`AdminService`。
+当前功能稳定提交是 `98c2dad Add notification read and target actions`，已推送到
+GitHub `main`。可信基线、校园活动报名闭环、按用户点赞、好友申请、评论通知、
+社交通知实时推送、单条已读和目标跳转已经完成。下一项为好友申请类通知补齐可
+追溯的操作入口；不要重做已完成链路。活动逻辑必须继续保留在独立领域模块，
+不能塞进 `FeedService` 或 `AdminService`。
 
 当前静态资源版本是 `20260715-notification-actions-v1`，本地验证地址是：
 http://127.0.0.1:5179/?v=20260715-notification-actions-v1
@@ -294,6 +309,8 @@ http://127.0.0.1:5179/?v=20260715-notification-actions-v1
 - 修改 UI 后用浏览器或渲染级 smoke 检查管理员后台、动态审核反馈和聊天页。
 - Java API 连上时显示本地数据库历史数据，不是 Mock 固定演示数据。
 - 不要使用 git reset --hard、git clean 或任何清理未跟踪文件的命令。
-- 完整 mvn test 在本机 Microsoft JDK 21 下仍受 Mockito/Byte Buddy 动态挂载
-  限制影响；需要报告受影响测试与本次相关测试的实际结果。
+- 后端修改后运行相关 Maven 测试。完整测试使用
+  `/Applications/IntelliJ IDEA.app/Contents/plugins/maven/lib/maven3/bin/mvn -f backend/pom.xml -DargLine=-javaagent:/Users/linus_k/.m2/repository/net/bytebuddy/byte-buddy-agent/1.17.5/byte-buddy-agent-1.17.5.jar test`；
+  本机 Microsoft JDK 21 仍会输出 Byte Buddy 动态挂载兼容性警告，必须如实报告。
+- 每个验证完成的小阶段单独提交并推送 `main`，同时更新 README 和交接文档。
 ```

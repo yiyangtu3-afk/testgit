@@ -87,6 +87,9 @@ API 设计应保持当前 Demo 边界一致：
 * Repository 接口表达业务需要的数据访问能力。
 * MyBatis 实现负责 SQL 和实体映射。
 * 不在 Service 中拼接 SQL。
+* 跨表业务写入必须由 Service 层 `@Transactional` 保护。
+* 修改 MyBatis 查询、写入或表结构时，补充真实 MySQL 的集成测试；测试使用
+  `@Transactional` 与 `@Rollback`，不得遗留或清理本地历史数据。
 
 修改表结构或种子数据时，必须确认本地 Demo 启动和相关测试仍然通过。
 
@@ -119,6 +122,16 @@ mvn test
 * Controller API 边界使用 MockMvc 测试。
 * WebSocket 行为使用 handler 级测试。
 * Repository 或数据库行为变化需补充合适的集成验证或现有测试更新。
+
+本机 Microsoft JDK 21 的 Mockito/Byte Buddy 不能可靠地自附加 agent。完整
+测试应优先使用显式 agent，并如实报告结果与 JVM 警告：
+
+```bash
+/Applications/IntelliJ\ IDEA.app/Contents/plugins/maven/lib/maven3/bin/mvn \
+  -f backend/pom.xml \
+  -DargLine=-javaagent:/Users/linus_k/.m2/repository/net/bytebuddy/byte-buddy-agent/1.17.5/byte-buddy-agent-1.17.5.jar \
+  test
+```
 
 ---
 

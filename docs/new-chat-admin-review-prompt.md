@@ -14,8 +14,8 @@
 4. 如果修改 docs/ 或 Markdown 文件，请遵循文档写作要求。
 
 项目路径是 /Users/linus_k/Documents/test。项目是 CampusLink，一个静态
-前端加 Spring Boot 后端的校园社交 Demo。请不要重置或清理未跟踪文件，
-当前仓库可能整体显示为未跟踪状态。
+前端加 Spring Boot 后端的校园社交 Demo。请不要执行 `git reset --hard`、
+`git clean`，也不要删除或清理未跟踪文件。
 
 上一轮已经完成管理员审核工作台修复：
 

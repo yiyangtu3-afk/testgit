@@ -80,7 +80,11 @@ frontend/
 * API 调用集中在 `api/`，界面模块不得直接散落 `fetch` 调用。
 * 受保护 live API 请求必须携带当前 bearer token。
 * Mock API 与 live API 的返回结构应保持一致。
+* 仅当 Java API 完全不可达时才回退 Mock；Java API 返回 `4xx` 或 `5xx` 时，
+  必须向用户展示真实失败，不能把操作静默写入 Mock。
 * 状态更新集中通过共享状态和 loader 流程完成。
+* 不要给 `frontend/js/state.js` 的导入添加版本查询参数；各模块必须共享同一
+  状态单例。
 * 不使用不必要的全局变量。
 
 ---
@@ -118,3 +122,4 @@ python3 -m http.server 5174
 ```
 
 至少保证 `node --check app.js` 通过，并根据改动范围运行前端 smoke test。
+修改 UI 后，还要检查管理员后台、动态审核反馈和聊天页没有回归或布局遮挡。

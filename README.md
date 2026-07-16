@@ -20,6 +20,14 @@ Open the local demo in a browser:
 Then visit
 `http://127.0.0.1:5179/?v=20260715-notification-actions-v1`.
 
+## Current handoff
+
+The current functional stable point is
+`98c2dad Add notification read and target actions` on `main`. The next planned
+slice is an actionable, traceable entry for friend-request notifications. Start
+from [`docs/new-chat-handoff-2026-07-08.md`](docs/new-chat-handoff-2026-07-08.md)
+for the complete handoff, constraints, and local verification commands.
+
 The demo supports these flows:
 
 - Log in with the student account; the login button gets a demo verification
@@ -125,11 +133,18 @@ cd backend
 mvn test
 ```
 
-On this machine, Microsoft JDK 21 can't let Mockito self-attach its Byte Buddy
-agent. The verified full run passes an explicit `-javaagent` through Maven's
-`argLine`; without it, Mockito-based tests fail during test setup rather than
-on application behavior. The July 15 run completed all 122 tests with the
-explicit agent and only printed the JVM class-sharing warning.
+On this machine, Microsoft JDK 21 can't reliably let Mockito self-attach its
+Byte Buddy agent. The verified full run passes an explicit `-javaagent` through
+Maven's `argLine`; without it, Mockito-based tests can fail during test setup
+rather than on application behavior. The July 15 run completed all 127 tests
+with the explicit agent and only printed the JVM class-sharing warning:
+
+```bash
+/Applications/IntelliJ\ IDEA.app/Contents/plugins/maven/lib/maven3/bin/mvn \
+  -f backend/pom.xml \
+  -DargLine=-javaagent:/Users/linus_k/.m2/repository/net/bytebuddy/byte-buddy-agent/1.17.5/byte-buddy-agent-1.17.5.jar \
+  test
+```
 
 The smoke test is dependency-free. It checks the static page, styles, frontend
 modules, adapter, and Java API skeleton for the selectors and routes that keep

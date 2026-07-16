@@ -99,6 +99,22 @@ Demo。本文只保留整个仓库通用的开发约定；进入 `frontend/` 或
 
 ---
 
+# 交接与安全
+
+开始新的开发对话时，先阅读根目录、`frontend/` 和 `backend/` 下的
+`AGENTS.md`，再阅读 `docs/new-chat-handoff-2026-07-08.md`、
+`docs/phase-two-activity-handoff.md` 和 `docs/resume-project-roadmap.md`。
+管理员审核历史的细节见相应的 `docs/admin-*.md` 文档。
+
+除非用户明确授权，不要运行 `git reset --hard`、`git clean`，也不要删除或
+清理未跟踪文件。不要擅自重置、重种或清空本地 MySQL 历史数据。
+
+每个可验证的功能阶段完成后，单独提交并推送到 `main`，并同步更新
+`README.md` 和相关交接文档。提交前只纳入本阶段的文件，不混入本地环境、
+构建产物或无关改动。
+
+---
+
 # 提交要求
 
 提交前确认变更范围清晰，避免混入无关重构、临时文件、构建产物或本地

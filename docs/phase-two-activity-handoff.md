@@ -9,9 +9,10 @@
 
 ## 稳定基线
 
-本轮实现继承 `f296c13 Complete activity roster and check-in workflow`。远程
-仓库是 `https://github.com/yiyangtu3-afk/testgit.git`，使用 `main` 分支；最新
-活动实现提交以 `main` 的最新提交为准。
+本轮实现继承 `f296c13 Complete activity roster and check-in workflow`。当前功能
+稳定提交是 `98c2dad Add notification read and target actions`。远程仓库是
+`https://github.com/yiyangtu3-afk/testgit.git`，使用 `main` 分支；后续仅文档
+交接提交可能更新，不应被误判为新的功能基线。
 
 静态前端版本为 `20260715-notification-actions-v1`，本地地址为：
 
@@ -262,8 +263,10 @@ http://127.0.0.1:8080
 ## 下一项工作
 
 阶段二和阶段三点赞、好友申请、评论通知、实时推送和通知操作切片已经完成。
-下一项为好友申请类通知补齐可追溯的操作入口。继续保持 bearer token 身份
-边界、真实 API 错误不回退 Mock、跨表写入事务和可回滚 MyBatis 集成测试。
+下一项为好友申请类通知补齐可追溯的操作入口。应从当前收件人的
+`social.friend.requested` 通知安全定位到其待处理申请，并复用已有同意、拒绝
+流程；不得相信前端传来的申请人或收件人身份。继续保持 bearer token 身份边界、
+真实 API 错误不回退 Mock、跨表写入事务和可回滚 MyBatis 集成测试。
 
 ## 必读文件
 
