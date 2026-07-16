@@ -7,6 +7,7 @@ import com.campuslink.entity.DemoEntities.AttachmentEntity;
 import com.campuslink.entity.DemoEntities.MessageEntity;
 import java.util.List;
 import java.util.Map;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,6 +24,11 @@ class ChatRepositoryIntegrationTest {
 
   @Autowired
   private ChatRepository chatRepository;
+
+  @BeforeEach
+  void marksTheExistingTeacherConversationRead() {
+    chatRepository.markConversationRead("u-2001", "u-1001", Long.MAX_VALUE);
+  }
 
   @Test
   void savesAndPaginatesMessageWithAttachmentsWithoutPersistingTestData() {
