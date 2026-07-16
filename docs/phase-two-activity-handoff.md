@@ -299,8 +299,8 @@ http://127.0.0.1:8080
     再由 Linux runner 的 Bash 运行 `./script/run_frontend_check.sh`，并运行带显式
     Byte Buddy agent 的完整 Maven 测试。CI 在测试前只向该临时服务导入
     UTF-8 `schema.sql` 和 `data.sql`，使关闭启动期初始化的回滚 MyBatis 测试可复现；
-    聊天集成测试也会在其回滚事务内显式隔离既有演示会话未读状态。该服务不会连接、
-    重置、重种或清理开发者本地 MySQL 历史数据。
+    聊天集成测试也会在其回滚事务内显式设置好友关系并隔离既有演示会话未读状态。该服务
+    不会连接、重置、重种或清理开发者本地 MySQL 历史数据。
 30. 2026 年 7 月 15 日完成 Docker Compose 演示：`compose.yml` 启动未发布到主机的
     MySQL 8.4、API 和静态前端；容器数据库使用独立命名卷，保留容器演示数据而不触碰
     本地 MySQL。API 和前端按健康顺序启动，公开

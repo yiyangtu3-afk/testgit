@@ -25,8 +25,12 @@ class ChatRepositoryIntegrationTest {
   @Autowired
   private ChatRepository chatRepository;
 
+  @Autowired
+  private FriendRepository friendRepository;
+
   @BeforeEach
-  void marksTheExistingTeacherConversationRead() {
+  void setsUpChatPreconditionsInsideTheRollbackTransaction() {
+    friendRepository.addFriendship("u-2001", "u-2002");
     chatRepository.markConversationRead("u-2001", "u-1001", Long.MAX_VALUE);
   }
 
