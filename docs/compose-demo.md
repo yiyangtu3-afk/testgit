@@ -28,6 +28,11 @@ curl -fsS http://127.0.0.1:8080/api/database/health
 成功响应包含 `"status":"UP"`、当前数据库名和演示用户数量。完整 API 路径清单
 见仓库根目录 [`README.md`](../README.md)。
 
+Compose 还公开状态摘要 `http://127.0.0.1:8080/actuator/health`，但不会公开数据库
+细节。`/actuator/info` 和 `/actuator/metrics/**` 需要管理员 JWT；使用管理员登录得到
+的 bearer token 查询这些诊断端点。核心业务指标包括用户、当日消息、动态和待审核
+内容总数，`campuslink.http.requests` 按路由模板记录 API 耗时。
+
 ## 停止演示
 
 以下命令停止容器，但保留 `campuslink-mysql` 命名卷中的容器演示数据，下一次启动会

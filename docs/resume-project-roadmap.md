@@ -128,7 +128,7 @@ HTTP 接口和学生活动卡片操作；定向 MyBatis 回滚集成测试已覆
 4. [x] 提供 Docker Compose 一键启动、健康检查、API 文档和浏览器演示说明。
    Compose 使用独立 MySQL 命名卷，GitHub Actions 在 Docker runner 构建、启动并
    请求健康接口，不会影响开发者本机 MySQL 历史数据。
-5. 使用 Actuator 和 Micrometer 展示健康状态、核心指标和请求诊断信息。
+5. [x] 使用 Actuator 和 Micrometer 展示健康状态、核心指标和请求诊断信息。
 
 ## 后续选择
 
@@ -139,9 +139,9 @@ HTTP 接口和学生活动卡片操作；定向 MyBatis 回滚集成测试已覆
 ## 下一步
 
 阶段三已完成，阶段四的签名 JWT、令牌过期、服务端注销、角色授权、Spring
-Security 安全链、GitHub Actions 验证、Docker Compose 浏览器演示和 Testcontainers
-MySQL 集成测试已经落地。CI
+Security 安全链、GitHub Actions 验证、Docker Compose 浏览器演示、Testcontainers
+MySQL 集成测试和 Actuator/Micrometer 可观察性已经落地。CI
 在临时 MySQL 8.4 服务上运行完整测试，并在 Docker runner 验证 Compose 健康接口；
-本机 MySQL 历史数据不受影响。下一项使用 Actuator 和 Micrometer 展示健康状态、
-核心指标和请求诊断信息，再推进可复现交付。每个可演示小阶段都更新 README 和本
-路线的完成状态。
+本机 MySQL 历史数据不受影响。阶段四已完成；后续仅在重新评估需求后考虑 AI 辅助
+审核，且必须保留人工复核、审核理由和审计记录。每个可演示小阶段都更新 README 和
+本路线的完成状态。

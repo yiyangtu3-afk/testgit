@@ -52,6 +52,36 @@ class SecurityConfigIntegrationTest {
   }
 
   @Test
+  void actuatorHealthIsPublicButMetricsRequireAnAdministratorSession() throws Exception {
+    String studentToken = authTokens.issueToken("u-1001");
+
+    mockMvc.perform(get("/actuator/health"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("UP"));
+    mockMvc.perform(get("/actuator/metrics")
+            .header("Authorization", "Bearer " + studentToken))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.message").value("需要管理员账号"));
+  }
+
+  @Test
+  void administratorCanInspectBusinessAndRequestMetrics() throws Exception {
+    String adminToken = authTokens.issueToken("u-2003");
+
+    mockMvc.perform(get("/api/users")
+            .header("Authorization", "Bearer " + adminToken))
+        .andExpect(status().isOk());
+    mockMvc.perform(get("/actuator/metrics/campuslink.users.total")
+            .header("Authorization", "Bearer " + adminToken))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.name").value("campuslink.users.total"));
+    mockMvc.perform(get("/actuator/metrics/campuslink.http.requests")
+            .header("Authorization", "Bearer " + adminToken))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.name").value("campuslink.http.requests"));
+  }
+
+  @Test
   void securityChainAcceptsSignedSessionTokenAndBlocksStudentAdminAccess() throws Exception {
     String studentToken = authTokens.issueToken("u-1001");
 

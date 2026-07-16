@@ -313,6 +313,13 @@ http://127.0.0.1:8080
     Testcontainers 升级到 `1.21.4`，兼容 Docker Engine 29；临时容器会在测试结束后
     停止，绝不连接、重置、重种或清理开发者本机 MySQL 历史数据。显式 Byte Buddy
     agent 下完整 Maven `140` 个测试通过，仅输出 JVM class-sharing 警告。
+32. 2026 年 7 月 15 日完成 Actuator 与 Micrometer 可观察性：公开
+    `/actuator/health` 仅返回总体状态，不泄露数据库详情；`/actuator/info` 与
+    `/actuator/metrics/**` 要求已有 JWT 管理员角色。新增用户、当日消息、动态、待审
+    内容 Gauge，以及按 HTTP 方法、路由模板和状态聚合的 API 耗时 Timer，不使用用户
+    或资源 ID 作为指标标签。安全集成测试验证公开健康、学生指标拒绝和管理员指标读取；
+    显式 Byte Buddy agent 下完整 Maven `142` 个测试通过，仅输出 JVM
+    class-sharing 警告。
 
 ## 下一项工作
 
@@ -322,11 +329,11 @@ token 确认当前收件人，并验证 `social.friend.requested`、通知发送
 与 `pending` 状态；前端只用返回的申请 ID 定位已有待处理申请卡片，复用同意、
 拒绝流程。真实仪表盘指标已不含展示性固定数字，签名 JWT、过期、服务端注销和
 Spring Security 安全链、GitHub Actions 验证、Docker Compose 演示与 Testcontainers
-MySQL 集成测试已经落地。CI
+MySQL 集成测试以及 Actuator/Micrometer 可观察性已经落地。CI
 在临时 MySQL 8.4 服务上运行完整测试，并在 Docker runner 构建和启动 Compose
-演示；本机 MySQL 历史数据不受影响。下一项为使用 Actuator 和 Micrometer 展示健康
-状态、核心指标和请求诊断信息，同时保持真实 API 错误不回退 Mock、跨表写入事务和
-可回滚 MyBatis 集成测试。
+演示；本机 MySQL 历史数据不受影响。阶段四已完成；下一项仅在重新评估需求后考虑
+AI 辅助审核，并继续保持真实 API 错误不回退 Mock、跨表写入事务和可回滚 MyBatis
+集成测试。
 
 ## 必读文件
 

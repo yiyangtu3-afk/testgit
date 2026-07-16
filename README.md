@@ -118,7 +118,9 @@ request even before its JWT expiry. Existing legacy random demo tokens no
 longer authorize requests after this change. Spring Security now enforces this
 as a stateless API boundary: `/api/auth/**` and the database health endpoint
 remain public, other `/api/**` routes require a verified JWT session, and
-`/api/admin/**` requires `ROLE_ADMIN`. Authentication and authorization errors
+`/api/admin/**` requires `ROLE_ADMIN`. Actuator exposes the status-only
+`/actuator/health` endpoint publicly, while `/actuator/info` and
+`/actuator/metrics/**` require `ROLE_ADMIN`. Authentication and authorization errors
 return the existing JSON `message` shape, so live API failures don't fall back
 to Mock. Student and teacher tokens receive `403 Forbidden` for admin-only APIs.
 
@@ -127,6 +129,14 @@ one line when it finishes. In IntelliJ IDEA, open the **Run** tool window for
 the **CampusLink API** configuration to see entries like
 `[HTTP] --> GET /api/admin/metrics` and
 `[HTTP] <-- GET /api/admin/metrics status=200 duration=12ms`.
+
+Actuator and Micrometer also expose status and diagnostics without widening the
+public API surface. `GET /actuator/health` returns only the overall health
+status. An administrator bearer token can query `GET /actuator/metrics` and the
+business gauges `campuslink.users.total`, `campuslink.messages.today`,
+`campuslink.posts.total`, and `campuslink.moderation.pending`. The
+`campuslink.http.requests` timer uses method, route template, and status tags,
+so it records API latency without adding user IDs or resource IDs as metric tags.
 
 For the local demo, the verification code is returned by the API response and
 filled into the login form so the flow can be tested without SMS delivery.
@@ -149,7 +159,7 @@ mvn test
 On this machine, Microsoft JDK 21 can't reliably let Mockito self-attach its
 Byte Buddy agent. The verified full run passes an explicit `-javaagent` through
 Maven's `argLine`; without it, Mockito-based tests can fail during test setup
-rather than on application behavior. The July 15 run completed all 140 tests
+rather than on application behavior. The July 15 run completed all 142 tests
 with the explicit agent and only printed the JVM class-sharing warning:
 
 ```bash
@@ -173,7 +183,7 @@ The suite also includes MockMvc controller tests for the auth, users, friends,
 chat, feed, activity notifications, social notifications, and admin API
 boundaries, plus direct WebSocket handler tests for chat and recipient-only
 activity and social notification events, plus the Spring Security API chain.
-The full suite currently contains 140 tests. `TestcontainersMySqlIntegrationTest`
+The full suite currently contains 142 tests. `TestcontainersMySqlIntegrationTest`
 starts an isolated `mysql:8.4` container and initializes it from the existing
 `schema.sql` and `data.sql` files. It verifies MyBatis visibility filtering,
 the transactional friend-acceptance and notification writes, and the JWT
