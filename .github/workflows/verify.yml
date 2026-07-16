@@ -46,7 +46,7 @@ jobs:
           cache: maven
 
       - name: Run frontend checks
-        run: ./script/run_frontend_check.sh
+        run: bash ./script/run_frontend_check.sh
 
       - name: Run backend tests
         run: >-
