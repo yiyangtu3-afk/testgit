@@ -4,6 +4,8 @@ import com.campuslink.dto.SocialNotificationDtos.NotificationSummary;
 import com.campuslink.dto.SocialNotificationDtos.NotificationView;
 import com.campuslink.entity.SocialNotificationEntity;
 import com.campuslink.repository.SocialNotificationRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,9 +13,18 @@ import org.springframework.transaction.annotation.Transactional;
 public class SocialNotificationService {
 
   private final SocialNotificationRepository notifications;
+  private final ApplicationEventPublisher events;
 
   public SocialNotificationService(SocialNotificationRepository notifications) {
+    this(notifications, ignored -> { });
+  }
+
+  @Autowired
+  public SocialNotificationService(
+      SocialNotificationRepository notifications,
+      ApplicationEventPublisher events) {
     this.notifications = notifications;
+    this.events = events;
   }
 
   public NotificationSummary summary(String recipientId) {
@@ -24,7 +35,7 @@ public class SocialNotificationService {
 
   public void recordPostLiked(
       String recipientId, String actorId, String actorName, Long postId) {
-    notifications.create(
+    create(
         recipientId,
         actorId,
         String.valueOf(postId),
@@ -39,7 +50,7 @@ public class SocialNotificationService {
       String actorName,
       Long commentId,
       String commentBody) {
-    notifications.create(
+    create(
         recipientId,
         actorId,
         String.valueOf(commentId),
@@ -50,7 +61,7 @@ public class SocialNotificationService {
 
   public void recordFriendRequestReceived(
       String recipientId, String actorId, String actorName, String requestId) {
-    notifications.create(
+    create(
         recipientId,
         actorId,
         requestId,
@@ -66,7 +77,7 @@ public class SocialNotificationService {
       String requestId,
       String status) {
     boolean accepted = "accepted".equals(status);
-    notifications.create(
+    create(
         recipientId,
         actorId,
         requestId,
@@ -79,6 +90,18 @@ public class SocialNotificationService {
   public NotificationSummary markAllRead(String recipientId) {
     notifications.markAllRead(recipientId);
     return summary(recipientId);
+  }
+
+  private void create(
+      String recipientId,
+      String actorId,
+      String targetId,
+      String type,
+      String title,
+      String body) {
+    SocialNotificationEntity notification = notifications.create(
+        recipientId, actorId, targetId, type, title, body);
+    events.publishEvent(new SocialNotificationCreatedEvent(recipientId, view(notification)));
   }
 
   private NotificationView view(SocialNotificationEntity notification) {

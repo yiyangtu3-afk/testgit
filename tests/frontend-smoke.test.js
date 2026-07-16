@@ -213,6 +213,46 @@ function runActivityNotificationRendererCheck() {
   }
 }
 
+function runSocialNotificationRealtimeCheck() {
+  const script = [
+    'globalThis.elements = {',
+    '  "#activityNotificationBadge": { hidden: true, textContent: "" },',
+    '  "#activityNotificationUnreadCount": { textContent: "" },',
+    '  "#activityNotificationList": { innerHTML: "" },',
+    '  "#activityNotificationNotice": { hidden: true, className: "", textContent: "" },',
+    '  "#markAllActivityNotifications": { disabled: false }',
+    '};',
+    'globalThis.document = { querySelector(selector) { return globalThis.elements[selector]; } };',
+    'const { state } = await import("./frontend/js/state.js");',
+    'state.activityNotifications = [];',
+    'state.activityNotificationUnreadCount = 0;',
+    'state.activityNotificationNotice = null;',
+    'state.socialNotifications = [];',
+    'state.socialNotificationUnreadCount = 0;',
+    'state.socialNotificationNotice = null;',
+    'const { handleNotificationRealtimeEvent } = await import("./frontend/js/notifications/realtime.js");',
+    'const notification = { id: "social-realtime-1", targetId: "comment-1", type: "social.post.commented", title: "动态收到新评论", body: "陈老师评论了你的动态：活动地点见。", read: false, createdAt: "2026-07-15T10:30:00" };',
+    'const firstHandled = handleNotificationRealtimeEvent({ type: "social.notification.created", notification });',
+    'const duplicateHandled = handleNotificationRealtimeEvent({ type: "social.notification.created", notification });',
+    'process.stdout.write(JSON.stringify({ firstHandled, duplicateHandled, unread: state.socialNotificationUnreadCount, badge: globalThis.elements["#activityNotificationBadge"].textContent, html: globalThis.elements["#activityNotificationList"].innerHTML, notice: globalThis.elements["#activityNotificationNotice"].textContent }));'
+  ].join("\n");
+  try {
+    const output = JSON.parse(execFileSync(
+      process.execPath,
+      ["--input-type=module", "--eval", script],
+      { cwd: root, encoding: "utf8" }
+    ));
+    if (!output.firstHandled || !output.duplicateHandled || output.unread !== 1 || output.badge !== "1") {
+      failures.push("social notification realtime: expected one deduplicated unread notification");
+    }
+    if (!output.html.includes("动态评论") || !output.notice.includes("站内通知")) {
+      failures.push("social notification realtime: expected immediate notification rendering and feedback");
+    }
+  } catch (error) {
+    failures.push(`Social notification realtime check failed: ${String(error.message || error)}`);
+  }
+}
+
 function runMockActivityWorkflowCheck() {
   const script = [
     'const { state } = await import("./frontend/js/state.js");',
@@ -515,6 +555,7 @@ runEscapeHtmlCheck();
 runFeedRendererEscapingCheck();
 runActivityRendererCheck();
 runActivityNotificationRendererCheck();
+runSocialNotificationRealtimeCheck();
 runMockActivityWorkflowCheck();
 runMockActivityFilterCheck();
 runMockActivityNotificationWorkflowCheck();
@@ -755,8 +796,8 @@ expectMatch(
   "admin layout: expected independent review workspaces to use normal document flow"
 );
 
-expectIncludes("html", "20260715-comment-notifications-v1", "HTML escaping cache-busting version");
-expectIncludes("appEntry", "20260715-comment-notifications-v1", "root app imports current HTML escaping module version");
+expectIncludes("html", "20260715-social-realtime-v1", "HTML escaping cache-busting version");
+expectIncludes("appEntry", "20260715-social-realtime-v1", "root app imports current HTML escaping module version");
 
 expectIncludes("js", "setRealtimeMode", "chat realtime status updater");
 expectIncludes("js", "HEARTBEAT_INTERVAL_MS", "chat realtime heartbeat interval");
@@ -855,7 +896,7 @@ expectMatch("js", /data-select-audit-event/, "audit event selection binding");
 expectMatch("js", /data-toggle-all-audit-events/, "audit event select-all toggle binding");
 expectMatch("js", /new WebSocket\(`\$\{chatSocketUrl\(\)\}\?token=/, "chat websocket connection");
 expectIncludes("js", "activity.notification.created", "activity notification realtime event");
-expectMatch("js", /handleActivityNotificationEvent\(payload\)/, "activity notification realtime routing");
+expectMatch("js", /handleNotificationRealtimeEvent\(payload\)/, "notification realtime routing");
 expectIncludes("js", "message.withdrawn", "chat websocket withdraw event");
 expectMatch("js", /payload\.type === "message\.created" \|\| payload\.type === "message\.withdrawn"/, "chat websocket message event guard");
 expectMatch("js", /await refreshConversation\(payload\.peerId\)/, "chat websocket eager message refresh");

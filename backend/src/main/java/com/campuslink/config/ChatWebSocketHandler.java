@@ -5,6 +5,7 @@ import com.campuslink.dto.ActivityNotificationDtos.NotificationView;
 import com.campuslink.service.ActivityNotificationRealtimePublisher;
 import com.campuslink.service.AuthTokenService;
 import com.campuslink.service.ChatRealtimeNotifier;
+import com.campuslink.service.SocialNotificationRealtimePublisher;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -23,7 +24,9 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 @Component
 public class ChatWebSocketHandler extends TextWebSocketHandler
-    implements ChatRealtimeNotifier, ActivityNotificationRealtimePublisher {
+    implements ChatRealtimeNotifier,
+        ActivityNotificationRealtimePublisher,
+        SocialNotificationRealtimePublisher {
 
   private static final String USER_ID_ATTRIBUTE = "userId";
 
@@ -97,6 +100,14 @@ public class ChatWebSocketHandler extends TextWebSocketHandler
         "activity.notification.created", notification));
   }
 
+  @Override
+  public void publishSocialNotification(
+      String recipientId,
+      com.campuslink.dto.SocialNotificationDtos.NotificationView notification) {
+    send(recipientId, new SocialNotificationRealtimeEvent(
+        "social.notification.created", notification));
+  }
+
   private void publishConversationEvent(String type, String peerId, MessageView message) {
     send(message.from(), new ChatRealtimeEvent(type, peerId, message));
     if (!peerId.equals(message.from())) {
@@ -155,6 +166,10 @@ public class ChatWebSocketHandler extends TextWebSocketHandler
 
   private record ActivityNotificationRealtimeEvent(
       String type, NotificationView notification) {
+  }
+
+  private record SocialNotificationRealtimeEvent(
+      String type, com.campuslink.dto.SocialNotificationDtos.NotificationView notification) {
   }
 
   private record HeartbeatEvent(String type) {

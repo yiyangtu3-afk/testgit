@@ -1,12 +1,25 @@
-import { renderActivityNotifications } from "./renderers.js?v=20260715-comment-notifications-v1";
-import { activityNotificationState } from "./state.js?v=20260715-comment-notifications-v1";
+import { renderActivityNotifications } from "./renderers.js?v=20260715-social-realtime-v1";
+import {
+  activityNotificationState,
+  socialNotificationState
+} from "./state.js?v=20260715-social-realtime-v1";
 
-export function handleActivityNotificationEvent(payload) {
-  if (payload.type !== "activity.notification.created" || !payload.notification) {
+export function handleNotificationRealtimeEvent(payload) {
+  if (!payload.notification) {
     return false;
   }
-  const notificationState = activityNotificationState();
-  const incoming = payload.notification;
+  if (payload.type === "activity.notification.created") {
+    applyIncomingNotification(activityNotificationState(), payload.notification, "活动");
+    return true;
+  }
+  if (payload.type === "social.notification.created") {
+    applyIncomingNotification(socialNotificationState(), payload.notification, "站内");
+    return true;
+  }
+  return false;
+}
+
+function applyIncomingNotification(notificationState, incoming, category) {
   const existed = notificationState.items.some((item) => item.id === incoming.id);
   notificationState.items = [
     incoming,
@@ -17,8 +30,7 @@ export function handleActivityNotificationEvent(payload) {
   }
   notificationState.notice = {
     kind: "success",
-    message: `收到新的活动通知：${incoming.title}`
+    message: `收到新的${category}通知：${incoming.title}`
   };
   renderActivityNotifications();
-  return true;
 }

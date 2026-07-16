@@ -109,6 +109,29 @@ class ChatWebSocketHandlerTest {
   }
 
   @Test
+  void publishSocialNotificationSendsEventOnlyToRecipient() throws Exception {
+    TestWebSocketSession recipient = connectedSession("demo.recipient", "u-2002");
+    TestWebSocketSession other = connectedSession("demo.student", "u-1001");
+    com.campuslink.dto.SocialNotificationDtos.NotificationView notification =
+        new com.campuslink.dto.SocialNotificationDtos.NotificationView(
+            "social-notification-1",
+            "comment-1",
+            "social.post.commented",
+            "动态收到新评论",
+            "林一评论了你的动态：活动见。",
+            false,
+            LocalDateTime.of(2026, 7, 15, 10, 30));
+
+    handler.publishSocialNotification("u-2002", notification);
+
+    JsonNode recipientEvent = recipient.sentJson(objectMapper).getFirst();
+    assertThat(recipientEvent.path("type").asText()).isEqualTo("social.notification.created");
+    assertThat(recipientEvent.path("notification").path("id").asText())
+        .isEqualTo("social-notification-1");
+    assertThat(other.sentMessages).isEmpty();
+  }
+
+  @Test
   void closedSessionIsRemovedFromBroadcastTargets() throws Exception {
     TestWebSocketSession session = connectedSession("demo.student", "u-1001");
 

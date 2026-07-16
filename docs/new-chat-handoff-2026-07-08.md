@@ -17,13 +17,13 @@
 当前静态资源版本是：
 
 ```text
-20260715-comment-notifications-v1
+20260715-social-realtime-v1
 ```
 
 当前本地验证地址是：
 
 ```text
-http://127.0.0.1:5179/?v=20260715-comment-notifications-v1
+http://127.0.0.1:5179/?v=20260715-social-realtime-v1
 ```
 
 ## 已完成内容
@@ -75,6 +75,9 @@ http://127.0.0.1:5179/?v=20260715-comment-notifications-v1
 - 非作者提交动态评论时，动态作者会收到 **动态收到新评论** 通知；通知只保留
   60 个字符的评论预览。评论本身仍处于 `pending`，审核通过前不显示在公开
   动态下；作者评论自己的动态不会产生通知。
+- 点赞、好友申请及其结果和评论通知现在复用已认证的 `/ws/chat` 通道。通知先
+  在原业务事务中写入 MySQL，提交后才发送 `social.notification.created`；收件人
+  前端按 ID 去重并立即更新统一未读数，离线历史继续由 Java API 加载。
 
 ## 2026-07-09 基线修复
 
@@ -228,8 +231,8 @@ scrollTop 从 1541.5 变到 1181.5
 
 ## 建议下一步
 
-校园活动报名闭环、按用户点赞、好友申请和评论通知切片已经完成。下一步继续
-通知与社交完整性，把社交通知接入实时 WebSocket 推送。最新边界见
+校园活动报名闭环、按用户点赞、好友申请、评论和社交通知实时推送已经完成。
+下一步继续通知与社交完整性，补齐单条通知已读和可追溯的目标跳转。最新边界见
 [`phase-two-activity-handoff.md`](phase-two-activity-handoff.md) 和
 [`resume-project-roadmap.md`](resume-project-roadmap.md)。
 
@@ -249,13 +252,13 @@ backend/AGENTS.md。项目路径是 /Users/linus_k/Documents/test。不要重置
 - docs/phase-two-activity-handoff.md
 - docs/resume-project-roadmap.md
 
-可信基线、校园活动报名闭环、按用户点赞、好友申请和评论通知切片已经完成并
-推送到 GitHub `main`。下一项把现有社交通知接入 WebSocket，再补实时未读数
-刷新。活动逻辑必须继续保留在独立领域模块，不能塞进 `FeedService` 或
+可信基线、校园活动报名闭环、按用户点赞、好友申请、评论通知和社交通知实时
+推送已经完成并推送到 GitHub `main`。下一项补齐单条通知已读和可追溯的目标
+跳转。活动逻辑必须继续保留在独立领域模块，不能塞进 `FeedService` 或
 `AdminService`。
 
-当前静态资源版本是 `20260715-comment-notifications-v1`，本地验证地址是：
-http://127.0.0.1:5179/?v=20260715-comment-notifications-v1
+当前静态资源版本是 `20260715-social-realtime-v1`，本地验证地址是：
+http://127.0.0.1:5179/?v=20260715-social-realtime-v1
 
 当前保留的功能：
 - 管理员后台有“待审核内容”工作台，位于指标卡片下方、审计记录上方。
@@ -268,6 +271,7 @@ http://127.0.0.1:5179/?v=20260715-comment-notifications-v1
 - 动态点赞按当前用户持久化，可再次点击取消；动态作者能在站内通知看到点赞。
 - 好友申请及其同意、拒绝结果写入持久化站内通知，并按收件人严格隔离。
 - 非作者提交评论后，动态作者会收到持久化评论通知；待审核评论不会提前公开。
+- 已连接的收件人会立即收到点赞、好友申请和评论通知，统一未读数无需刷新。
 - 聊天附件保持普通文件卡片展示，不保留图片气泡或大图预览。
 - 登录页是黑色右侧信息面板版本，文案为“简洁的校园沟通空间”。
 

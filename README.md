@@ -18,7 +18,7 @@ Open the local demo in a browser:
 ```
 
 Then visit
-`http://127.0.0.1:5179/?v=20260715-comment-notifications-v1`.
+`http://127.0.0.1:5179/?v=20260715-social-realtime-v1`.
 
 The demo supports these flows:
 
@@ -53,8 +53,9 @@ The demo supports these flows:
   likes, new comments, and friend-request results. A post author receives a
   comment notification when another user submits a comment for review; that
   comment remains outside the public feed until moderation approves it. The
-  notification rail combines unread counts, and the unified notification
-  center supports marking activity and social items as read.
+  notification rail combines unread counts, the unified notification center
+  supports marking activity and social items as read, and connected recipients
+  see new social notifications without refreshing.
 - Switch online and invisible presence states.
 - Publish a campus feed post.
 - Like a post once per signed-in user, see the current-user liked state, and
@@ -126,7 +127,7 @@ mvn test
 On this machine, Microsoft JDK 21 can't let Mockito self-attach its Byte Buddy
 agent. The verified full run passes an explicit `-javaagent` through Maven's
 `argLine`; without it, Mockito-based tests fail during test setup rather than
-on application behavior. The July 15 run completed all 119 tests with the
+on application behavior. The July 15 run completed all 122 tests with the
 explicit agent and only printed the JVM class-sharing warning.
 
 The smoke test is dependency-free. It checks the static page, styles, frontend
@@ -142,7 +143,8 @@ rollback-safe history.
 The suite also includes MockMvc controller tests for the auth, users, friends,
 chat, feed, activity notifications, social notifications, and admin API
 boundaries, plus direct WebSocket handler tests for chat and recipient-only
-activity notification events. The full suite currently contains 119 tests.
+activity and social notification events. The full suite currently contains 122
+tests.
 Repository integration tests use transactions that roll back, so test rows
 don't remain in existing demo history. Chat repository coverage verifies
 that unread counts include only messages addressed to the current user, still
@@ -205,7 +207,8 @@ The frontend uses this module layout:
 - `activities`: Activity filters, list, registration, submission, organizer
   roster, check-in, CSV export, status, and admin review UI.
 - `notifications`: Unified activity and social notification rendering,
-  combined unread state, read-all interaction, and activity WebSocket events.
+  combined unread state, read-all interaction, and activity/social WebSocket
+  events.
 - `contacts`: Friend and contact workflows are wired through shared loaders and
   contact renderers.
 - `posts`: Campus feed rendering.
@@ -366,6 +369,14 @@ messages also refresh the contacts list so a window opened before a friendship
 change can still show the new conversation. The WebSocket sends lightweight
 heartbeat messages and reconnects when the heartbeat times out.
 
+Activity and social notifications reuse this authenticated channel. Their
+domain services persist the notification in the surrounding business
+transaction, then publish `activity.notification.created` or
+`social.notification.created` only after the transaction commits. The frontend
+deduplicates the received item, refreshes the unified unread count immediately,
+and still reloads MySQL history at login; a Java API error never substitutes
+Mock notification data.
+
 Feed posts and comments also include a lightweight moderation status. The admin
 queue can approve or reject pending demo content; rejected posts and comments
 are hidden from the feed response. The seed data starts with an empty
@@ -423,6 +434,6 @@ keeping activity rules outside the feed and generic admin services.
 The reviewed
 [`activity registration and waitlist design`](docs/activity-registration-design.md)
 records the completed registration, cancellation, waitlist, organizer roster,
-transactional check-in, CSV export, and real activity-metric boundaries. The
-next roadmap work adds persistent friend-request and comment notifications to
-the social notification foundation, then extends realtime delivery.
+transactional check-in, CSV export, and real activity-metric boundaries.
+Persistent social notifications now also use the existing authenticated
+WebSocket for immediate delivery.

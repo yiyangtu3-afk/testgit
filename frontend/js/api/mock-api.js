@@ -1,5 +1,5 @@
 import { mockStore, reportRanges, state } from "../state.js";
-import { nowTime } from "../utils/dom.js?v=20260715-comment-notifications-v1";
+import { nowTime } from "../utils/dom.js?v=20260715-social-realtime-v1";
 
 let mockAuditId = Date.now();
 let mockActivityId = Date.now();
