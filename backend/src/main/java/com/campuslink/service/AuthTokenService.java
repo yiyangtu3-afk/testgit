@@ -4,6 +4,8 @@ import com.campuslink.entity.DemoEntities.UserEntity;
 import com.campuslink.repository.AuthSessionRepository;
 import com.campuslink.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -36,6 +38,10 @@ public class AuthTokenService {
   }
 
   public String requireUserId(String authorization) {
+    UserEntity authenticatedUser = authenticatedUser();
+    if (authenticatedUser != null) {
+      return authenticatedUser.id();
+    }
     return requireToken(bearerToken(authorization));
   }
 
@@ -57,6 +63,10 @@ public class AuthTokenService {
   }
 
   public UserEntity requireUser(String authorization) {
+    UserEntity authenticatedUser = authenticatedUser();
+    if (authenticatedUser != null) {
+      return authenticatedUser;
+    }
     String userId = requireUserId(authorization);
     return userRepository.findById(userId)
         .orElseThrow(() -> new SecurityException("当前用户不存在"));
@@ -79,5 +89,14 @@ public class AuthTokenService {
       throw new SecurityException("请先登录");
     }
     return token;
+  }
+
+  private UserEntity authenticatedUser() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication != null && authentication.isAuthenticated()
+        && authentication.getPrincipal() instanceof UserEntity user) {
+      return user;
+    }
+    return null;
   }
 }

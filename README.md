@@ -115,9 +115,12 @@ set `CAMPUSLINK_JWT_SECRET` before using a non-demo environment. The matching
 MySQL `auth_sessions` row supports server-side revocation: `POST /api/auth/logout`
 deletes only the presented session, so that token cannot authorize another
 request even before its JWT expiry. Existing legacy random demo tokens no
-longer authorize requests after this change.
-Admin routes require a token for an account whose role contains `管理员`.
-Student and teacher tokens receive `403 Forbidden` for admin-only APIs.
+longer authorize requests after this change. Spring Security now enforces this
+as a stateless API boundary: `/api/auth/**` and the database health endpoint
+remain public, other `/api/**` routes require a verified JWT session, and
+`/api/admin/**` requires `ROLE_ADMIN`. Authentication and authorization errors
+return the existing JSON `message` shape, so live API failures don't fall back
+to Mock. Student and teacher tokens receive `403 Forbidden` for admin-only APIs.
 
 The Java API prints one request log line when each `/api/**` request starts and
 one line when it finishes. In IntelliJ IDEA, open the **Run** tool window for
@@ -146,7 +149,7 @@ mvn test
 On this machine, Microsoft JDK 21 can't reliably let Mockito self-attach its
 Byte Buddy agent. The verified full run passes an explicit `-javaagent` through
 Maven's `argLine`; without it, Mockito-based tests can fail during test setup
-rather than on application behavior. The July 15 run completed all 133 tests
+rather than on application behavior. The July 15 run completed all 137 tests
 with the explicit agent and only printed the JVM class-sharing warning:
 
 ```bash
@@ -169,7 +172,8 @@ rollback-safe history.
 The suite also includes MockMvc controller tests for the auth, users, friends,
 chat, feed, activity notifications, social notifications, and admin API
 boundaries, plus direct WebSocket handler tests for chat and recipient-only
-activity and social notification events. The full suite currently contains 133
+activity and social notification events, plus the Spring Security API chain.
+The full suite currently contains 137
 tests.
 Repository integration tests use transactions that roll back, so test rows
 don't remain in existing demo history. Chat repository coverage verifies

@@ -285,6 +285,15 @@ http://127.0.0.1:8080
     覆盖，另有 JWT 过期、注销和 HTTP 边界测试；前端检查通过，`state.js` 导入仍
     无版本参数。显式 Byte Buddy agent 下完整 Maven `133` 个测试通过，仅输出
     JVM class-sharing 警告。
+28. 2026 年 7 月 15 日完成 Spring Security HTTP 安全链：JWT 过滤器把已验证且
+    未撤销的数据库用户放入无状态安全上下文，控制器可继续复用已有身份边界；
+    `/api/auth/**` 与 `/api/database/health` 公开，其他 `/api/**` 必须认证，
+    `/api/admin/**` 统一要求 `ROLE_ADMIN`。认证和授权失败返回既有 JSON `message`
+    结构，避免前端把 `401` 或 `403` 误回退到 Mock。CORS 移入安全配置并明确允许
+    `PATCH`，兼容非 Web MySQL 测试上下文。新的 `@Transactional`/`@Rollback`
+    安全集成测试覆盖公开登录、无令牌、无效令牌、有效 JWT 和学生管理员拒绝；
+    显式 Byte Buddy agent 下完整 Maven `137` 个测试通过，仅输出 JVM
+    class-sharing 警告。
 
 ## 下一项工作
 
@@ -292,10 +301,10 @@ http://127.0.0.1:8080
 `GET /api/social-notifications/{notificationId}/friend-request-target` 从 bearer
 token 确认当前收件人，并验证 `social.friend.requested`、通知发送者、申请目标
 与 `pending` 状态；前端只用返回的申请 ID 定位已有待处理申请卡片，复用同意、
-拒绝流程。真实仪表盘指标已不含展示性固定数字，签名 JWT、过期和服务端注销
-已经落地；下一项将现有认证边界迁移到 Spring Security，再继续 Testcontainers、
-持续集成与交付，同时保持真实 API 错误不回退 Mock、跨表写入事务和可回滚
-MyBatis 集成测试。
+拒绝流程。真实仪表盘指标已不含展示性固定数字，签名 JWT、过期、服务端注销和
+Spring Security 安全链已经落地；下一项使用 Testcontainers MySQL 扩展 MyBatis、
+事务和权限集成测试，再继续持续集成与交付，同时保持真实 API 错误不回退 Mock、
+跨表写入事务和可回滚 MyBatis 集成测试。
 
 ## 必读文件
 
