@@ -283,6 +283,29 @@ function runMockNotificationActionWorkflowCheck() {
   }
 }
 
+function runMockDashboardMetricsCheck() {
+  const script = [
+    'const { mockStore } = await import("./frontend/js/state.js");',
+    'const { mockApi } = await import("./frontend/js/api/mock-api.js");',
+    'const metrics = await mockApi.metrics();',
+    'process.stdout.write(JSON.stringify({ metrics, accounts: mockStore.accounts.length, posts: mockStore.posts.length }));'
+  ].join("\n");
+  try {
+    const output = JSON.parse(execFileSync(
+      process.execPath,
+      ["--input-type=module", "--eval", script],
+      { cwd: root, encoding: "utf8" }
+    ));
+    if (output.metrics.注册用户 !== String(output.accounts)
+        || output.metrics.动态总数 !== String(output.posts)
+        || !Number.isInteger(Number(output.metrics.今日消息))) {
+      failures.push("mock dashboard metrics: expected current mock data counts");
+    }
+  } catch (error) {
+    failures.push(`Mock dashboard metrics check failed: ${String(error.message || error)}`);
+  }
+}
+
 function runMockActivityWorkflowCheck() {
   const script = [
     'const { state } = await import("./frontend/js/state.js");',
@@ -587,6 +610,7 @@ runActivityRendererCheck();
 runActivityNotificationRendererCheck();
 runSocialNotificationRealtimeCheck();
 runMockNotificationActionWorkflowCheck();
+runMockDashboardMetricsCheck();
 runMockActivityWorkflowCheck();
 runMockActivityFilterCheck();
 runMockActivityNotificationWorkflowCheck();
@@ -827,8 +851,8 @@ expectMatch(
   "admin layout: expected independent review workspaces to use normal document flow"
 );
 
-expectIncludes("html", "20260715-friend-request-actions-v1", "HTML escaping cache-busting version");
-expectIncludes("appEntry", "20260715-friend-request-actions-v1", "root app imports current HTML escaping module version");
+expectIncludes("html", "20260715-real-dashboard-metrics-v1", "HTML escaping cache-busting version");
+expectIncludes("appEntry", "20260715-real-dashboard-metrics-v1", "root app imports current HTML escaping module version");
 
 expectIncludes("js", "setRealtimeMode", "chat realtime status updater");
 expectIncludes("js", "HEARTBEAT_INTERVAL_MS", "chat realtime heartbeat interval");
@@ -879,6 +903,8 @@ expectMatch(
 );
 
 expectMatch("js", /request\("\/admin\/moderation"\)/, "moderation list endpoint");
+expectMatch("js", /注册用户: String\(mockStore\.accounts\.length\)/, "mock user metric is derived");
+expectMatch("backend", /countMessagesSince\(clock\.now\(\)\.toLocalDate\(\)\.atStartOfDay\(\)\)/, "backend today message metric is derived");
 expectMatch("apiClient", /request\(`\/activities\$\{query/, "filtered published activity endpoint");
 expectMatch("apiClient", /request\("\/admin\/activities\/pending"\)/, "pending activity endpoint");
 expectMatch("apiClient", /\/admin\/activities\/\$\{activityId}\/reviews/, "activity review endpoint");

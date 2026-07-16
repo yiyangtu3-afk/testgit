@@ -7,6 +7,7 @@ import com.campuslink.dto.DemoDtos.ModerationItemView;
 import com.campuslink.dto.DemoDtos.ReportRangeView;
 import com.campuslink.entity.DemoEntities.ModerationItemEntity;
 import com.campuslink.repository.AuditRepository;
+import com.campuslink.repository.AdminMetricsRepository;
 import com.campuslink.repository.FeedRepository;
 import com.campuslink.repository.ModerationRepository;
 import java.util.LinkedHashMap;
@@ -21,6 +22,7 @@ public class AdminService {
   private final FeedRepository feedRepository;
   private final ModerationRepository moderationRepository;
   private final AuditRepository auditRepository;
+  private final AdminMetricsRepository metricsRepository;
   private final AuditService auditService;
   private final DemoClock clock;
 
@@ -28,20 +30,23 @@ public class AdminService {
       FeedRepository feedRepository,
       ModerationRepository moderationRepository,
       AuditRepository auditRepository,
+      AdminMetricsRepository metricsRepository,
       AuditService auditService,
       DemoClock clock) {
     this.feedRepository = feedRepository;
     this.moderationRepository = moderationRepository;
     this.auditRepository = auditRepository;
+    this.metricsRepository = metricsRepository;
     this.auditService = auditService;
     this.clock = clock;
   }
 
   public Map<String, String> metrics() {
     Map<String, String> metrics = new LinkedHashMap<>();
-    metrics.put("注册用户", "128");
-    metrics.put("今日消息", "436");
-    metrics.put("动态总数", String.valueOf(feedRepository.findVisiblePosts().size()));
+    metrics.put("注册用户", String.valueOf(metricsRepository.countUsers()));
+    metrics.put("今日消息", String.valueOf(
+        metricsRepository.countMessagesSince(clock.now().toLocalDate().atStartOfDay())));
+    metrics.put("动态总数", String.valueOf(feedRepository.countPosts()));
     metrics.put("待审内容", String.valueOf(moderationRepository.countPending()));
     return metrics;
   }

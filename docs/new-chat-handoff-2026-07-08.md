@@ -17,13 +17,13 @@
 当前静态资源版本是：
 
 ```text
-20260715-friend-request-actions-v1
+20260715-real-dashboard-metrics-v1
 ```
 
 当前本地验证地址是：
 
 ```text
-http://127.0.0.1:5179/?v=20260715-friend-request-actions-v1
+http://127.0.0.1:5179/?v=20260715-real-dashboard-metrics-v1
 ```
 
 当前功能稳定提交为 `98c2dad Add notification read and target actions`，已推送到
@@ -89,6 +89,9 @@ http://127.0.0.1:5179/?v=20260715-friend-request-actions-v1
   收件人解析通知，并同时验证通知类型、申请 ID、申请发送者和 `pending` 状态；
   前端只取得受限的申请 ID，进入并高亮已有的待处理申请卡片，复用原有
   **同意** 与 **拒绝** 操作。
+- 管理员后台的 **注册用户**、**今日消息**、**动态总数** 与 **待审内容**
+  均按当前 MySQL 数据计算；活动报名和签到继续使用独立活动指标。Mock 使用
+  账号与消息历史计算同名字段，不保留展示性固定数字。
 
 ## 2026-07-09 基线修复
 
@@ -188,7 +191,7 @@ scrollTop 从 1541.5 变到 1181.5
 截至 2026-07-15，当前功能稳定点已完成以下验证：
 
 1. `./script/run_frontend_check.sh` 通过。
-2. 显式加载 Byte Buddy agent 的完整 Maven 测试通过，`128` 个测试无失败、
+2. 显式加载 Byte Buddy agent 的完整 Maven 测试通过，`130` 个测试无失败、
    错误或跳过；仅有 JVM class-sharing 兼容性警告。
 3. 本地前端地址和 `http://127.0.0.1:8080/api/database/health` 都返回 `200`。
 4. 通知单条已读、活动/动态目标定位、好友申请通知的处理入口、管理员后台、
@@ -254,8 +257,8 @@ scrollTop 从 1541.5 变到 1181.5
 ## 建议下一步
 
 校园活动报名闭环、按用户点赞、好友申请、评论、实时通知、单条已读、动态目标
-跳转和好友申请通知的处理入口已经完成。下一步继续通知与社交完整性，补充真实
-统计与筛选能力。最新边界见
+跳转、好友申请通知的处理入口和真实仪表盘指标已经完成。下一步进入阶段四的
+安全、测试与交付准备。最新边界见
 [`phase-two-activity-handoff.md`](phase-two-activity-handoff.md) 和
 [`resume-project-roadmap.md`](resume-project-roadmap.md)。
 
@@ -277,12 +280,12 @@ git reset --hard、git clean，也不要删除或清理未跟踪文件。
 
 当前功能稳定提交是 `98c2dad Add notification read and target actions`，已推送到
 GitHub `main`。可信基线、校园活动报名闭环、按用户点赞、好友申请、评论通知、
-社交通知实时推送、单条已读、动态目标跳转和好友申请通知处理入口已经完成。
-下一项为真实统计和筛选；不要重做已完成链路。活动逻辑必须继续保留在独立领域模块，
+社交通知实时推送、单条已读、动态目标跳转、好友申请通知处理入口和真实仪表盘
+指标已经完成。下一项进入安全、测试与交付准备；不要重做已完成链路。活动逻辑必须继续保留在独立领域模块，
 不能塞进 `FeedService` 或 `AdminService`。
 
-当前静态资源版本是 `20260715-friend-request-actions-v1`，本地验证地址是：
-http://127.0.0.1:5179/?v=20260715-friend-request-actions-v1
+当前静态资源版本是 `20260715-real-dashboard-metrics-v1`，本地验证地址是：
+http://127.0.0.1:5179/?v=20260715-real-dashboard-metrics-v1
 
 当前保留的功能：
 - 管理员后台有“待审核内容”工作台，位于指标卡片下方、审计记录上方。

@@ -1,6 +1,6 @@
 import { API_BASE, state } from "../state.js";
-import { setApiMode } from "../ui/status.js?v=20260715-friend-request-actions-v1";
-import { mockApi } from "./mock-api.js?v=20260715-friend-request-actions-v1";
+import { setApiMode } from "../ui/status.js?v=20260715-real-dashboard-metrics-v1";
+import { mockApi } from "./mock-api.js?v=20260715-real-dashboard-metrics-v1";
 
 class ApiUnavailableError extends Error {
   constructor(cause) {

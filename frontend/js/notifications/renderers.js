@@ -1,6 +1,6 @@
-import { $ } from "../utils/dom.js?v=20260715-friend-request-actions-v1";
-import { escapeHtml } from "../utils/format.js?v=20260715-friend-request-actions-v1";
-import { activityNotificationState, socialNotificationState } from "./state.js?v=20260715-friend-request-actions-v1";
+import { $ } from "../utils/dom.js?v=20260715-real-dashboard-metrics-v1";
+import { escapeHtml } from "../utils/format.js?v=20260715-real-dashboard-metrics-v1";
+import { activityNotificationState, socialNotificationState } from "./state.js?v=20260715-real-dashboard-metrics-v1";
 
 const typeLabels = {
   "activity.review.approved": "审核通过",

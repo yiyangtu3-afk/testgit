@@ -1,8 +1,8 @@
-import { renderActivityNotifications } from "./renderers.js?v=20260715-friend-request-actions-v1";
+import { renderActivityNotifications } from "./renderers.js?v=20260715-real-dashboard-metrics-v1";
 import {
   activityNotificationState,
   socialNotificationState
-} from "./state.js?v=20260715-friend-request-actions-v1";
+} from "./state.js?v=20260715-real-dashboard-metrics-v1";
 
 export function handleNotificationRealtimeEvent(payload) {
   if (!payload.notification) {

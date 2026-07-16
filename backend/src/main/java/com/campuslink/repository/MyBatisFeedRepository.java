@@ -22,6 +22,11 @@ public class MyBatisFeedRepository implements FeedRepository {
   }
 
   @Override
+  public int countPosts() {
+    return feedMapper.countPosts();
+  }
+
+  @Override
   public List<PostEntity> findVisiblePosts() {
     return feedMapper.findVisiblePosts();
   }

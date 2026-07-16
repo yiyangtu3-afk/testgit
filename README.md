@@ -18,7 +18,7 @@ Open the local demo in a browser:
 ```
 
 Then visit
-`http://127.0.0.1:5179/?v=20260715-friend-request-actions-v1`.
+`http://127.0.0.1:5179/?v=20260715-real-dashboard-metrics-v1`.
 
 ## Current handoff
 
@@ -94,7 +94,9 @@ The demo supports these flows:
 - Filter the admin report by **今日**, **本周**, or **全部**, then print a
   report card with preview rows, a CSV download, and a print preview action.
 - View admin metrics and live audit records. The **活动报名** and **活动签到**
-  cards read real activity registration rows instead of display constants.
+  cards read real activity registration rows instead of display constants. The
+  **注册用户**、**今日消息**、**动态总数** and **待审内容** cards also read
+  current MySQL counts.
 
 The frontend tries `http://127.0.0.1:8080/api` first. If the Java API can't be
 reached, it falls back to the built-in mock data and shows **Mock** in the

@@ -8,6 +8,8 @@ import java.util.Optional;
 
 public interface FeedRepository {
 
+  int countPosts();
+
   List<PostEntity> findVisiblePosts();
 
   List<PostEntity> findPostsVisibleTo(String viewerId);

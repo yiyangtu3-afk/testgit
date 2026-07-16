@@ -1,5 +1,6 @@
 package com.campuslink.service;
 
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import org.springframework.stereotype.Component;
@@ -11,5 +12,9 @@ public class DemoClock {
 
   public String nowTime() {
     return LocalTime.now().format(TIME_FORMAT);
+  }
+
+  public LocalDateTime now() {
+    return LocalDateTime.now();
   }
 }

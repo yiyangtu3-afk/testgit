@@ -13,6 +13,9 @@ import org.apache.ibatis.annotations.Update;
 @Mapper
 public interface FeedMapper {
 
+  @Select("select count(*) from posts")
+  int countPosts();
+
   @Select("""
       select cast(p.id as signed) as id,
              u.name as author,

@@ -1,5 +1,5 @@
 import { mockStore, reportRanges, state } from "../state.js";
-import { nowTime } from "../utils/dom.js?v=20260715-friend-request-actions-v1";
+import { nowTime } from "../utils/dom.js?v=20260715-real-dashboard-metrics-v1";
 
 let mockAuditId = Date.now();
 let mockActivityId = Date.now();
@@ -754,9 +754,12 @@ export const mockApi = {
   },
   async metrics() {
     const pendingModeration = mockStore.moderationItems.filter((item) => item.status === "pending").length;
+    const todayMessages = Object.values(mockStore.conversations)
+      .flat()
+      .filter((message) => !["昨天", "周一"].includes(message.time)).length;
     return {
-      注册用户: "128",
-      今日消息: "436",
+      注册用户: String(mockStore.accounts.length),
+      今日消息: String(todayMessages),
       动态总数: String(mockStore.posts.length),
       待审内容: String(pendingModeration)
     };

@@ -1,10 +1,10 @@
-import { api } from "../api/client.js?v=20260715-friend-request-actions-v1";
-import { $ } from "../utils/dom.js?v=20260715-friend-request-actions-v1";
-import { renderActivityNotifications } from "./renderers.js?v=20260715-friend-request-actions-v1";
-import { activityNotificationState, socialNotificationState } from "./state.js?v=20260715-friend-request-actions-v1";
+import { api } from "../api/client.js?v=20260715-real-dashboard-metrics-v1";
+import { $ } from "../utils/dom.js?v=20260715-real-dashboard-metrics-v1";
+import { renderActivityNotifications } from "./renderers.js?v=20260715-real-dashboard-metrics-v1";
+import { activityNotificationState, socialNotificationState } from "./state.js?v=20260715-real-dashboard-metrics-v1";
 import { state } from "../state.js";
-import { loadActivities, loadFeed, loadFriendRequests } from "../loaders.js?v=20260715-friend-request-actions-v1";
-import { switchTab } from "../ui/shell.js?v=20260715-friend-request-actions-v1";
+import { loadActivities, loadFeed, loadFriendRequests } from "../loaders.js?v=20260715-real-dashboard-metrics-v1";
+import { switchTab } from "../ui/shell.js?v=20260715-real-dashboard-metrics-v1";
 
 export function bindActivityNotificationEvents() {
   $("#markAllActivityNotifications").addEventListener("click", markAllRead);

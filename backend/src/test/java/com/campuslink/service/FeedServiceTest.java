@@ -206,6 +206,11 @@ class FeedServiceTest {
     private String lastViewerId;
 
     @Override
+    public int countPosts() {
+      return posts.size();
+    }
+
+    @Override
     public List<PostEntity> findVisiblePosts() {
       return posts.stream().filter(post -> "approved".equals(post.moderationStatus())).toList();
     }

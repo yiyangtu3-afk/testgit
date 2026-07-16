@@ -14,10 +14,10 @@
 `https://github.com/yiyangtu3-afk/testgit.git`，使用 `main` 分支；后续仅文档
 交接提交可能更新，不应被误判为新的功能基线。
 
-静态前端版本为 `20260715-friend-request-actions-v1`，本地地址为：
+静态前端版本为 `20260715-real-dashboard-metrics-v1`，本地地址为：
 
 ```text
-http://127.0.0.1:5179/?v=20260715-friend-request-actions-v1
+http://127.0.0.1:5179/?v=20260715-real-dashboard-metrics-v1
 ```
 
 后端本地地址为：
@@ -267,6 +267,14 @@ http://127.0.0.1:8080
     和前端 smoke 均通过；显式 Byte Buddy agent 下完整 Maven 测试 128 个通过。
     前端版本升级为 `20260715-friend-request-actions-v1`，共享 `state.js` 导入
     仍无查询参数。
+26. 2026 年 7 月 15 日完成真实仪表盘指标：新增独立管理员指标 Repository 和
+    Mapper，**注册用户** 与 **今日消息** 分别按 `users` 和当天 `messages`
+    计算；**动态总数** 改为统计全部 `posts`，不再只统计公开动态；**待审内容**
+    与活动报名、签到保留原有真实查询。Mock 以账户和消息历史计算同名字段。
+    新的 `@Transactional`/`@Rollback` MySQL 集成测试确认当前日消息会在事务内
+    写入后计入指标并自动回滚；前端 smoke 通过。显式 Byte Buddy agent 下完整
+    Maven 测试 130 个通过。前端版本升级为 `20260715-real-dashboard-metrics-v1`，
+    共享 `state.js` 导入仍无查询参数。
 
 ## 下一项工作
 
@@ -274,8 +282,8 @@ http://127.0.0.1:8080
 `GET /api/social-notifications/{notificationId}/friend-request-target` 从 bearer
 token 确认当前收件人，并验证 `social.friend.requested`、通知发送者、申请目标
 与 `pending` 状态；前端只用返回的申请 ID 定位已有待处理申请卡片，复用同意、
-拒绝流程。下一项为动态、评论和活动的真实统计与筛选；继续保持真实 API 错误不
-回退 Mock、跨表写入事务和可回滚 MyBatis 集成测试。
+拒绝流程。真实仪表盘指标已不含展示性固定数字；下一项进入安全、测试与交付，
+继续保持真实 API 错误不回退 Mock、跨表写入事务和可回滚 MyBatis 集成测试。
 
 ## 必读文件
 
