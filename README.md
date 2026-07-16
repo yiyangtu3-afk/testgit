@@ -30,6 +30,12 @@ accept or reject controls are shown. Start from
 [`docs/new-chat-handoff-2026-07-08.md`](docs/new-chat-handoff-2026-07-08.md)
 for the complete handoff, constraints, and local verification commands.
 
+The next planned work is an incremental Vue 3 and Vite migration. It has not
+started: the current static frontend remains the functional baseline while a
+separate `frontend-vue/` application is introduced and verified feature by
+feature. See [`docs/vue-migration-handoff.md`](docs/vue-migration-handoff.md)
+for the migration boundary and first slice.
+
 The demo supports these flows:
 
 - Log in with the student account; the login button gets a demo verification

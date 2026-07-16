@@ -130,18 +130,28 @@ HTTP 接口和学生活动卡片操作；定向 MyBatis 回滚集成测试已覆
    请求健康接口，不会影响开发者本机 MySQL 历史数据。
 5. [x] 使用 Actuator 和 Micrometer 展示健康状态、核心指标和请求诊断信息。
 
+## 阶段五：Vue 前端渐进迁移
+
+这一阶段把已验证的原生 ES Modules 前端迁移为可维护的 Vue 3 前端，但不改变任何
+后端 API、MySQL 历史数据或已完成业务规则。迁移从独立 `frontend-vue/` 目录开始，
+旧版继续作为可演示基线；只有每个领域完成等价验证后才能考虑切换入口。
+
+1. [ ] 初始化 Vue 3、Vite、Vue Router 和 Pinia，并建立 HTTP、Mock 与认证边界。
+2. [ ] 依次迁移应用壳、聊天、动态、活动、通知和管理员模块。
+3. [ ] 保持 Java API 不可达才回退 Mock、JWT 身份边界、实时通知和 XSS 转义语义。
+4. [ ] 新旧版本逐项验收后，经明确确认才切换默认入口。
+
+详细阶段边界见 [`vue-migration-handoff.md`](vue-migration-handoff.md)。
+
 ## 后续选择
 
-完成上述阶段后，再评估 AI 辅助审核。该能力必须保持人工复核、审核理由和
-审计记录，不能替代既有的人工审核闭环。当前不恢复聊天图片预览、后续登录
-页试做版本或动态页强制刷新等已明确排除的功能。
+Vue 前端迁移完成后，再评估 AI 辅助审核。该能力必须保持人工复核、审核理由和
+审计记录，不能替代既有的人工审核闭环。当前不恢复聊天图片预览、后续登录页试做
+版本或动态页强制刷新等已明确排除的功能。
 
 ## 下一步
 
-阶段三已完成，阶段四的签名 JWT、令牌过期、服务端注销、角色授权、Spring
-Security 安全链、GitHub Actions 验证、Docker Compose 浏览器演示、Testcontainers
-MySQL 集成测试和 Actuator/Micrometer 可观察性已经落地。CI
-在临时 MySQL 8.4 服务上运行完整测试，并在 Docker runner 验证 Compose 健康接口；
-本机 MySQL 历史数据不受影响。阶段四已完成；后续仅在重新评估需求后考虑 AI 辅助
-审核，且必须保留人工复核、审核理由和审计记录。每个可演示小阶段都更新 README 和
-本路线的完成状态。
+阶段一至阶段四已经完成；CI 在临时 MySQL 8.4 服务上运行完整测试，并在 Docker
+runner 验证 Compose 健康接口，本机 MySQL 历史数据不受影响。下一项是阶段五的第一
+个 Vue 切片：在不替换旧静态入口的前提下，建立 `frontend-vue/`、Vite、Vue Router、
+Pinia、认证与 API/Mock 边界。每个可演示小阶段都更新 README 和本路线的完成状态。
