@@ -1,5 +1,6 @@
 package com.campuslink.mapper;
 
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -21,4 +22,7 @@ public interface AuthSessionMapper {
       where token = #{token}
       """)
   String findUserIdByToken(@Param("token") String token);
+
+  @Delete("delete from auth_sessions where token = #{token}")
+  void delete(@Param("token") String token);
 }

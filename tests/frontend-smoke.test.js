@@ -851,8 +851,8 @@ expectMatch(
   "admin layout: expected independent review workspaces to use normal document flow"
 );
 
-expectIncludes("html", "20260715-real-dashboard-metrics-v1", "HTML escaping cache-busting version");
-expectIncludes("appEntry", "20260715-real-dashboard-metrics-v1", "root app imports current HTML escaping module version");
+expectIncludes("html", "20260715-signed-jwt-logout-v1", "HTML escaping cache-busting version");
+expectIncludes("appEntry", "20260715-signed-jwt-logout-v1", "root app imports current HTML escaping module version");
 
 expectIncludes("js", "setRealtimeMode", "chat realtime status updater");
 expectIncludes("js", "HEARTBEAT_INTERVAL_MS", "chat realtime heartbeat interval");

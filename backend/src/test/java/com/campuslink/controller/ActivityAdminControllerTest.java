@@ -7,13 +7,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.campuslink.config.GlobalExceptionHandler;
 import com.campuslink.entity.DemoEntities.UserEntity;
-import com.campuslink.repository.AuthSessionRepository;
 import com.campuslink.repository.UserRepository;
 import com.campuslink.service.ActivityService;
 import com.campuslink.service.ActivityNotificationService;
 import com.campuslink.service.AuthTokenService;
 import com.campuslink.support.InMemoryActivityRepository;
 import com.campuslink.support.InMemoryActivityNotificationRepository;
+import com.campuslink.support.InMemoryAuthSessionRepository;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -26,6 +26,9 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 class ActivityAdminControllerTest {
 
   private MockMvc mockMvc;
+  private String teacherAuthorization;
+  private String adminAuthorization;
+  private String studentAuthorization;
 
   @BeforeEach
   void setUp() {
@@ -34,18 +37,7 @@ class ActivityAdminControllerTest {
     UserEntity student = new UserEntity("u-1001", "林一", "学生账号", "13800000001", "online");
     Map<String, UserEntity> usersById = Map.of(
         teacher.id(), teacher, admin.id(), admin, student.id(), student);
-    Map<String, String> tokens = Map.of(
-        "teacher-token", teacher.id(), "admin-token", admin.id(), "student-token", student.id());
-    AuthSessionRepository authSessions = new AuthSessionRepository() {
-      @Override
-      public void save(String token, String userId) {
-      }
-
-      @Override
-      public Optional<String> findUserIdByToken(String token) {
-        return Optional.ofNullable(tokens.get(token));
-      }
-    };
+    var authSessions = new InMemoryAuthSessionRepository();
     UserRepository users = new UserRepository() {
       @Override
       public List<UserEntity> findAll() {
@@ -69,6 +61,9 @@ class ActivityAdminControllerTest {
     ActivityService activityService = new ActivityService(new InMemoryActivityRepository(),
         new ActivityNotificationService(new InMemoryActivityNotificationRepository()));
     AuthTokenService authTokenService = new AuthTokenService(authSessions, users);
+    teacherAuthorization = "Bearer " + authTokenService.issueToken(teacher.id());
+    adminAuthorization = "Bearer " + authTokenService.issueToken(admin.id());
+    studentAuthorization = "Bearer " + authTokenService.issueToken(student.id());
     mockMvc = MockMvcBuilders.standaloneSetup(
         new ActivityController(activityService, authTokenService),
         new ActivityAdminController(activityService, authTokenService))
@@ -81,12 +76,12 @@ class ActivityAdminControllerTest {
     String activityId = submitActivity();
 
     mockMvc.perform(get("/api/admin/activities/pending")
-            .header("Authorization", "Bearer admin-token"))
+            .header("Authorization", adminAuthorization))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].id").value(activityId));
 
     mockMvc.perform(post("/api/admin/activities/{activityId}/reviews", activityId)
-            .header("Authorization", "Bearer admin-token")
+            .header("Authorization", adminAuthorization)
             .contentType("application/json")
             .content("{\"decision\":\"approve\"}"))
         .andExpect(status().isOk())
@@ -94,7 +89,7 @@ class ActivityAdminControllerTest {
         .andExpect(jsonPath("$.reviewDecision").value("approved"));
 
     mockMvc.perform(get("/api/activities")
-            .header("Authorization", "Bearer teacher-token"))
+            .header("Authorization", teacherAuthorization))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].id").value(activityId));
   }
@@ -110,7 +105,7 @@ class ActivityAdminControllerTest {
 
     mockMvc.perform(get("/api/activities")
             .queryParam("category", "科技")
-            .header("Authorization", "Bearer student-token"))
+            .header("Authorization", studentAuthorization))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.length()").value(1))
         .andExpect(jsonPath("$[0].id").value(technologyId))
@@ -132,7 +127,7 @@ class ActivityAdminControllerTest {
     mockMvc.perform(get("/api/activities")
             .queryParam("from", "2026-08-02")
             .queryParam("to", "2026-08-03")
-            .header("Authorization", "Bearer student-token"))
+            .header("Authorization", studentAuthorization))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.length()").value(1))
         .andExpect(jsonPath("$[0].id").value(inRangeId));
@@ -151,7 +146,7 @@ class ActivityAdminControllerTest {
             .queryParam("category", "公益")
             .queryParam("from", "2026-08-02")
             .queryParam("to", "2026-08-02")
-            .header("Authorization", "Bearer student-token"))
+            .header("Authorization", studentAuthorization))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.length()").value(1))
         .andExpect(jsonPath("$[0].id").value(publicServiceId));
@@ -161,7 +156,7 @@ class ActivityAdminControllerTest {
   void publishedActivityListRejectsInvalidDateFormat() throws Exception {
     mockMvc.perform(get("/api/activities")
             .queryParam("from", "2026/08/02")
-            .header("Authorization", "Bearer student-token"))
+            .header("Authorization", studentAuthorization))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.message").value("活动日期格式必须为 YYYY-MM-DD"));
   }
@@ -171,7 +166,7 @@ class ActivityAdminControllerTest {
     mockMvc.perform(get("/api/activities")
             .queryParam("from", "2026-08-03")
             .queryParam("to", "2026-08-02")
-            .header("Authorization", "Bearer student-token"))
+            .header("Authorization", studentAuthorization))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.message").value("活动筛选结束日期不能早于开始日期"));
   }
@@ -181,7 +176,7 @@ class ActivityAdminControllerTest {
     String activityId = submitActivity();
 
     mockMvc.perform(post("/api/admin/activities/{activityId}/reviews", activityId)
-            .header("Authorization", "Bearer student-token")
+            .header("Authorization", studentAuthorization)
             .contentType("application/json")
             .content("{\"decision\":\"approve\"}"))
         .andExpect(status().isForbidden())
@@ -193,7 +188,7 @@ class ActivityAdminControllerTest {
     String activityId = submitActivity();
 
     mockMvc.perform(post("/api/admin/activities/{activityId}/reviews", activityId)
-            .header("Authorization", "Bearer admin-token")
+            .header("Authorization", adminAuthorization)
             .contentType("application/json")
             .content("{\"decision\":\"reject\"}"))
         .andExpect(status().isBadRequest())
@@ -208,7 +203,7 @@ class ActivityAdminControllerTest {
   private String submitActivity(
       String title, String category, String startsAt, String endsAt) throws Exception {
     MvcResult creation = mockMvc.perform(post("/api/activities")
-            .header("Authorization", "Bearer teacher-token")
+            .header("Authorization", teacherAuthorization)
             .contentType("application/json")
             .content(String.format("""
                 {
@@ -229,7 +224,7 @@ class ActivityAdminControllerTest {
 
   private void approveActivity(String activityId) throws Exception {
     mockMvc.perform(post("/api/admin/activities/{activityId}/reviews", activityId)
-            .header("Authorization", "Bearer admin-token")
+            .header("Authorization", adminAuthorization)
             .contentType("application/json")
             .content("{\"decision\":\"approve\"}"))
         .andExpect(status().isOk());

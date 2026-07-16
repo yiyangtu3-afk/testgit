@@ -1,6 +1,7 @@
 package com.campuslink.controller;
 
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -68,5 +69,13 @@ class AuthControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.token").value("demo-admin-token"))
         .andExpect(jsonPath("$.user.id").value("u-2003"));
+  }
+
+  @Test
+  void logoutRevokesCurrentBearerSession() throws Exception {
+    mockMvc.perform(post("/api/auth/logout").header("Authorization", "Bearer test-token"))
+        .andExpect(status().isOk());
+
+    verify(authService).logout("Bearer test-token");
   }
 }

@@ -1,6 +1,6 @@
 import { API_BASE, state } from "../state.js";
-import { setApiMode } from "../ui/status.js?v=20260715-real-dashboard-metrics-v1";
-import { mockApi } from "./mock-api.js?v=20260715-real-dashboard-metrics-v1";
+import { setApiMode } from "../ui/status.js?v=20260715-signed-jwt-logout-v1";
+import { mockApi } from "./mock-api.js?v=20260715-signed-jwt-logout-v1";
 
 class ApiUnavailableError extends Error {
   constructor(cause) {
@@ -63,6 +63,12 @@ export const api = {
     return withApi(
       () => request("/auth/demo-login", { method: "POST", body: JSON.stringify({ userId }) }),
       () => mockApi.loginAsDemo(userId)
+    );
+  },
+  logout() {
+    return withApi(
+      () => request("/auth/logout", { method: "POST" }),
+      () => mockApi.logout()
     );
   },
   users(keyword) {

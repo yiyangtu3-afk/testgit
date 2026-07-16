@@ -44,7 +44,7 @@ class AuthServiceTest {
     assertThat(response.user().id()).isEqualTo("u-1001");
     assertThat(response.user().name()).isEqualTo("林一");
     assertThat(response.user().role()).isEqualTo("学生账号");
-    assertThat(response.token()).startsWith("demo.");
+    assertThat(response.token()).startsWith("eyJ");
     assertThat(authSessions.findUserIdByToken(response.token())).contains("u-1001");
   }
 
@@ -53,7 +53,7 @@ class AuthServiceTest {
     LoginResponse response = authService.demoLogin("u-1001");
 
     assertThat(response.user().id()).isEqualTo("u-1001");
-    assertThat(response.token()).startsWith("demo.");
+    assertThat(response.token()).startsWith("eyJ");
     assertThat(authSessions.findUserIdByToken(response.token())).contains("u-1001");
   }
 

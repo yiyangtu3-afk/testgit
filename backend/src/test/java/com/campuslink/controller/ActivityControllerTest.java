@@ -7,13 +7,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.campuslink.config.GlobalExceptionHandler;
 import com.campuslink.entity.DemoEntities.UserEntity;
-import com.campuslink.repository.AuthSessionRepository;
 import com.campuslink.repository.UserRepository;
 import com.campuslink.service.ActivityService;
 import com.campuslink.service.ActivityNotificationService;
 import com.campuslink.service.AuthTokenService;
 import com.campuslink.support.InMemoryActivityRepository;
 import com.campuslink.support.InMemoryActivityNotificationRepository;
+import com.campuslink.support.InMemoryAuthSessionRepository;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,20 +24,12 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 class ActivityControllerTest {
 
   private MockMvc mockMvc;
+  private String teacherAuthorization;
 
   @BeforeEach
   void setUp() {
     UserEntity teacher = new UserEntity("u-2001", "陈老师", "教师", "13800000002", "online");
-    AuthSessionRepository authSessions = new AuthSessionRepository() {
-      @Override
-      public void save(String token, String userId) {
-      }
-
-      @Override
-      public Optional<String> findUserIdByToken(String token) {
-        return "teacher-token".equals(token) ? Optional.of("u-2001") : Optional.empty();
-      }
-    };
+    var authSessions = new InMemoryAuthSessionRepository();
     UserRepository users = new UserRepository() {
       @Override
       public List<UserEntity> findAll() {
@@ -61,6 +53,7 @@ class ActivityControllerTest {
     ActivityService activityService = new ActivityService(new InMemoryActivityRepository(),
         new ActivityNotificationService(new InMemoryActivityNotificationRepository()));
     AuthTokenService authTokenService = new AuthTokenService(authSessions, users);
+    teacherAuthorization = "Bearer " + authTokenService.issueToken(teacher.id());
     mockMvc = MockMvcBuilders.standaloneSetup(
         new ActivityController(activityService, authTokenService))
         .setControllerAdvice(new GlobalExceptionHandler())
@@ -70,7 +63,7 @@ class ActivityControllerTest {
   @Test
   void teacherSubmissionIgnoresClientOrganizerId() throws Exception {
     mockMvc.perform(post("/api/activities")
-            .header("Authorization", "Bearer teacher-token")
+            .header("Authorization", teacherAuthorization)
             .contentType("application/json")
             .content("""
                 {
@@ -92,7 +85,7 @@ class ActivityControllerTest {
   @Test
   void invalidCapacityReturnsConsistentValidationMessage() throws Exception {
     mockMvc.perform(post("/api/activities")
-            .header("Authorization", "Bearer teacher-token")
+            .header("Authorization", teacherAuthorization)
             .contentType("application/json")
             .content("""
                 {
@@ -112,7 +105,7 @@ class ActivityControllerTest {
   @Test
   void teacherReadsOwnPersistedActivities() throws Exception {
     mockMvc.perform(post("/api/activities")
-            .header("Authorization", "Bearer teacher-token")
+            .header("Authorization", teacherAuthorization)
             .contentType("application/json")
             .content("""
                 {"title":"名单工作坊","description":"测试","category":"科技","location":"A201",
@@ -121,7 +114,7 @@ class ActivityControllerTest {
         .andExpect(status().isCreated());
 
     mockMvc.perform(get("/api/activities/managed")
-            .header("Authorization", "Bearer teacher-token"))
+            .header("Authorization", teacherAuthorization))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].title").value("名单工作坊"))
         .andExpect(jsonPath("$[0].organizerId").value("u-2001"));

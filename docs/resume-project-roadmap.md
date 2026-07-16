@@ -5,8 +5,8 @@
 
 ## 当前基线
 
-当前前端版本为 `20260715-real-dashboard-metrics-v1`，本地验证地址为
-`http://127.0.0.1:5179/?v=20260715-real-dashboard-metrics-v1`。当前基线保留
+当前前端版本为 `20260715-signed-jwt-logout-v1`，本地验证地址为
+`http://127.0.0.1:5179/?v=20260715-signed-jwt-logout-v1`。当前基线保留
 管理员审核工作台、普通用户审核反馈、普通文件附件卡片、窄窗口聊天
 滚动修复，以及真实的动态可见范围过滤。当前功能稳定提交为
 `98c2dad Add notification read and target actions`；详细约束见
@@ -119,7 +119,9 @@ HTTP 接口和学生活动卡片操作；定向 MyBatis 回滚集成测试已覆
 
 这一阶段把项目整理为可复现、可观察、可持续迭代的工程作品。
 
-1. 使用 Spring Security 和签名 JWT，补齐令牌过期、注销和角色授权。
+1. [ ] 将现有授权边界迁移到 Spring Security。签名 JWT、默认一小时过期、
+   MySQL 会话校验、服务端注销和角色授权已完成；仍需用 Spring Security 统一
+   HTTP 安全链。
 2. 使用 Testcontainers MySQL 编写 MyBatis、事务和权限集成测试。
 3. 添加 GitHub Actions，在每次提交和拉取请求中运行检查与测试。
 4. 提供 Docker Compose 一键启动、健康检查、API 文档和在线演示说明。
@@ -133,6 +135,6 @@ HTTP 接口和学生活动卡片操作；定向 MyBatis 回滚集成测试已覆
 
 ## 下一步
 
-阶段三已完成。下一项进入阶段四，优先为签名 JWT、令牌过期和角色授权建立安全
-边界，再推进 Testcontainers、持续集成和可复现交付。每个可演示小阶段都更新
-README 和本路线的完成状态。
+阶段三已完成，阶段四的签名 JWT、令牌过期、服务端注销和角色授权边界已经落地。
+下一项将这些边界迁移到 Spring Security，再推进 Testcontainers、持续集成和
+可复现交付。每个可演示小阶段都更新 README 和本路线的完成状态。

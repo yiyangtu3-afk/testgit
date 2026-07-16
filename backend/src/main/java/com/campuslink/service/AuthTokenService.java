@@ -3,26 +3,34 @@ package com.campuslink.service;
 import com.campuslink.entity.DemoEntities.UserEntity;
 import com.campuslink.repository.AuthSessionRepository;
 import com.campuslink.repository.UserRepository;
-import java.security.SecureRandom;
-import java.util.Base64;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AuthTokenService {
 
-  private final SecureRandom random = new SecureRandom();
   private final AuthSessionRepository authSessionRepository;
   private final UserRepository userRepository;
+  private final JwtTokenCodec jwtTokens;
 
-  public AuthTokenService(AuthSessionRepository authSessionRepository, UserRepository userRepository) {
+  @Autowired
+  public AuthTokenService(
+      AuthSessionRepository authSessionRepository,
+      UserRepository userRepository,
+      JwtTokenCodec jwtTokens) {
     this.authSessionRepository = authSessionRepository;
     this.userRepository = userRepository;
+    this.jwtTokens = jwtTokens;
+  }
+
+  public AuthTokenService(AuthSessionRepository authSessionRepository, UserRepository userRepository) {
+    this(authSessionRepository, userRepository,
+        new JwtTokenCodec("campuslink-test-signing-secret-must-have-32-bytes", 3600,
+            java.time.Clock.systemUTC()));
   }
 
   public String issueToken(String userId) {
-    byte[] bytes = new byte[24];
-    random.nextBytes(bytes);
-    String token = "demo." + Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    String token = jwtTokens.issue(userId);
     authSessionRepository.save(token, userId);
     return token;
   }
@@ -35,8 +43,17 @@ public class AuthTokenService {
     if (token == null || token.isBlank()) {
       throw new SecurityException("请先登录");
     }
-    return authSessionRepository.findUserIdByToken(token)
+    String subject = jwtTokens.requireSubject(token);
+    String userId = authSessionRepository.findUserIdByToken(token)
         .orElseThrow(() -> new SecurityException("登录已失效，请重新登录"));
+    if (!subject.equals(userId)) {
+      throw new SecurityException("登录令牌无效");
+    }
+    return userId;
+  }
+
+  public void logout(String authorization) {
+    authSessionRepository.delete(bearerToken(authorization));
   }
 
   public UserEntity requireUser(String authorization) {

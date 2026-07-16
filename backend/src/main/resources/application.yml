@@ -19,3 +19,9 @@ spring:
 mybatis:
   configuration:
     map-underscore-to-camel-case: true
+
+campuslink:
+  security:
+    jwt:
+      secret: ${CAMPUSLINK_JWT_SECRET:campuslink-demo-signing-secret-change-in-production-2026}
+      ttl-seconds: 3600

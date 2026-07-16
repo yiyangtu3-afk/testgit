@@ -10,6 +10,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import org.junit.jupiter.api.Test;
 
 class AuthTokenServiceTest {
@@ -31,7 +34,10 @@ class AuthTokenServiceTest {
 
   @Test
   void missingSessionIsRejected() {
-    assertThatThrownBy(() -> authTokenService.requireUserId("Bearer demo.missing"))
+    JwtTokenCodec issuer = new JwtTokenCodec(
+        "campuslink-test-signing-secret-must-have-32-bytes", 3600, Clock.systemUTC());
+
+    assertThatThrownBy(() -> authTokenService.requireUserId("Bearer " + issuer.issue("u-1001")))
         .isInstanceOf(SecurityException.class)
         .hasMessage("登录已失效，请重新登录");
   }
@@ -41,6 +47,32 @@ class AuthTokenServiceTest {
     String token = authTokenService.issueToken("u-2003");
 
     assertThat(authTokenService.requireAdmin("Bearer " + token).id()).isEqualTo("u-2003");
+  }
+
+  @Test
+  void expiredOrLoggedOutJwtIsRejected() {
+    JwtTokenCodec issuer = new JwtTokenCodec(
+        "campuslink-test-signing-secret-must-have-32-bytes", 1,
+        Clock.fixed(Instant.parse("2026-07-15T00:00:00Z"), ZoneOffset.UTC));
+    AuthTokenService expiredTokens = new AuthTokenService(
+        authSessions,
+        new InMemoryUserRepository(List.of(new UserEntity(
+            "u-1001", "林一", "学生账号", "13800000001", "online"))),
+        new JwtTokenCodec(
+            "campuslink-test-signing-secret-must-have-32-bytes", 1,
+            Clock.fixed(Instant.parse("2026-07-15T00:00:02Z"), ZoneOffset.UTC)));
+    String expired = issuer.issue("u-1001");
+    authSessions.save(expired, "u-1001");
+
+    assertThatThrownBy(() -> expiredTokens.requireUserId("Bearer " + expired))
+        .isInstanceOf(SecurityException.class)
+        .hasMessage("登录已过期，请重新登录");
+
+    String token = authTokenService.issueToken("u-1001");
+    authTokenService.logout("Bearer " + token);
+    assertThatThrownBy(() -> authTokenService.requireUserId("Bearer " + token))
+        .isInstanceOf(SecurityException.class)
+        .hasMessage("登录已失效，请重新登录");
   }
 
   private static final class InMemoryAuthSessionRepository implements AuthSessionRepository {
@@ -55,6 +87,11 @@ class AuthTokenServiceTest {
     @Override
     public Optional<String> findUserIdByToken(String token) {
       return Optional.ofNullable(tokenUsers.get(token));
+    }
+
+    @Override
+    public void delete(String token) {
+      tokenUsers.remove(token);
     }
   }
 

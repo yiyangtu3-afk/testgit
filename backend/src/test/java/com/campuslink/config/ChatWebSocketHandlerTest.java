@@ -41,7 +41,7 @@ class ChatWebSocketHandlerTest {
 
   @Test
   void heartbeatPingReturnsPong() throws Exception {
-    TestWebSocketSession session = connectedSession("demo.student", "u-1001");
+    TestWebSocketSession session = connectedSession("u-1001");
 
     handler.handleMessage(session, new TextMessage("""
         {"type":"heartbeat.ping"}
@@ -52,8 +52,8 @@ class ChatWebSocketHandlerTest {
 
   @Test
   void publishMessageSendsEventToSenderAndRecipientSessions() throws Exception {
-    TestWebSocketSession sender = connectedSession("demo.sender", "u-1001");
-    TestWebSocketSession recipient = connectedSession("demo.recipient", "u-2002");
+    TestWebSocketSession sender = connectedSession("u-1001");
+    TestWebSocketSession recipient = connectedSession("u-2002");
 
     handler.publishMessage(
         "u-2002",
@@ -70,8 +70,8 @@ class ChatWebSocketHandlerTest {
 
   @Test
   void publishMessageWithdrawnSendsEventToSenderAndRecipientSessions() throws Exception {
-    TestWebSocketSession sender = connectedSession("demo.sender", "u-1001");
-    TestWebSocketSession recipient = connectedSession("demo.recipient", "u-2002");
+    TestWebSocketSession sender = connectedSession("u-1001");
+    TestWebSocketSession recipient = connectedSession("u-2002");
 
     handler.publishMessageWithdrawn(
         "u-2002",
@@ -88,8 +88,8 @@ class ChatWebSocketHandlerTest {
 
   @Test
   void publishActivityNotificationSendsEventOnlyToRecipient() throws Exception {
-    TestWebSocketSession recipient = connectedSession("demo.recipient", "u-2002");
-    TestWebSocketSession other = connectedSession("demo.student", "u-1001");
+    TestWebSocketSession recipient = connectedSession("u-2002");
+    TestWebSocketSession other = connectedSession("u-1001");
     NotificationView notification = new NotificationView(
         "notification-1",
         "activity-1",
@@ -110,8 +110,8 @@ class ChatWebSocketHandlerTest {
 
   @Test
   void publishSocialNotificationSendsEventOnlyToRecipient() throws Exception {
-    TestWebSocketSession recipient = connectedSession("demo.recipient", "u-2002");
-    TestWebSocketSession other = connectedSession("demo.student", "u-1001");
+    TestWebSocketSession recipient = connectedSession("u-2002");
+    TestWebSocketSession other = connectedSession("u-1001");
     com.campuslink.dto.SocialNotificationDtos.NotificationView notification =
         new com.campuslink.dto.SocialNotificationDtos.NotificationView(
             "social-notification-1",
@@ -133,7 +133,7 @@ class ChatWebSocketHandlerTest {
 
   @Test
   void closedSessionIsRemovedFromBroadcastTargets() throws Exception {
-    TestWebSocketSession session = connectedSession("demo.student", "u-1001");
+    TestWebSocketSession session = connectedSession("u-1001");
 
     handler.afterConnectionClosed(session, CloseStatus.NORMAL);
     handler.publishMessage(
@@ -153,8 +153,8 @@ class ChatWebSocketHandlerTest {
     assertThat(session.closeStatus).isEqualTo(CloseStatus.NOT_ACCEPTABLE.withReason("请先登录"));
   }
 
-  private TestWebSocketSession connectedSession(String token, String userId) throws Exception {
-    authSessions.save(token, userId);
+  private TestWebSocketSession connectedSession(String userId) throws Exception {
+    String token = authTokenService.issueToken(userId);
     TestWebSocketSession session = new TestWebSocketSession("/ws/chat?token=" + token);
     handler.afterConnectionEstablished(session);
     assertThat(session.open).isTrue();

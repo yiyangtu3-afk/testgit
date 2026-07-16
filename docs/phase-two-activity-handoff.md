@@ -14,10 +14,10 @@
 `https://github.com/yiyangtu3-afk/testgit.git`，使用 `main` 分支；后续仅文档
 交接提交可能更新，不应被误判为新的功能基线。
 
-静态前端版本为 `20260715-real-dashboard-metrics-v1`，本地地址为：
+静态前端版本为 `20260715-signed-jwt-logout-v1`，本地地址为：
 
 ```text
-http://127.0.0.1:5179/?v=20260715-real-dashboard-metrics-v1
+http://127.0.0.1:5179/?v=20260715-signed-jwt-logout-v1
 ```
 
 后端本地地址为：
@@ -275,6 +275,16 @@ http://127.0.0.1:8080
     写入后计入指标并自动回滚；前端 smoke 通过。显式 Byte Buddy agent 下完整
     Maven 测试 130 个通过。前端版本升级为 `20260715-real-dashboard-metrics-v1`，
     共享 `state.js` 导入仍无查询参数。
+27. 2026 年 7 月 15 日完成签名 JWT 与注销边界：登录为当前 MySQL 用户签发
+    HMAC-SHA256 JWT，默认一小时过期；受保护请求先验证签名和过期时间，再校验
+    `auth_sessions` 中的同 subject 会话，不能伪造当前用户或管理员角色。新增
+    `POST /api/auth/logout`，只删除当前 bearer token 的会话，前端在 live API 和
+    Mock 模式维持同一退出体验；API 的 `4xx`/`5xx` 不会触发 Mock 写入。
+    `auth_sessions.token` 以幂等迁移扩展至 `varchar(512)`，仅扩展列、不重置或清理
+    本地历史数据。MyBatis 删除由新的 `@Transactional`/`@Rollback` MySQL 集成测试
+    覆盖，另有 JWT 过期、注销和 HTTP 边界测试；前端检查通过，`state.js` 导入仍
+    无版本参数。显式 Byte Buddy agent 下完整 Maven `133` 个测试通过，仅输出
+    JVM class-sharing 警告。
 
 ## 下一项工作
 
@@ -282,8 +292,10 @@ http://127.0.0.1:8080
 `GET /api/social-notifications/{notificationId}/friend-request-target` 从 bearer
 token 确认当前收件人，并验证 `social.friend.requested`、通知发送者、申请目标
 与 `pending` 状态；前端只用返回的申请 ID 定位已有待处理申请卡片，复用同意、
-拒绝流程。真实仪表盘指标已不含展示性固定数字；下一项进入安全、测试与交付，
-继续保持真实 API 错误不回退 Mock、跨表写入事务和可回滚 MyBatis 集成测试。
+拒绝流程。真实仪表盘指标已不含展示性固定数字，签名 JWT、过期和服务端注销
+已经落地；下一项将现有认证边界迁移到 Spring Security，再继续 Testcontainers、
+持续集成与交付，同时保持真实 API 错误不回退 Mock、跨表写入事务和可回滚
+MyBatis 集成测试。
 
 ## 必读文件
 

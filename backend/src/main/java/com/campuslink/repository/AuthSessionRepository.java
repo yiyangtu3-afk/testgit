@@ -7,4 +7,7 @@ public interface AuthSessionRepository {
   void save(String token, String userId);
 
   Optional<String> findUserIdByToken(String token);
+
+  default void delete(String token) {
+  }
 }

@@ -8,7 +8,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.campuslink.config.GlobalExceptionHandler;
 import com.campuslink.entity.DemoEntities.UserEntity;
-import com.campuslink.repository.AuthSessionRepository;
 import com.campuslink.repository.FeedRepository;
 import com.campuslink.repository.FriendRepository;
 import com.campuslink.repository.UserRepository;
@@ -17,6 +16,7 @@ import com.campuslink.service.FriendRequestNotificationTargetService;
 import com.campuslink.service.SocialNotificationService;
 import com.campuslink.service.SocialNotificationTargetService;
 import com.campuslink.support.InMemorySocialNotificationRepository;
+import com.campuslink.support.InMemoryAuthSessionRepository;
 import java.lang.reflect.Proxy;
 import java.util.List;
 import java.util.Optional;
@@ -29,18 +29,14 @@ class SocialNotificationControllerTest {
 
   private MockMvc mockMvc;
   private InMemorySocialNotificationRepository notifications;
+  private String authorAuthorization;
 
   @BeforeEach
   void setUp() {
     UserEntity author = new UserEntity("u-author", "林一", "学生", "1", "online");
     UserEntity other = new UserEntity("u-other", "周同学", "学生", "2", "online");
     notifications = new InMemorySocialNotificationRepository();
-    AuthSessionRepository sessions = new AuthSessionRepository() {
-      public void save(String token, String userId) { }
-      public Optional<String> findUserIdByToken(String token) {
-        return "author-token".equals(token) ? Optional.of(author.id()) : Optional.empty();
-      }
-    };
+    var sessions = new InMemoryAuthSessionRepository();
     UserRepository users = new UserRepository() {
       public List<UserEntity> findAll() { return List.of(author, other); }
       public Optional<UserEntity> findById(String id) {
@@ -63,11 +59,13 @@ class SocialNotificationControllerTest {
             ? Optional.of(new com.campuslink.entity.DemoEntities.FriendRequestEntity(
                 "friend-request-1", other.id(), author.id(), "pending"))
             : Optional.empty());
+    var authTokens = new AuthTokenService(sessions, users);
+    authorAuthorization = "Bearer " + authTokens.issueToken(author.id());
     mockMvc = MockMvcBuilders.standaloneSetup(new SocialNotificationController(
             service,
             new SocialNotificationTargetService(notifications, feed),
             new FriendRequestNotificationTargetService(notifications, friends),
-            new AuthTokenService(sessions, users)))
+            authTokens))
         .setControllerAdvice(new GlobalExceptionHandler())
         .build();
   }
@@ -80,7 +78,7 @@ class SocialNotificationControllerTest {
         "动态收到新点赞", "林一赞了你的动态。");
 
     mockMvc.perform(get("/api/social-notifications")
-            .header("Authorization", "Bearer author-token"))
+            .header("Authorization", authorAuthorization))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.unreadCount").value(1))
         .andExpect(jsonPath("$.items.length()").value(1))
@@ -96,7 +94,7 @@ class SocialNotificationControllerTest {
         "动态收到新点赞", "周同学赞了你的动态。");
 
     mockMvc.perform(post("/api/social-notifications/read-all")
-            .header("Authorization", "Bearer author-token"))
+            .header("Authorization", authorAuthorization))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.unreadCount").value(0))
         .andExpect(jsonPath("$.items[0].read").value(true));
@@ -110,7 +108,7 @@ class SocialNotificationControllerTest {
         "动态收到新点赞", "周同学赞了你的另一条动态。");
 
     mockMvc.perform(post("/api/social-notifications/{notificationId}/read", first.id())
-            .header("Authorization", "Bearer author-token"))
+            .header("Authorization", authorAuthorization))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.unreadCount").value(1))
         .andExpect(jsonPath("$.items[?(@.id == '" + first.id() + "')].read").value(true));
@@ -122,7 +120,7 @@ class SocialNotificationControllerTest {
         "动态收到新评论", "周同学评论了你的动态。");
 
     mockMvc.perform(get("/api/social-notifications/{notificationId}/post-target", notification.id())
-            .header("Authorization", "Bearer author-token"))
+            .header("Authorization", authorAuthorization))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.postId").value(42));
   }
@@ -133,7 +131,7 @@ class SocialNotificationControllerTest {
         "social.friend.requested", "新的好友申请", "周同学向你发送了好友申请。");
 
     mockMvc.perform(get("/api/social-notifications/{notificationId}/friend-request-target", notification.id())
-            .header("Authorization", "Bearer author-token"))
+            .header("Authorization", authorAuthorization))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.requestId").value("friend-request-1"));
   }
@@ -144,7 +142,7 @@ class SocialNotificationControllerTest {
         "social.post.liked", "动态收到新点赞", "林一赞了其他账号的动态。");
 
     mockMvc.perform(post("/api/social-notifications/{notificationId}/read", otherNotification.id())
-            .header("Authorization", "Bearer author-token"))
+            .header("Authorization", authorAuthorization))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.unreadCount").value(0));
 

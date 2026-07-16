@@ -1,11 +1,11 @@
 import { mockStore, state } from "../state.js";
-import { api } from "../api/client.js?v=20260715-real-dashboard-metrics-v1";
-import { accountById, pushMockAudit } from "../api/mock-api.js?v=20260715-real-dashboard-metrics-v1";
-import { $ } from "../utils/dom.js?v=20260715-real-dashboard-metrics-v1";
-import { setApiMode, setRealtimeMode, setStatus } from "../ui/status.js?v=20260715-real-dashboard-metrics-v1";
-import { renderAccountSwitch, renderAttachmentTray, renderExportPanel, renderIdentity, renderMessages } from "../ui/renderers.js?v=20260715-real-dashboard-metrics-v1";
-import { loadActivities, loadAdminData, loadConversationPreviews, loadFeed, loadFriendRequests, loadFriends, loadMessages, loadNotifications, loadUnreadCounts, loadUsers } from "../loaders.js?v=20260715-real-dashboard-metrics-v1";
-import { connectChatRealtime, disconnectChatRealtime } from "../chat/realtime.js?v=20260715-real-dashboard-metrics-v1";
+import { api } from "../api/client.js?v=20260715-signed-jwt-logout-v1";
+import { accountById, pushMockAudit } from "../api/mock-api.js?v=20260715-signed-jwt-logout-v1";
+import { $ } from "../utils/dom.js?v=20260715-signed-jwt-logout-v1";
+import { setApiMode, setRealtimeMode, setStatus } from "../ui/status.js?v=20260715-signed-jwt-logout-v1";
+import { renderAccountSwitch, renderAttachmentTray, renderExportPanel, renderIdentity, renderMessages } from "../ui/renderers.js?v=20260715-signed-jwt-logout-v1";
+import { loadActivities, loadAdminData, loadConversationPreviews, loadFeed, loadFriendRequests, loadFriends, loadMessages, loadNotifications, loadUnreadCounts, loadUsers } from "../loaders.js?v=20260715-signed-jwt-logout-v1";
+import { connectChatRealtime, disconnectChatRealtime } from "../chat/realtime.js?v=20260715-signed-jwt-logout-v1";
 
 export async function bootstrapWorkspace() {
   renderAccountSwitch();
@@ -76,7 +76,12 @@ export async function switchAccount(userId) {
   connectChatRealtime();
 }
 
-export function logout() {
+export async function logout() {
+  try {
+    await api.logout();
+  } catch {
+    // The local session must still be cleared after an expired or rejected token.
+  }
   disconnectChatRealtime();
   state.token = "";
   setRealtimeMode("offline");

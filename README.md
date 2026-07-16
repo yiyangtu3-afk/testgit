@@ -18,7 +18,7 @@ Open the local demo in a browser:
 ```
 
 Then visit
-`http://127.0.0.1:5179/?v=20260715-real-dashboard-metrics-v1`.
+`http://127.0.0.1:5179/?v=20260715-signed-jwt-logout-v1`.
 
 ## Current handoff
 
@@ -35,7 +35,8 @@ The demo supports these flows:
 - Log in with the student account; the login button gets a demo verification
   code automatically when the code field is empty.
 - Enter the workspace instantly through the quick demo button.
-- Switch demo accounts or log out to return to the login screen.
+- Switch demo accounts or log out to return to the login screen. In Java API
+  mode, logging out also revokes the server-side session.
 - Search demo users and send a friend request. The recipient receives a
   persistent **新的好友申请** notification.
 - Switch demo accounts to review incoming friend requests and accept or reject
@@ -104,15 +105,17 @@ sidebar. When the Java API responds, the sidebar shows **Java API**. A response
 from the Java API with an error status doesn't fall back to Mock, so rejected
 or failed requests remain visible instead of changing browser-only data.
 
-After login, the Java API returns a demo bearer token. The frontend sends that
-token in the `Authorization` header, and protected live API requests resolve
-the current user from the token instead of trusting query parameters or request
-body user IDs. The quick demo entry and account switcher use
-`POST /api/auth/demo-login` to issue a token for the selected demo account.
-Issued demo tokens are stored in the MySQL `auth_sessions` table, so the Java
-API can continue resolving tokens after an application restart as long as the
-database keeps the session row. These tokens are still local demo credentials,
-not production JWTs.
+After login, the Java API returns a signed, time-limited JWT bearer token. The
+frontend sends that token in the `Authorization` header, and protected live API
+requests resolve the current user from the verified token and matching MySQL
+session instead of trusting query parameters or request body user IDs. The
+quick demo entry and account switcher use `POST /api/auth/demo-login` to issue
+the token for the selected demo account. JWTs expire after one hour by default;
+set `CAMPUSLINK_JWT_SECRET` before using a non-demo environment. The matching
+MySQL `auth_sessions` row supports server-side revocation: `POST /api/auth/logout`
+deletes only the presented session, so that token cannot authorize another
+request even before its JWT expiry. Existing legacy random demo tokens no
+longer authorize requests after this change.
 Admin routes require a token for an account whose role contains `管理员`.
 Student and teacher tokens receive `403 Forbidden` for admin-only APIs.
 
@@ -143,7 +146,7 @@ mvn test
 On this machine, Microsoft JDK 21 can't reliably let Mockito self-attach its
 Byte Buddy agent. The verified full run passes an explicit `-javaagent` through
 Maven's `argLine`; without it, Mockito-based tests can fail during test setup
-rather than on application behavior. The July 15 run completed all 127 tests
+rather than on application behavior. The July 15 run completed all 133 tests
 with the explicit agent and only printed the JVM class-sharing warning:
 
 ```bash
@@ -166,7 +169,7 @@ rollback-safe history.
 The suite also includes MockMvc controller tests for the auth, users, friends,
 chat, feed, activity notifications, social notifications, and admin API
 boundaries, plus direct WebSocket handler tests for chat and recipient-only
-activity and social notification events. The full suite currently contains 127
+activity and social notification events. The full suite currently contains 133
 tests.
 Repository integration tests use transactions that roll back, so test rows
 don't remain in existing demo history. Chat repository coverage verifies

@@ -53,6 +53,10 @@ public class AuthService {
     return loginResponseFor(user);
   }
 
+  public void logout(String authorization) {
+    authTokenService.logout(authorization);
+  }
+
   private LoginResponse loginResponseFor(UserEntity user) {
     return new LoginResponse(
         authTokenService.issueToken(user.id()),

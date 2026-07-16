@@ -9,7 +9,6 @@ import com.campuslink.config.GlobalExceptionHandler;
 import com.campuslink.dto.ActivityDtos.CreateActivityRequest;
 import com.campuslink.dto.ActivityDtos.ReviewActivityRequest;
 import com.campuslink.entity.DemoEntities.UserEntity;
-import com.campuslink.repository.AuthSessionRepository;
 import com.campuslink.repository.UserRepository;
 import com.campuslink.service.ActivityRegistrationService;
 import com.campuslink.service.ActivityNotificationService;
@@ -18,6 +17,7 @@ import com.campuslink.service.AuthTokenService;
 import com.campuslink.support.InMemoryActivityRegistrationRepository;
 import com.campuslink.support.InMemoryActivityNotificationRepository;
 import com.campuslink.support.InMemoryActivityRepository;
+import com.campuslink.support.InMemoryAuthSessionRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -29,6 +29,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 class ActivityRegistrationControllerTest {
   private MockMvc mockMvc;
   private String activityId;
+  private String studentAuthorization;
+  private String teacherAuthorization;
 
   @BeforeEach void setUp() {
     UserEntity student = new UserEntity("u-student", "林一", "学生", "1", "online");
@@ -41,13 +43,7 @@ class ActivityRegistrationControllerTest {
         "A201", LocalDateTime.of(2026, 8, 1, 9, 0), LocalDateTime.of(2026, 8, 1, 10, 0), 1));
     activityId = activityService.review(admin, pending.id(), new ReviewActivityRequest("approve", null)).id();
     List<UserEntity> users = List.of(student, teacher, admin);
-    AuthSessionRepository sessions = new AuthSessionRepository() {
-      public void save(String token, String userId) { }
-      public Optional<String> findUserIdByToken(String token) {
-        return Optional.ofNullable(switch (token) { case "student-token" -> "u-student";
-          case "teacher-token" -> "u-teacher"; default -> null; });
-      }
-    };
+    var sessions = new InMemoryAuthSessionRepository();
     UserRepository userRepository = new UserRepository() {
       public List<UserEntity> findAll() { return users; }
       public Optional<UserEntity> findById(String id) { return users.stream().filter(u -> u.id().equals(id)).findFirst(); }
@@ -57,29 +53,32 @@ class ActivityRegistrationControllerTest {
     var service = new ActivityRegistrationService(activityRepository,
         new InMemoryActivityRegistrationRepository(),
         new ActivityNotificationService(new InMemoryActivityNotificationRepository()));
+    var authTokens = new AuthTokenService(sessions, userRepository);
+    studentAuthorization = "Bearer " + authTokens.issueToken(student.id());
+    teacherAuthorization = "Bearer " + authTokens.issueToken(teacher.id());
     mockMvc = MockMvcBuilders.standaloneSetup(new ActivityRegistrationController(service,
-        new AuthTokenService(sessions, userRepository))).setControllerAdvice(new GlobalExceptionHandler()).build();
+        authTokens)).setControllerAdvice(new GlobalExceptionHandler()).build();
   }
 
   @Test void authenticatedStudentRegistersWithoutAttendeeId() throws Exception {
     mockMvc.perform(post("/api/activities/{activityId}/registrations", activityId)
-        .header("Authorization", "Bearer student-token"))
+        .header("Authorization", studentAuthorization))
         .andExpect(status().isCreated()).andExpect(jsonPath("$.status").value("registered"));
   }
 
   @Test void teacherCannotRegisterAsAttendee() throws Exception {
     mockMvc.perform(post("/api/activities/{activityId}/registrations", activityId)
-        .header("Authorization", "Bearer teacher-token"))
+        .header("Authorization", teacherAuthorization))
         .andExpect(status().isForbidden()).andExpect(jsonPath("$.message").value("只有学生可以报名活动"));
   }
 
   @Test void organizerReadsRosterWithoutClientOrganizerId() throws Exception {
     mockMvc.perform(post("/api/activities/{activityId}/registrations", activityId)
-        .header("Authorization", "Bearer student-token"))
+        .header("Authorization", studentAuthorization))
         .andExpect(status().isCreated());
 
     mockMvc.perform(get("/api/activities/{activityId}/registrations/roster", activityId)
-        .header("Authorization", "Bearer teacher-token"))
+        .header("Authorization", teacherAuthorization))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.activityId").value(activityId))
         .andExpect(jsonPath("$.registeredCount").value(1))
@@ -88,12 +87,12 @@ class ActivityRegistrationControllerTest {
 
   @Test void organizerChecksInRegistrationWithoutClientActorId() throws Exception {
     mockMvc.perform(post("/api/activities/{activityId}/registrations", activityId)
-        .header("Authorization", "Bearer student-token"))
+        .header("Authorization", studentAuthorization))
         .andExpect(status().isCreated());
 
     mockMvc.perform(post("/api/activities/{activityId}/registrations/{registrationId}/check-in",
             activityId, "registration-1")
-        .header("Authorization", "Bearer teacher-token"))
+        .header("Authorization", teacherAuthorization))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.status").value("checked_in"))
         .andExpect(jsonPath("$.checkedInAt").isNotEmpty());

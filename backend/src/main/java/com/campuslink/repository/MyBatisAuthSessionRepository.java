@@ -22,4 +22,9 @@ public class MyBatisAuthSessionRepository implements AuthSessionRepository {
   public Optional<String> findUserIdByToken(String token) {
     return Optional.ofNullable(authSessionMapper.findUserIdByToken(token));
   }
+
+  @Override
+  public void delete(String token) {
+    authSessionMapper.delete(token);
+  }
 }

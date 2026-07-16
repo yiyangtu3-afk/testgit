@@ -15,11 +15,27 @@ create table if not exists verification_codes (
 );
 
 create table if not exists auth_sessions (
-  token varchar(128) primary key,
+  token varchar(512) primary key,
   user_id varchar(32) not null,
   created_at timestamp not null default current_timestamp,
   last_seen_at timestamp not null default current_timestamp on update current_timestamp
 );
+
+set @auth_session_token_length = (
+  select character_maximum_length
+  from information_schema.columns
+  where table_schema = database()
+    and table_name = 'auth_sessions'
+    and column_name = 'token'
+);
+set @auth_session_token_migration = if(
+  @auth_session_token_length >= 512,
+  'select 1',
+  'alter table auth_sessions modify token varchar(512) not null'
+);
+prepare widen_auth_session_token from @auth_session_token_migration;
+execute widen_auth_session_token;
+deallocate prepare widen_auth_session_token;
 
 create table if not exists friendships (
   id bigint primary key auto_increment,

@@ -1,6 +1,6 @@
 import { state } from "../state.js";
-import { $ } from "../utils/dom.js?v=20260715-real-dashboard-metrics-v1";
-import { escapeHtml } from "../utils/format.js?v=20260715-real-dashboard-metrics-v1";
+import { $ } from "../utils/dom.js?v=20260715-signed-jwt-logout-v1";
+import { escapeHtml } from "../utils/format.js?v=20260715-signed-jwt-logout-v1";
 
 export function renderFeed() {
   const feedList = $("#feedList");

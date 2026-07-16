@@ -17,13 +17,13 @@
 当前静态资源版本是：
 
 ```text
-20260715-real-dashboard-metrics-v1
+20260715-signed-jwt-logout-v1
 ```
 
 当前本地验证地址是：
 
 ```text
-http://127.0.0.1:5179/?v=20260715-real-dashboard-metrics-v1
+http://127.0.0.1:5179/?v=20260715-signed-jwt-logout-v1
 ```
 
 当前功能稳定提交为 `98c2dad Add notification read and target actions`，已推送到
@@ -92,6 +92,11 @@ http://127.0.0.1:5179/?v=20260715-real-dashboard-metrics-v1
 - 管理员后台的 **注册用户**、**今日消息**、**动态总数** 与 **待审内容**
   均按当前 MySQL 数据计算；活动报名和签到继续使用独立活动指标。Mock 使用
   账号与消息历史计算同名字段，不保留展示性固定数字。
+- Java API 登录签发 HMAC-SHA256 签名 JWT，默认一小时过期。受保护请求必须同时
+  通过签名和过期校验，并在 MySQL `auth_sessions` 找到与 JWT subject 一致的会话；
+  后端不会从请求体或查询参数取得当前用户或角色。`POST /api/auth/logout` 仅删除
+  当前 bearer token 的会话，前端无论令牌已经失效还是服务端拒绝，都清除本地登录
+  状态。`auth_sessions.token` 已通过幂等迁移扩展到 `varchar(512)`，不清理历史数据。
 
 ## 2026-07-09 基线修复
 
@@ -191,7 +196,7 @@ scrollTop 从 1541.5 变到 1181.5
 截至 2026-07-15，当前功能稳定点已完成以下验证：
 
 1. `./script/run_frontend_check.sh` 通过。
-2. 显式加载 Byte Buddy agent 的完整 Maven 测试通过，`130` 个测试无失败、
+2. 显式加载 Byte Buddy agent 的完整 Maven 测试通过，`133` 个测试无失败、
    错误或跳过；仅有 JVM class-sharing 兼容性警告。
 3. 本地前端地址和 `http://127.0.0.1:8080/api/database/health` 都返回 `200`。
 4. 通知单条已读、活动/动态目标定位、好友申请通知的处理入口、管理员后台、
@@ -257,8 +262,9 @@ scrollTop 从 1541.5 变到 1181.5
 ## 建议下一步
 
 校园活动报名闭环、按用户点赞、好友申请、评论、实时通知、单条已读、动态目标
-跳转、好友申请通知的处理入口和真实仪表盘指标已经完成。下一步进入阶段四的
-安全、测试与交付准备。最新边界见
+跳转、好友申请通知的处理入口、真实仪表盘指标和签名 JWT 注销边界已经完成。
+下一步继续阶段四：将既有授权边界迁移到 Spring Security，再推进 Testcontainers
+和持续集成交付。最新边界见
 [`phase-two-activity-handoff.md`](phase-two-activity-handoff.md) 和
 [`resume-project-roadmap.md`](resume-project-roadmap.md)。
 
@@ -280,12 +286,13 @@ git reset --hard、git clean，也不要删除或清理未跟踪文件。
 
 当前功能稳定提交是 `98c2dad Add notification read and target actions`，已推送到
 GitHub `main`。可信基线、校园活动报名闭环、按用户点赞、好友申请、评论通知、
-社交通知实时推送、单条已读、动态目标跳转、好友申请通知处理入口和真实仪表盘
-指标已经完成。下一项进入安全、测试与交付准备；不要重做已完成链路。活动逻辑必须继续保留在独立领域模块，
+社交通知实时推送、单条已读、动态目标跳转、好友申请通知处理入口、真实仪表盘
+指标和签名 JWT 注销边界已经完成。下一项继续将授权迁移到 Spring Security，再做
+Testcontainers 与持续集成交付；不要重做已完成链路。活动逻辑必须继续保留在独立领域模块，
 不能塞进 `FeedService` 或 `AdminService`。
 
-当前静态资源版本是 `20260715-real-dashboard-metrics-v1`，本地验证地址是：
-http://127.0.0.1:5179/?v=20260715-real-dashboard-metrics-v1
+当前静态资源版本是 `20260715-signed-jwt-logout-v1`，本地验证地址是：
+http://127.0.0.1:5179/?v=20260715-signed-jwt-logout-v1
 
 当前保留的功能：
 - 管理员后台有“待审核内容”工作台，位于指标卡片下方、审计记录上方。
