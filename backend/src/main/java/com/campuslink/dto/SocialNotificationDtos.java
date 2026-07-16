@@ -20,4 +20,7 @@ public final class SocialNotificationDtos {
 
   public record NotificationSummary(List<NotificationView> items, int unreadCount) {
   }
+
+  public record PostTarget(Long postId) {
+  }
 }

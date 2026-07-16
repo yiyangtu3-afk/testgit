@@ -3,6 +3,7 @@ package com.campuslink.repository;
 import com.campuslink.entity.SocialNotificationEntity;
 import com.campuslink.mapper.SocialNotificationMapper;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
 
@@ -34,6 +35,12 @@ public class MyBatisSocialNotificationRepository implements SocialNotificationRe
   }
 
   @Override
+  public Optional<SocialNotificationEntity> findByIdForRecipient(
+      String recipientId, String notificationId) {
+    return Optional.ofNullable(mapper.findByIdForRecipient(recipientId, notificationId));
+  }
+
+  @Override
   public int countUnread(String recipientId) {
     return mapper.countUnread(recipientId);
   }
@@ -41,5 +48,10 @@ public class MyBatisSocialNotificationRepository implements SocialNotificationRe
   @Override
   public int markAllRead(String recipientId) {
     return mapper.markAllRead(recipientId);
+  }
+
+  @Override
+  public int markRead(String recipientId, String notificationId) {
+    return mapper.markRead(recipientId, notificationId);
   }
 }

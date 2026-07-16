@@ -13,4 +13,6 @@ public interface ActivityNotificationRepository {
   int countUnread(String recipientId);
 
   int markAllRead(String recipientId);
+
+  int markRead(String recipientId, String notificationId);
 }

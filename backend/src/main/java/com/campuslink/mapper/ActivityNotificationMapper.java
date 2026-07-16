@@ -56,4 +56,12 @@ public interface ActivityNotificationMapper {
       where recipient_id = #{recipientId} and read_at is null
       """)
   int markAllRead(@Param("recipientId") String recipientId);
+
+  @Update("""
+      update activity_notifications set read_at = current_timestamp(6)
+      where id = #{notificationId} and recipient_id = #{recipientId} and read_at is null
+      """)
+  int markRead(
+      @Param("recipientId") String recipientId,
+      @Param("notificationId") String notificationId);
 }

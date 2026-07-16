@@ -149,6 +149,9 @@ public interface FeedMapper {
       """)
   PostEntity findPost(@Param("postId") String postId);
 
+  @Select("select cast(post_id as signed) from comments where id = #{commentId}")
+  Long findPostIdByCommentId(@Param("commentId") String commentId);
+
   @Select("select author_id from posts where id = #{postId}")
   String findPostAuthorId(@Param("postId") String postId);
 

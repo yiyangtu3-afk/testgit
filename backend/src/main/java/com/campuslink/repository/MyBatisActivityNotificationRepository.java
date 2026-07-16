@@ -37,4 +37,9 @@ public class MyBatisActivityNotificationRepository implements ActivityNotificati
   public int markAllRead(String recipientId) {
     return mapper.markAllRead(recipientId);
   }
+
+  @Override
+  public int markRead(String recipientId, String notificationId) {
+    return mapper.markRead(recipientId, notificationId);
+  }
 }

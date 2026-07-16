@@ -47,6 +47,17 @@ public interface SocialNotificationMapper {
   List<SocialNotificationEntity> findForRecipient(@Param("recipientId") String recipientId);
 
   @Select("""
+      select id, recipient_id as recipientId, actor_id as actorId,
+             target_id as targetId, notification_type as type, title, body,
+             read_at as readAt, created_at as createdAt
+      from social_notifications
+      where recipient_id = #{recipientId} and id = #{notificationId}
+      """)
+  SocialNotificationEntity findByIdForRecipient(
+      @Param("recipientId") String recipientId,
+      @Param("notificationId") String notificationId);
+
+  @Select("""
       select count(*) from social_notifications
       where recipient_id = #{recipientId} and read_at is null
       """)
@@ -57,4 +68,12 @@ public interface SocialNotificationMapper {
       where recipient_id = #{recipientId} and read_at is null
       """)
   int markAllRead(@Param("recipientId") String recipientId);
+
+  @Update("""
+      update social_notifications set read_at = current_timestamp(6)
+      where id = #{notificationId} and recipient_id = #{recipientId} and read_at is null
+      """)
+  int markRead(
+      @Param("recipientId") String recipientId,
+      @Param("notificationId") String notificationId);
 }

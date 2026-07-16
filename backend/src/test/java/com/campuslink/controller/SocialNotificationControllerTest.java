@@ -1,5 +1,6 @@
 package com.campuslink.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -8,10 +9,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.campuslink.config.GlobalExceptionHandler;
 import com.campuslink.entity.DemoEntities.UserEntity;
 import com.campuslink.repository.AuthSessionRepository;
+import com.campuslink.repository.FeedRepository;
 import com.campuslink.repository.UserRepository;
 import com.campuslink.service.AuthTokenService;
 import com.campuslink.service.SocialNotificationService;
+import com.campuslink.service.SocialNotificationTargetService;
 import com.campuslink.support.InMemorySocialNotificationRepository;
+import java.lang.reflect.Proxy;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,8 +48,16 @@ class SocialNotificationControllerTest {
       public void updatePresence(String userId, String presence) { }
     };
     var service = new SocialNotificationService(notifications);
+    FeedRepository feed = (FeedRepository) Proxy.newProxyInstance(
+        getClass().getClassLoader(),
+        new Class<?>[] { FeedRepository.class },
+        (proxy, method, arguments) -> "findPostIdByCommentId".equals(method.getName())
+            ? Optional.of(42L)
+            : Optional.empty());
     mockMvc = MockMvcBuilders.standaloneSetup(new SocialNotificationController(
-            service, new AuthTokenService(sessions, users)))
+            service,
+            new SocialNotificationTargetService(notifications, feed),
+            new AuthTokenService(sessions, users)))
         .setControllerAdvice(new GlobalExceptionHandler())
         .build();
   }
@@ -78,5 +90,43 @@ class SocialNotificationControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.unreadCount").value(0))
         .andExpect(jsonPath("$.items[0].read").value(true));
+  }
+
+  @Test
+  void authenticatedAuthorMarksOnlyOneSocialNotificationRead() throws Exception {
+    var first = notifications.create("u-author", "u-other", "1", "social.post.liked",
+        "动态收到新点赞", "周同学赞了你的动态。");
+    notifications.create("u-author", "u-other", "2", "social.post.liked",
+        "动态收到新点赞", "周同学赞了你的另一条动态。");
+
+    mockMvc.perform(post("/api/social-notifications/{notificationId}/read", first.id())
+            .header("Authorization", "Bearer author-token"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.unreadCount").value(1))
+        .andExpect(jsonPath("$.items[?(@.id == '" + first.id() + "')].read").value(true));
+  }
+
+  @Test
+  void authenticatedAuthorResolvesCommentNotificationToItsPost() throws Exception {
+    var notification = notifications.create("u-author", "u-other", "12", "social.post.commented",
+        "动态收到新评论", "周同学评论了你的动态。");
+
+    mockMvc.perform(get("/api/social-notifications/{notificationId}/post-target", notification.id())
+            .header("Authorization", "Bearer author-token"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.postId").value(42));
+  }
+
+  @Test
+  void authenticatedAuthorCannotMarkAnotherUsersSocialNotificationRead() throws Exception {
+    var otherNotification = notifications.create("u-other", "u-author", "1",
+        "social.post.liked", "动态收到新点赞", "林一赞了其他账号的动态。");
+
+    mockMvc.perform(post("/api/social-notifications/{notificationId}/read", otherNotification.id())
+            .header("Authorization", "Bearer author-token"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.unreadCount").value(0));
+
+    assertThat(notifications.findForRecipient("u-other").getFirst().readAt()).isNull();
   }
 }

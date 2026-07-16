@@ -5,6 +5,7 @@ import com.campuslink.repository.SocialNotificationRepository;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public final class InMemorySocialNotificationRepository implements SocialNotificationRepository {
 
@@ -40,6 +41,15 @@ public final class InMemorySocialNotificationRepository implements SocialNotific
   }
 
   @Override
+  public Optional<SocialNotificationEntity> findByIdForRecipient(
+      String recipientId, String notificationId) {
+    return notifications.stream()
+        .filter(notification -> notification.recipientId().equals(recipientId))
+        .filter(notification -> notification.id().equals(notificationId))
+        .findFirst();
+  }
+
+  @Override
   public int countUnread(String recipientId) {
     return (int) notifications.stream()
         .filter(notification -> notification.recipientId().equals(recipientId))
@@ -61,5 +71,22 @@ public final class InMemorySocialNotificationRepository implements SocialNotific
       }
     }
     return updated;
+  }
+
+  @Override
+  public int markRead(String recipientId, String notificationId) {
+    for (int index = 0; index < notifications.size(); index++) {
+      SocialNotificationEntity notification = notifications.get(index);
+      if (notification.id().equals(notificationId)
+          && notification.recipientId().equals(recipientId)
+          && notification.readAt() == null) {
+        notifications.set(index, new SocialNotificationEntity(
+            notification.id(), notification.recipientId(), notification.actorId(),
+            notification.targetId(), notification.type(), notification.title(), notification.body(),
+            LocalDateTime.now(), notification.createdAt()));
+        return 1;
+      }
+    }
+    return 0;
   }
 }

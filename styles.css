@@ -1059,7 +1059,7 @@ select:focus {
 .notification-card {
   position: relative;
   display: grid;
-  grid-template-columns: 12px minmax(0, 1fr) auto;
+  grid-template-columns: 12px minmax(0, 1fr) auto auto;
   align-items: start;
   gap: 16px;
   padding: 20px 22px;
@@ -1125,6 +1125,17 @@ select:focus {
   color: var(--muted);
   font-size: 10px;
   font-weight: 750;
+}
+
+.notification-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.notification-actions .small-button {
+  white-space: nowrap;
 }
 
 .notification-card--unread .notification-read-state {
@@ -1537,6 +1548,13 @@ select:focus {
   border: 1px solid var(--line);
   border-radius: 18px;
   background: var(--surface-strong);
+}
+
+.activity-card.is-notification-target,
+.activity-operation-card.is-notification-target,
+.feed-card--notification-target {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px rgba(20, 20, 22, 0.09), 0 12px 28px rgba(0, 0, 0, 0.08);
 }
 
 .activity-card-date {
@@ -2764,6 +2782,11 @@ select:focus {
   .notification-read-state {
     grid-column: 2;
     justify-self: start;
+  }
+
+  .notification-actions {
+    grid-column: 2;
+    justify-content: flex-start;
   }
 
   .activity-field--wide {

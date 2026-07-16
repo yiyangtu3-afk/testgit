@@ -42,6 +42,11 @@ public class MyBatisFeedRepository implements FeedRepository {
   }
 
   @Override
+  public Optional<Long> findPostIdByCommentId(Long commentId) {
+    return Optional.ofNullable(feedMapper.findPostIdByCommentId(String.valueOf(commentId)));
+  }
+
+  @Override
   public Optional<String> findPostAuthorId(Long postId) {
     return Optional.ofNullable(feedMapper.findPostAuthorId(String.valueOf(postId)));
   }

@@ -1,7 +1,7 @@
 import { state } from "../state.js";
-import { isActivityOrganizer } from "../utils/auth.js?v=20260715-social-realtime-v1";
-import { $ } from "../utils/dom.js?v=20260715-social-realtime-v1";
-import { escapeHtml } from "../utils/format.js?v=20260715-social-realtime-v1";
+import { isActivityOrganizer } from "../utils/auth.js?v=20260715-notification-actions-v1";
+import { $ } from "../utils/dom.js?v=20260715-notification-actions-v1";
+import { escapeHtml } from "../utils/format.js?v=20260715-notification-actions-v1";
 
 const activityStatusLabels = {
   draft: "需修改",
@@ -41,7 +41,7 @@ function managedActivityCard(activity) {
     ? `<p class="activity-rejection"><strong>拒绝原因：</strong>${escapeHtml(activity.reviewReason || "未填写")}</p>`
     : "";
   return `
-    <article class="activity-operation-card ${expanded ? "is-open" : ""}">
+    <article class="activity-operation-card ${expanded ? "is-open" : ""}${state.notificationActivityFocusId === activity.id ? " is-notification-target" : ""}" data-activity-id="${escapeHtml(activity.id)}">
       <div class="activity-operation-copy">
         <div class="activity-card-topline">
           <span>${escapeHtml(activity.category)}</span>

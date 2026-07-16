@@ -91,6 +91,12 @@ public class ActivityNotificationService {
     return summary(recipient);
   }
 
+  @Transactional
+  public NotificationSummary markRead(UserEntity recipient, String notificationId) {
+    notifications.markRead(recipient.id(), notificationId);
+    return summary(recipient);
+  }
+
   private void create(
       String recipientId, String activityId, String type, String title, String body) {
     ActivityNotificationEntity notification = notifications.create(

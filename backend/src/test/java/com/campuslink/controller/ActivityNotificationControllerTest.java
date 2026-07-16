@@ -1,5 +1,6 @@
 package com.campuslink.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -82,5 +83,32 @@ class ActivityNotificationControllerTest {
         .andExpect(jsonPath("$.items.length()").value(2))
         .andExpect(jsonPath("$.items[0].read").value(true))
         .andExpect(jsonPath("$.items[1].read").value(true));
+  }
+
+  @Test
+  void authenticatedUserMarksOnlyOneActivityNotificationRead() throws Exception {
+    var first = notifications.create("u-student", "activity-1", "activity.review.approved",
+        "活动已发布", "校园编程工作坊已通过审核。");
+    notifications.create("u-student", "activity-2", "activity.registration.registered",
+        "报名成功", "已为你保留名额。");
+
+    mockMvc.perform(post("/api/activity-notifications/{notificationId}/read", first.id())
+            .header("Authorization", "Bearer student-token"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.unreadCount").value(1))
+        .andExpect(jsonPath("$.items[?(@.id == '" + first.id() + "')].read").value(true));
+  }
+
+  @Test
+  void authenticatedUserCannotMarkAnotherUsersActivityNotificationRead() throws Exception {
+    var otherNotification = notifications.create("u-other", "activity-2",
+        "activity.registration.registered", "报名成功", "已为其他账号保留名额。");
+
+    mockMvc.perform(post("/api/activity-notifications/{notificationId}/read", otherNotification.id())
+            .header("Authorization", "Bearer student-token"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.unreadCount").value(0));
+
+    assertThat(notifications.findForRecipient("u-other").getFirst().readAt()).isNull();
   }
 }

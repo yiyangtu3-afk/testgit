@@ -18,7 +18,7 @@ Open the local demo in a browser:
 ```
 
 Then visit
-`http://127.0.0.1:5179/?v=20260715-social-realtime-v1`.
+`http://127.0.0.1:5179/?v=20260715-notification-actions-v1`.
 
 The demo supports these flows:
 
@@ -54,7 +54,8 @@ The demo supports these flows:
   comment notification when another user submits a comment for review; that
   comment remains outside the public feed until moderation approves it. The
   notification rail combines unread counts, the unified notification center
-  supports marking activity and social items as read, and connected recipients
+  supports marking activity and social items as read, opens the related
+  activity or post with a visible target highlight, and connected recipients
   see new social notifications without refreshing.
 - Switch online and invisible presence states.
 - Publish a campus feed post.
@@ -143,7 +144,7 @@ rollback-safe history.
 The suite also includes MockMvc controller tests for the auth, users, friends,
 chat, feed, activity notifications, social notifications, and admin API
 boundaries, plus direct WebSocket handler tests for chat and recipient-only
-activity and social notification events. The full suite currently contains 122
+activity and social notification events. The full suite currently contains 127
 tests.
 Repository integration tests use transactions that roll back, so test rows
 don't remain in existing demo history. Chat repository coverage verifies
@@ -207,8 +208,8 @@ The frontend uses this module layout:
 - `activities`: Activity filters, list, registration, submission, organizer
   roster, check-in, CSV export, status, and admin review UI.
 - `notifications`: Unified activity and social notification rendering,
-  combined unread state, read-all interaction, and activity/social WebSocket
-  events.
+  combined unread state, individual read and target actions, and activity/social
+  WebSocket events.
 - `contacts`: Friend and contact workflows are wired through shared loaders and
   contact renderers.
 - `posts`: Campus feed rendering.
@@ -305,8 +306,11 @@ The current backend exposes these API paths:
 - `POST /api/activities/{activityId}/registrations/{registrationId}/check-in`
 - `GET /api/activity-notifications`
 - `POST /api/activity-notifications/read-all`
+- `POST /api/activity-notifications/{notificationId}/read`
 - `GET /api/social-notifications`
 - `POST /api/social-notifications/read-all`
+- `POST /api/social-notifications/{notificationId}/read`
+- `GET /api/social-notifications/{notificationId}/post-target`
 - `GET /api/admin/activities/pending`
 - `POST /api/admin/activities/{activityId}/reviews`
 - `GET /api/admin/metrics`

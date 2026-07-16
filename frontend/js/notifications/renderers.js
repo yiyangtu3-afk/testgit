@@ -1,6 +1,6 @@
-import { $ } from "../utils/dom.js?v=20260715-social-realtime-v1";
-import { escapeHtml } from "../utils/format.js?v=20260715-social-realtime-v1";
-import { activityNotificationState, socialNotificationState } from "./state.js?v=20260715-social-realtime-v1";
+import { $ } from "../utils/dom.js?v=20260715-notification-actions-v1";
+import { escapeHtml } from "../utils/format.js?v=20260715-notification-actions-v1";
+import { activityNotificationState, socialNotificationState } from "./state.js?v=20260715-notification-actions-v1";
 
 const typeLabels = {
   "activity.review.approved": "审核通过",
@@ -37,6 +37,7 @@ export function renderActivityNotifications() {
 
 function notificationCard(notification) {
   const typeLabel = typeLabels[notification.type] || "站内更新";
+  const isActivity = notification.type.startsWith("activity.");
   return `<article class="notification-card${notification.read ? "" : " notification-card--unread"}">
     <div class="notification-marker" aria-hidden="true"></div>
     <div class="notification-copy">
@@ -47,8 +48,24 @@ function notificationCard(notification) {
       <h3>${escapeHtml(notification.title)}</h3>
       <p>${escapeHtml(notification.body)}</p>
     </div>
+    <div class="notification-actions">
+      ${notificationActionMarkup(notification, isActivity)}
+    </div>
     <span class="notification-read-state">${notification.read ? "已读" : "未读"}</span>
   </article>`;
+}
+
+function notificationActionMarkup(notification, isActivity) {
+  const actions = [];
+  if (isActivity) {
+    actions.push(`<button class="small-button" type="button" data-open-activity-notification="${escapeHtml(notification.id)}" data-activity-id="${escapeHtml(notification.activityId)}">查看活动</button>`);
+  } else if (notification.type.startsWith("social.post.")) {
+    actions.push(`<button class="small-button" type="button" data-open-social-notification="${escapeHtml(notification.id)}">查看动态</button>`);
+  }
+  if (!notification.read) {
+    actions.push(`<button class="small-button" type="button" data-mark-notification="${escapeHtml(notification.id)}" data-notification-kind="${isActivity ? "activity" : "social"}">标为已读</button>`);
+  }
+  return actions.join("");
 }
 
 function renderNotice(noticeState) {

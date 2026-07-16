@@ -1,5 +1,5 @@
 import { mockStore, reportRanges, state } from "../state.js";
-import { nowTime } from "../utils/dom.js?v=20260715-social-realtime-v1";
+import { nowTime } from "../utils/dom.js?v=20260715-notification-actions-v1";
 
 let mockAuditId = Date.now();
 let mockActivityId = Date.now();
@@ -691,6 +691,13 @@ export const mockApi = {
     });
     return this.activityNotifications();
   },
+  async markActivityNotificationRead(notificationId) {
+    const notification = mockStore.activityNotifications.find((item) => (
+      item.id === notificationId && item.recipientId === state.currentUser.id
+    ));
+    if (notification) notification.read = true;
+    return this.activityNotifications();
+  },
   async socialNotifications() {
     const items = mockStore.socialNotifications
       .filter((notification) => notification.recipientId === state.currentUser.id)
@@ -705,6 +712,29 @@ export const mockApi = {
       if (notification.recipientId === state.currentUser.id) notification.read = true;
     });
     return this.socialNotifications();
+  },
+  async markSocialNotificationRead(notificationId) {
+    const notification = mockStore.socialNotifications.find((item) => (
+      item.id === notificationId && item.recipientId === state.currentUser.id
+    ));
+    if (notification) notification.read = true;
+    return this.socialNotifications();
+  },
+  async socialNotificationPostTarget(notificationId) {
+    const notification = mockStore.socialNotifications.find((item) => (
+      item.id === notificationId && item.recipientId === state.currentUser.id
+    ));
+    if (!notification || !notification.type.startsWith("social.post.")) {
+      throw new Error("该通知未关联动态");
+    }
+    if (notification.type === "social.post.liked") {
+      return { postId: Number(notification.targetId) };
+    }
+    const post = Object.entries(mockStore.comments).find(([, comments]) => (
+      comments.some((comment) => String(comment.id) === String(notification.targetId))
+    ));
+    if (!post) throw new Error("关联动态不存在");
+    return { postId: Number(post[0]) };
   },
   async metrics() {
     const pendingModeration = mockStore.moderationItems.filter((item) => item.status === "pending").length;

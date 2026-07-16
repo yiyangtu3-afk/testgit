@@ -1,9 +1,9 @@
 import { state } from "../state.js";
-import { isActivityOrganizer, isAdminUser, isStudentUser } from "../utils/auth.js?v=20260715-social-realtime-v1";
-import { $ } from "../utils/dom.js?v=20260715-social-realtime-v1";
-import { escapeHtml } from "../utils/format.js?v=20260715-social-realtime-v1";
-import { activityFilterState } from "./filters.js?v=20260715-social-realtime-v1";
-import { renderActivityOperations } from "./operations-renderer.js?v=20260715-social-realtime-v1";
+import { isActivityOrganizer, isAdminUser, isStudentUser } from "../utils/auth.js?v=20260715-notification-actions-v1";
+import { $ } from "../utils/dom.js?v=20260715-notification-actions-v1";
+import { escapeHtml } from "../utils/format.js?v=20260715-notification-actions-v1";
+import { activityFilterState } from "./filters.js?v=20260715-notification-actions-v1";
+import { renderActivityOperations } from "./operations-renderer.js?v=20260715-notification-actions-v1";
 
 const statusLabels = {
   draft: "需修改",
@@ -101,7 +101,7 @@ function activityCard(activity, showReview = false) {
     ? activityRegistrationMarkup(activity, registration)
     : "";
   return `
-    <article class="activity-card activity-card--${escapeHtml(activity.status)}">
+    <article class="activity-card activity-card--${escapeHtml(activity.status)}${state.notificationActivityFocusId === activity.id ? " is-notification-target" : ""}" data-activity-id="${escapeHtml(activity.id)}">
       <div class="activity-card-date" aria-label="活动日期">
         <strong>${escapeHtml(datePart(activity.startsAt, "day"))}</strong>
         <span>${escapeHtml(datePart(activity.startsAt, "month"))}</span>

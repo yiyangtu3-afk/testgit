@@ -92,6 +92,12 @@ public class SocialNotificationService {
     return summary(recipientId);
   }
 
+  @Transactional
+  public NotificationSummary markRead(String recipientId, String notificationId) {
+    notifications.markRead(recipientId, notificationId);
+    return summary(recipientId);
+  }
+
   private void create(
       String recipientId,
       String actorId,

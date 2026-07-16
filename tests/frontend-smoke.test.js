@@ -253,6 +253,33 @@ function runSocialNotificationRealtimeCheck() {
   }
 }
 
+function runMockNotificationActionWorkflowCheck() {
+  const script = [
+    'const { state, mockStore } = await import("./frontend/js/state.js");',
+    'const { mockApi } = await import("./frontend/js/api/mock-api.js");',
+    'state.currentUser = { id: "u-1001", name: "林一", role: "学生账号" };',
+    'mockStore.activityNotifications = [{ id: "activity-action-1", recipientId: "u-1001", activityId: "activity-1", type: "activity.registration.registered", title: "报名成功", body: "已为你保留名额。", read: false, createdAt: "2026-07-15T11:00:00" }];',
+    'mockStore.socialNotifications = [{ id: "social-action-1", recipientId: "u-1001", targetId: "1", type: "social.post.commented", title: "动态收到新评论", body: "陈老师评论了你的动态。", read: false, createdAt: "2026-07-15T11:01:00" }];',
+    'const activitySummary = await mockApi.markActivityNotificationRead("activity-action-1");',
+    'const socialSummary = await mockApi.markSocialNotificationRead("social-action-1");',
+    'const target = await mockApi.socialNotificationPostTarget("social-action-1");',
+    'process.stdout.write(JSON.stringify({ activityUnread: activitySummary.unreadCount, socialUnread: socialSummary.unreadCount, activityRead: activitySummary.items[0].read, socialRead: socialSummary.items[0].read, postId: target.postId }));'
+  ].join("\n");
+  try {
+    const output = JSON.parse(execFileSync(
+      process.execPath,
+      ["--input-type=module", "--eval", script],
+      { cwd: root, encoding: "utf8" }
+    ));
+    if (output.activityUnread !== 0 || output.socialUnread !== 0
+        || !output.activityRead || !output.socialRead || output.postId !== 1) {
+      failures.push("notification action workflow: expected individual reads and comment post target");
+    }
+  } catch (error) {
+    failures.push(`Notification action workflow check failed: ${String(error.message || error)}`);
+  }
+}
+
 function runMockActivityWorkflowCheck() {
   const script = [
     'const { state } = await import("./frontend/js/state.js");',
@@ -556,6 +583,7 @@ runFeedRendererEscapingCheck();
 runActivityRendererCheck();
 runActivityNotificationRendererCheck();
 runSocialNotificationRealtimeCheck();
+runMockNotificationActionWorkflowCheck();
 runMockActivityWorkflowCheck();
 runMockActivityFilterCheck();
 runMockActivityNotificationWorkflowCheck();
@@ -796,8 +824,8 @@ expectMatch(
   "admin layout: expected independent review workspaces to use normal document flow"
 );
 
-expectIncludes("html", "20260715-social-realtime-v1", "HTML escaping cache-busting version");
-expectIncludes("appEntry", "20260715-social-realtime-v1", "root app imports current HTML escaping module version");
+expectIncludes("html", "20260715-notification-actions-v1", "HTML escaping cache-busting version");
+expectIncludes("appEntry", "20260715-notification-actions-v1", "root app imports current HTML escaping module version");
 
 expectIncludes("js", "setRealtimeMode", "chat realtime status updater");
 expectIncludes("js", "HEARTBEAT_INTERVAL_MS", "chat realtime heartbeat interval");
@@ -897,6 +925,9 @@ expectMatch("js", /data-toggle-all-audit-events/, "audit event select-all toggle
 expectMatch("js", /new WebSocket\(`\$\{chatSocketUrl\(\)\}\?token=/, "chat websocket connection");
 expectIncludes("js", "activity.notification.created", "activity notification realtime event");
 expectMatch("js", /handleNotificationRealtimeEvent\(payload\)/, "notification realtime routing");
+expectIncludes("js", "data-mark-notification", "individual notification read action");
+expectIncludes("js", "socialNotificationPostTarget", "comment notification target adapter");
+expectIncludes("js", "is-notification-target", "notification target highlighting");
 expectIncludes("js", "message.withdrawn", "chat websocket withdraw event");
 expectMatch("js", /payload\.type === "message\.created" \|\| payload\.type === "message\.withdrawn"/, "chat websocket message event guard");
 expectMatch("js", /await refreshConversation\(payload\.peerId\)/, "chat websocket eager message refresh");

@@ -1,8 +1,8 @@
 import { API_BASE, state } from "../state.js";
-import { loadFriends, loadMessages, loadUnreadCounts } from "../loaders.js?v=20260715-social-realtime-v1";
-import { renderConversations } from "../ui/contacts-renderers.js?v=20260715-social-realtime-v1";
-import { setRealtimeMode } from "../ui/status.js?v=20260715-social-realtime-v1";
-import { handleNotificationRealtimeEvent } from "../notifications/realtime.js?v=20260715-social-realtime-v1";
+import { loadFriends, loadMessages, loadUnreadCounts } from "../loaders.js?v=20260715-notification-actions-v1";
+import { renderConversations } from "../ui/contacts-renderers.js?v=20260715-notification-actions-v1";
+import { setRealtimeMode } from "../ui/status.js?v=20260715-notification-actions-v1";
+import { handleNotificationRealtimeEvent } from "../notifications/realtime.js?v=20260715-notification-actions-v1";
 
 const HEARTBEAT_INTERVAL_MS = 15000;
 const HEARTBEAT_TIMEOUT_MS = 6000;

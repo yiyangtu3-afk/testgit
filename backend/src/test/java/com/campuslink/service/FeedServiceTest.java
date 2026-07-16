@@ -223,9 +223,16 @@ class FeedServiceTest {
     }
 
     @Override
-    public Optional<PostEntity> findPost(Long postId) {
-      return posts.stream().filter(post -> post.id().equals(postId)).findFirst();
-    }
+  public Optional<PostEntity> findPost(Long postId) {
+    return posts.stream().filter(post -> post.id().equals(postId)).findFirst();
+  }
+
+  @Override
+  public Optional<Long> findPostIdByCommentId(Long commentId) {
+    return comments.stream().anyMatch(comment -> comment.id().equals(commentId))
+        ? Optional.of(1L)
+        : Optional.empty();
+  }
 
     @Override
     public Optional<String> findPostAuthorId(Long postId) {

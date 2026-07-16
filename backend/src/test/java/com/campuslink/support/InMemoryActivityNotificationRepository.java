@@ -52,4 +52,21 @@ public final class InMemoryActivityNotificationRepository
     }
     return updated;
   }
+
+  @Override
+  public int markRead(String recipientId, String notificationId) {
+    for (int index = 0; index < notifications.size(); index++) {
+      ActivityNotificationEntity notification = notifications.get(index);
+      if (notification.id().equals(notificationId)
+          && notification.recipientId().equals(recipientId)
+          && notification.readAt() == null) {
+        notifications.set(index, new ActivityNotificationEntity(
+            notification.id(), notification.recipientId(), notification.activityId(),
+            notification.type(), notification.title(), notification.body(),
+            LocalDateTime.now(), notification.createdAt()));
+        return 1;
+      }
+    }
+    return 0;
+  }
 }

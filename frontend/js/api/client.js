@@ -1,6 +1,6 @@
 import { API_BASE, state } from "../state.js";
-import { setApiMode } from "../ui/status.js?v=20260715-social-realtime-v1";
-import { mockApi } from "./mock-api.js?v=20260715-social-realtime-v1";
+import { setApiMode } from "../ui/status.js?v=20260715-notification-actions-v1";
+import { mockApi } from "./mock-api.js?v=20260715-notification-actions-v1";
 
 class ApiUnavailableError extends Error {
   constructor(cause) {
@@ -267,6 +267,12 @@ export const api = {
       () => mockApi.markAllActivityNotificationsRead()
     );
   },
+  markActivityNotificationRead(notificationId) {
+    return withApi(
+      () => request(`/activity-notifications/${notificationId}/read`, { method: "POST" }),
+      () => mockApi.markActivityNotificationRead(notificationId)
+    );
+  },
   socialNotifications() {
     return withApi(
       () => request("/social-notifications"),
@@ -277,6 +283,18 @@ export const api = {
     return withApi(
       () => request("/social-notifications/read-all", { method: "POST" }),
       () => mockApi.markAllSocialNotificationsRead()
+    );
+  },
+  markSocialNotificationRead(notificationId) {
+    return withApi(
+      () => request(`/social-notifications/${notificationId}/read`, { method: "POST" }),
+      () => mockApi.markSocialNotificationRead(notificationId)
+    );
+  },
+  socialNotificationPostTarget(notificationId) {
+    return withApi(
+      () => request(`/social-notifications/${notificationId}/post-target`),
+      () => mockApi.socialNotificationPostTarget(notificationId)
     );
   },
   metrics() {

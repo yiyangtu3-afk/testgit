@@ -16,6 +16,8 @@ public interface FeedRepository {
 
   Optional<PostEntity> findPost(Long postId);
 
+  Optional<Long> findPostIdByCommentId(Long commentId);
+
   Optional<String> findPostAuthorId(Long postId);
 
   PostEntity savePost(String authorId, String body, String visibility);

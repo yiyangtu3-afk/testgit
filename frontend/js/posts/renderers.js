@@ -1,6 +1,6 @@
 import { state } from "../state.js";
-import { $ } from "../utils/dom.js?v=20260715-social-realtime-v1";
-import { escapeHtml } from "../utils/format.js?v=20260715-social-realtime-v1";
+import { $ } from "../utils/dom.js?v=20260715-notification-actions-v1";
+import { escapeHtml } from "../utils/format.js?v=20260715-notification-actions-v1";
 
 export function renderFeed() {
   const feedList = $("#feedList");
@@ -35,7 +35,7 @@ export function renderFeed() {
               .join("")
           : `<p class="empty-copy">还没有评论。</p>`;
         return `
-        <article class="feed-card">
+        <article class="feed-card${state.notificationPostFocusId === post.id ? " feed-card--notification-target" : ""}" data-post-id="${escapeHtml(post.id)}">
           <div class="feed-head">
             <span class="avatar">${escapeHtml((post.author || "?").slice(0, 1))}</span>
             <div>

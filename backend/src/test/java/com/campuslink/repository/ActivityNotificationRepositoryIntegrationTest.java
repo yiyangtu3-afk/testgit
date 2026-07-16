@@ -57,6 +57,18 @@ class ActivityNotificationRepositoryIntegrationTest {
             "activity.registration.promoted",
             "activity.registration.waitlisted");
 
+    var beforeMarkingRead = notifications.summary(waitlistedStudent);
+    var promoted = beforeMarkingRead.items().stream()
+        .filter(notification -> notification.type().equals("activity.registration.promoted"))
+        .findFirst()
+        .orElseThrow();
+    notifications.markRead(waitlistedStudent, promoted.id());
+    assertThat(notifications.summary(waitlistedStudent).unreadCount())
+        .isEqualTo(beforeMarkingRead.unreadCount() - 1);
+    assertThat(repository.findForRecipient(waitlistedStudent.id()).stream()
+        .filter(notification -> notification.id().equals(promoted.id())))
+        .allMatch(notification -> notification.readAt() != null);
+
     notifications.markAllRead(waitlistedStudent);
     assertThat(repository.findForRecipient(waitlistedStudent.id()).stream()
         .filter(notification -> notification.activityId().equals(published.id())))
