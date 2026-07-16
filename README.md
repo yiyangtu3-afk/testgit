@@ -202,10 +202,12 @@ GitHub Actions runs [the verification workflow](.github/workflows/verify.yml)
 on pushes and pull requests targeting `main`, and you can also start it
 manually. The workflow starts a disposable MySQL 8.4 service, runs
 `./script/run_frontend_check.sh` through Bash for GitHub's Linux runner, then
-runs the complete Maven suite with the explicit Byte Buddy agent. It also builds
-and starts the Compose demo, waits for its health checks, and calls the public
-health endpoint. It never connects to, resets, or seeds a developer's local
-MySQL history.
+imports `schema.sql` and `data.sql` into the disposable CI MySQL service, then
+runs the complete Maven suite with the explicit Byte Buddy agent. This makes
+rollback-safe MyBatis tests reproducible without enabling initialization against
+a developer's local history. It also builds and starts the Compose demo, waits
+for its health checks, and calls the public health endpoint. It never connects
+to, resets, or seeds a developer's local MySQL history.
 
 ## Local live API acceptance
 

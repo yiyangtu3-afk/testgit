@@ -48,6 +48,15 @@ jobs:
       - name: Run frontend checks
         run: bash ./script/run_frontend_check.sh
 
+      - name: Initialize the CI database
+        run: |
+          mysql_container="$(docker ps --filter 'ancestor=mysql:8.4' --format '{{.ID}}')"
+          test -n "$mysql_container"
+          docker exec -i "$mysql_container" mysql -ucampuslink -pcampuslink123 campuslink \
+            < backend/src/main/resources/schema.sql
+          docker exec -i "$mysql_container" mysql -ucampuslink -pcampuslink123 campuslink \
+            < backend/src/main/resources/data.sql
+
       - name: Run backend tests
         run: >-
           mvn -f backend/pom.xml
