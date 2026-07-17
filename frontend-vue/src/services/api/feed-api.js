@@ -1,0 +1,5 @@
+import { withApiFallback } from "./auth-api";
+export function createFeedApi({ http, mockFeed }) {
+  const call = (path, options, fallback) => withApiFallback(() => http.request(path, options), fallback);
+  return { feed: () => call("/api/feed", {}, () => mockFeed.feed()), personalPosts: () => call("/api/feed/personal-posts", {}, () => mockFeed.personalPosts()), publishPost: (body, visibility) => call("/api/feed", { method: "POST", body: JSON.stringify({ body, visibility }) }, () => mockFeed.publishPost(body, visibility)), updatePost: (id, body) => call(`/api/feed/personal-posts/${id}`, { method: "PATCH", body: JSON.stringify({ body }) }, () => mockFeed.updatePost(id, body)), deletePost: (id) => call(`/api/feed/personal-posts/${id}`, { method: "DELETE" }, () => mockFeed.deletePost(id)), like: (id) => call(`/api/feed/${id}/likes`, { method: "POST" }, () => mockFeed.like(id)), comments: (id) => call(`/api/feed/${id}/comments`, {}, () => mockFeed.comments(id)), comment: (id, body) => call(`/api/feed/${id}/comments`, { method: "POST", body: JSON.stringify({ body }) }, () => mockFeed.comment(id, body)) };
+}
