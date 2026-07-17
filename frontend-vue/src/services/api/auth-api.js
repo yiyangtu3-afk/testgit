@@ -1,36 +1,37 @@
 import { ApiUnavailableError } from "./errors";
 
-export function createAuthApi({ http, mockAuth }) {
-  async function withFallback(liveCall, mockCall) {
+export async function withApiFallback(liveCall, mockCall) {
     try {
       return { mode: "api", data: await liveCall() };
     } catch (error) {
       if (!(error instanceof ApiUnavailableError)) throw error;
       return { mode: "mock", data: await mockCall() };
     }
-  }
+}
+
+export function createAuthApi({ http, mockAuth }) {
 
   return {
     createCode(phone) {
-      return withFallback(
+      return withApiFallback(
         () => http.request("/api/auth/code", { method: "POST", body: JSON.stringify({ phone }) }),
         () => mockAuth.createCode(phone)
       );
     },
     login(phone, code) {
-      return withFallback(
+      return withApiFallback(
         () => http.request("/api/auth/login", { method: "POST", body: JSON.stringify({ phone, code }) }),
         () => mockAuth.login(phone, code)
       );
     },
     demoLogin(userId) {
-      return withFallback(
+      return withApiFallback(
         () => http.request("/api/auth/demo-login", { method: "POST", body: JSON.stringify({ userId }) }),
         () => mockAuth.demoLogin(userId)
       );
     },
     logout() {
-      return withFallback(
+      return withApiFallback(
         () => http.request("/api/auth/logout", { method: "POST" }),
         () => mockAuth.logout()
       );

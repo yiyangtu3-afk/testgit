@@ -68,6 +68,9 @@ export function createSessionStore({ api, storage = browserStorage() } = {}) {
 }
 
 export const useSessionStore = defineStore("session", () => {
-  const api = createApi({ getToken: () => browserStorage()?.getItem(TOKEN_KEY) || "" });
+  const api = createApi({
+    getToken: () => browserStorage()?.getItem(TOKEN_KEY) || "",
+    getUser: () => JSON.parse(browserStorage()?.getItem(USER_KEY) || "null")
+  });
   return createSessionStore({ api })();
 });
