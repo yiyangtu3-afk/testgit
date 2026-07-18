@@ -36,7 +36,9 @@ chat, the campus feed, activities, and the unified notification desk. The
 notification desk merges persisted activity and social summaries, supports
 single or bulk read actions, resolves protected post and friend-request
 targets, and receives events through the authenticated chat WebSocket. The
-root static frontend remains the functional baseline and default demo entry.
+final Vue slice adds the administrator dashboard, moderation, activity review,
+audit cleanup, and CSV report generation. The root static frontend remains the
+functional baseline and default demo entry until an explicit parity decision.
 See
 [`docs/vue-migration-handoff.md`](docs/vue-migration-handoff.md) for the
 completed slice and next boundary.

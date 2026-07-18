@@ -14,13 +14,13 @@
       <article class="migration-card is-complete"><span>04</span><h3>校园动态</h3><p>公开流、个人动态、点赞、评论和审核反馈。</p><strong>已完成</strong></article>
       <article class="migration-card is-complete"><span>05</span><h3>活动闭环</h3><p>筛选、报名、候补、名单和签到。</p><strong>已完成</strong></article>
       <article class="migration-card is-complete"><span>06</span><h3>通知中心</h3><p>未读状态、目标跳转与实时通知。</p><strong>已完成</strong></article>
-      <article class="migration-card"><span>07</span><h3>管理员控制台</h3><p>指标、审核、审计和报表仍保留在旧版。</p><strong>下一项</strong></article>
+      <article class="migration-card is-complete"><span>07</span><h3>管理员控制台</h3><p>指标、审核、审计和报表复用现有权限边界。</p><strong>已完成</strong></article>
     </div>
 
     <section class="baseline-note">
       <p class="eyebrow">FUNCTIONAL BASELINE</p>
-      <p><strong>旧版仍是当前完整 Demo。</strong> 管理员控制台尚未迁移；在新旧功能逐项
-        等价并得到明确确认前，请继续从根目录静态入口演示完整流程。</p>
+      <p><strong>旧版仍是当前完整 Demo。</strong> 在新旧功能逐项等价并得到明确确认前，
+        请继续从根目录静态入口演示完整流程。</p>
     </section>
   </section>
 </template>

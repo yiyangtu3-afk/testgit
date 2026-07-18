@@ -88,8 +88,8 @@ async function logout() {
 
       <div class="rail-footer">
         <p>迁移进度</p>
-        <strong>06 / 07</strong>
-        <span>通知已迁移</span>
+        <strong>07 / 07</strong>
+        <span>领域迁移完成</span>
       </div>
     </aside>
 

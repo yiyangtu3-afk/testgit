@@ -9,6 +9,8 @@ import { createActivityApi } from "./activity-api";
 import { createMockActivityApi } from "./mock-activity";
 import { createNotificationApi } from "./notification-api";
 import { createMockNotificationApi } from "./mock-notifications";
+import { createAdminApi } from "./admin-api";
+import { createMockAdminApi } from "./mock-admin";
 
 export function createApi({ getToken, getUser, fetchImpl } = {}) {
   const http = createHttpClient({ getToken, fetchImpl });
@@ -17,6 +19,7 @@ export function createApi({ getToken, getUser, fetchImpl } = {}) {
     ...createSocialApi({ http, mockSocial: createMockSocialApi(getUser || (() => null)) }),
     ...createFeedApi({ http, mockFeed: createMockFeedApi(getUser || (() => null)) }),
     ...createActivityApi({ http, mockActivity: createMockActivityApi(getUser || (() => null)) }),
-    ...createNotificationApi({ http, mockNotifications: createMockNotificationApi() })
+    ...createNotificationApi({ http, mockNotifications: createMockNotificationApi() }),
+    ...createAdminApi({ http, mockAdmin: createMockAdminApi(getUser || (() => null)) })
   };
 }

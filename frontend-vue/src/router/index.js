@@ -6,6 +6,7 @@ import ContactsChatView from "../features/chat/ContactsChatView.vue";
 import FeedView from "../features/feed/FeedView.vue";
 import ActivitiesView from "../features/activities/ActivitiesView.vue";
 import NotificationsView from "../features/notifications/NotificationsView.vue";
+import AdminView from "../features/admin/AdminView.vue";
 
 export default createRouter({
   history: createWebHistory(),
@@ -19,7 +20,8 @@ export default createRouter({
         { path: "contacts", name: "contacts", component: ContactsChatView },
         { path: "feed", name: "feed", component: FeedView },
         { path: "activities", name: "activities", component: ActivitiesView },
-        { path: "notifications", name: "notifications", component: NotificationsView }
+        { path: "notifications", name: "notifications", component: NotificationsView },
+        { path: "admin", name: "admin", component: AdminView }
       ]
     }
   ]
