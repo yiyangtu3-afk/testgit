@@ -43,11 +43,23 @@ button:disabled { cursor: wait; opacity: .55; }
 .shell-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.6rem; }
 .shell-header .eyebrow { margin: 0 0 .3rem; color: #94752a; }
 .shell-header h1 { margin: 0; font-size: clamp(2rem, 4vw, 3.8rem); line-height: .95; letter-spacing: -.05em; }
-.account-cluster { display: flex; align-items: center; gap: .65rem; color: #406056; }
+.account-cluster { position: relative; display: flex; align-items: center; gap: .65rem; color: #406056; }
 .account-cluster strong, .account-cluster span { display: block; font-size: .82rem; }
 .account-cluster span { margin-top: .12rem; color: #72857a; font-size: .7rem; }
 .account-avatar { display: grid; width: 2.25rem; height: 2.25rem; place-items: center; border-radius: 50%; background: #274f40; color: #fff; }
 .text-button { margin-left: .6rem; padding: .25rem; border: 0; border-bottom: 1px solid #a9b8ad; background: transparent; color: #4d665c; font-size: .75rem; }
+.account-actions { display: flex; gap: .15rem; }
+.account-actions .text-button { margin-left: 0; }
+.account-switcher { position: absolute; z-index: 5; top: calc(100% + .7rem); right: 0; display: grid; min-width: 215px; overflow: hidden; padding: .45rem; border: 1px solid #b8c8bb; background: #fbfcf8; box-shadow: 0 14px 34px rgba(28, 58, 45, .16); }
+.account-switcher > p:first-child { margin: .35rem .45rem .5rem; color: #75887c; font: .62rem/1 ui-monospace, monospace; letter-spacing: .08em; text-transform: uppercase; }
+.account-switcher button { display: grid; grid-template-columns: 1.9rem minmax(0, 1fr); column-gap: .55rem; align-items: center; width: 100%; padding: .55rem .5rem; border: 0; background: transparent; color: #244d3d; text-align: left; }
+.account-switcher button:hover:not(:disabled) { background: #e7efe7; }
+.account-switcher button:disabled { cursor: default; opacity: 1; }
+.account-switcher button span { grid-row: span 2; display: grid; width: 1.85rem; height: 1.85rem; place-items: center; border-radius: 50%; background: #dce8de; color: #21513f; font-size: .76rem; }
+.account-switcher button.is-current span { background: #214f3e; color: #fff; }
+.account-switcher button strong { font-size: .79rem; }
+.account-switcher button small { color: #788c80; font-size: .66rem; }
+.account-switcher-error { margin: .45rem; color: #a24f36; font-size: .72rem; line-height: 1.45; }
 .status-notice { display: flex; gap: .7rem; margin-bottom: 1.5rem; padding: .82rem 1rem; border-left: 3px solid #628c77; background: #dce8df; color: #244e3d; }
 .status-notice.is-info { border-left-color: #9b7a2c; background: #f1ead5; color: #624d1a; }
 .status-orb { width: .55rem; height: .55rem; margin-top: .37rem; flex: 0 0 auto; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 4px rgba(36, 78, 61, .1); }

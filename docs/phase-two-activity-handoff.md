@@ -382,6 +382,10 @@ http://127.0.0.1:8080
     生产包，以 Nginx 代理相对 `/api`、`/ws` 并支持 History 路由刷新。根目录
     `index.html`、`app.js`、`styles.css` 与 `frontend/js/` 保持不变；旧版仍可由
     `run_legacy_frontend_demo.sh` 在 5179 提供，并在 Compose 的 `/legacy/` 使用。
+46. 2026 年 7 月 17 日新增 Vue 工作台内的演示账号切换：账号区域不再要求先退出，
+    可直接切换学生、教师与管理员。会话 store 先取得目标 demo 会话、撤销旧 token 的服务端
+    会话，再持久化新 token 并刷新工作台，避免上一账号的 Pinia 领域状态残留；撤销失败时
+    当前账号保持不变。Vue 测试 26 项、生产构建和旧版前端检查通过。
 
 ## 下一项工作
 

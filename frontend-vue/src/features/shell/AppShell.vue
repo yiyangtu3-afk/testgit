@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { RouterLink, RouterView, useRouter } from "vue-router";
 import { useSessionStore } from "../../stores/session";
 import { useAppShellStore } from "../../stores/app-shell";
@@ -15,6 +15,13 @@ const shell = useAppShellStore();
 const chat = useChatStore();
 const notifications = useNotificationStore();
 const source = computed(() => session.mode || "unknown");
+const accountMenuOpen = ref(false);
+const switchError = ref("");
+const demoAccounts = [
+  { id: "u-1001", name: "林一", role: "学生账号" },
+  { id: "u-2001", name: "陈老师", role: "教师账号" },
+  { id: "u-2003", name: "教务管理员", role: "管理员" }
+];
 let realtime;
 
 onMounted(() => {
@@ -53,6 +60,17 @@ async function logout() {
   } finally {
     realtime?.disconnect();
     router.replace("/");
+  }
+}
+
+async function switchAccount(userId) {
+  if (userId === session.user?.id || session.busy) return;
+  switchError.value = "";
+  try {
+    await session.switchDemoAccount(userId);
+    window.location.assign("/workspace");
+  } catch (error) {
+    switchError.value = error.message || "账号切换失败，当前会话未改变。";
   }
 }
 </script>
@@ -99,7 +117,32 @@ async function logout() {
         <div class="account-cluster">
           <div class="account-avatar">{{ session.user?.name?.slice(0, 1) || "访" }}</div>
           <div><strong>{{ session.user?.name || "未登录" }}</strong><span>{{ session.user?.role || "" }}</span></div>
-          <button type="button" class="text-button" @click="logout">退出</button>
+          <div class="account-actions">
+            <button
+              type="button"
+              class="text-button"
+              :aria-expanded="accountMenuOpen"
+              aria-controls="account-switcher"
+              @click="accountMenuOpen = !accountMenuOpen"
+            >切换账号</button>
+            <button type="button" class="text-button" @click="logout">退出</button>
+          </div>
+          <section v-if="accountMenuOpen" id="account-switcher" class="account-switcher" aria-label="切换演示账号">
+            <p>切换演示身份</p>
+            <button
+              v-for="account in demoAccounts"
+              :key="account.id"
+              type="button"
+              :class="{ 'is-current': account.id === session.user?.id }"
+              :disabled="account.id === session.user?.id || session.busy"
+              @click="switchAccount(account.id)"
+            >
+              <span>{{ account.name.slice(0, 1) }}</span>
+              <strong>{{ account.name }}</strong>
+              <small>{{ account.id === session.user?.id ? "当前账号" : account.role }}</small>
+            </button>
+            <p v-if="switchError" class="account-switcher-error" role="alert">{{ switchError }}</p>
+          </section>
         </div>
       </header>
 

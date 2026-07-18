@@ -3,8 +3,8 @@
     <div class="workspace-intro">
       <p class="eyebrow">MIGRATION CONTROL</p>
       <h2>先让每一次跳转都有清晰的边界。</h2>
-      <p>这不是业务首页。它是新旧前端并行期间的应用壳，用来统一承载导航、身份和
-        数据来源状态。</p>
+      <p>Vue 已是默认演示入口。这里统一承载导航、身份和数据来源状态，也支持随时
+        切换演示账号。</p>
     </div>
 
     <div class="migration-grid">
@@ -19,8 +19,8 @@
 
     <section class="baseline-note">
       <p class="eyebrow">FUNCTIONAL BASELINE</p>
-      <p><strong>旧版仍是当前完整 Demo。</strong> 在新旧功能逐项等价并得到明确确认前，
-        请继续从根目录静态入口演示完整流程。</p>
+      <p><strong>旧版仍保留为回退演示。</strong> 需要核对旧版行为时，可从登录页的
+        **打开旧版演示** 入口进入。</p>
     </section>
   </section>
 </template>

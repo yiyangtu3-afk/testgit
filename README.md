@@ -64,8 +64,13 @@ The demo supports these flows:
 - Log in with the student account; the login button gets a demo verification
   code automatically when the code field is empty.
 - Enter the workspace instantly through the quick demo button.
-- Switch demo accounts or log out to return to the login screen. In Java API
-  mode, logging out also revokes the server-side session.
+- Use **切换账号** next to the current identity to move directly between the
+  student, teacher, and administrator demo accounts without first leaving the
+  workspace. The client obtains the next demo session, revokes the current
+  server-side session, replaces its saved token, and refreshes the workspace so
+  no prior account data remains in the page state.
+- Log out to return to the login screen. In Java API mode, logging out also
+  revokes the server-side session.
 - Search demo users and send a friend request. The recipient receives a
   persistent **新的好友申请** notification.
 - Switch demo accounts to review incoming friend requests and accept or reject

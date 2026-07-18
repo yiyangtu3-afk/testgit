@@ -53,6 +53,20 @@ export function createSessionStore({ api, storage = browserStorage() } = {}) {
       },
       login: (phone, code) => run(() => api.login(phone, code), "登录成功"),
       demoLogin: (userId = "u-1001") => run(() => api.demoLogin(userId), "已进入演示"),
+      async switchDemoAccount(userId) {
+        const previousToken = token.value;
+        busy.value = true;
+        try {
+          const nextSession = await api.demoLogin(userId);
+          if (previousToken) await api.logout();
+          mode.value = nextSession.mode;
+          saveSession(nextSession.data);
+          feedback.value = `已切换为 ${nextSession.data.user.name}（${nextSession.mode === "api" ? "Java API" : "Mock"}）。`;
+          return nextSession.data;
+        } finally {
+          busy.value = false;
+        }
+      },
       async logout() {
         try {
           const result = await api.logout();
