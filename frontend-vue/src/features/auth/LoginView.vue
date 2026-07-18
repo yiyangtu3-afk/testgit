@@ -7,7 +7,9 @@ const router = useRouter();
 const session = useSessionStore();
 const phone = ref("13800000001");
 const code = ref("");
+const name = ref("");
 const error = ref("");
+const registrationMode = ref(false);
 const legacyHref = location.port === "5180"
   ? "http://127.0.0.1:5179/?v=20260715-signed-jwt-logout-v1"
   : "/legacy/";
@@ -29,14 +31,28 @@ async function demoLogin() {
   try { await session.demoLogin(); router.push("/workspace"); }
   catch (reason) { error.value = reason.message || "进入演示失败。"; }
 }
+function toggleRegistration() {
+  error.value = "";
+  registrationMode.value = !registrationMode.value;
+}
+async function submit() {
+  if (registrationMode.value) {
+    error.value = "";
+    try { await session.register(name.value.trim(), phone.value.trim(), code.value.trim()); router.push("/workspace"); }
+    catch (reason) { error.value = reason.message || "注册失败。"; }
+    return;
+  }
+  await login();
+}
 </script>
 
 <template>
   <main class="auth-page">
     <section class="brand-panel"><p class="eyebrow">CAMPUSLINK / VUE</p><h1>连接正在<br />发生的校园。</h1><p>Vue 工作台已覆盖社交、活动、通知和管理员领域；旧静态版仍可作为回退演示使用。</p><a class="legacy-link" :href="legacyHref">打开旧版演示</a></section>
-    <section class="login-panel"><p class="eyebrow">IDENTITY GATE</p><h2>欢迎回来</h2><p class="muted">使用验证码登录，或直接进入演示账号。</p>
-      <form @submit.prevent="login"><label>手机号<input v-model="phone" inputmode="numeric" maxlength="11" /></label><label>验证码<div class="code-row"><input v-model="code" maxlength="6" /><button type="button" class="secondary" :disabled="session.busy" @click="requestCode">获取验证码</button></div></label><button class="primary" :disabled="session.busy">{{ session.busy ? "处理中…" : "验证码登录" }}</button></form>
-      <button class="demo" :disabled="session.busy" @click="demoLogin">快速进入演示</button><p class="status" :class="{ error }">{{ error || session.feedback || "等待登录" }}</p><p class="mode">数据来源：{{ session.mode === "api" ? "Java API" : session.mode === "mock" ? "Mock（仅 API 不可达时）" : "尚未连接" }}</p>
+    <section class="login-panel"><p class="eyebrow">IDENTITY GATE</p><h2>{{ registrationMode ? "创建学生账号" : "欢迎回来" }}</h2><p class="muted">{{ registrationMode ? "验证手机号后，信息会保存到 CampusLink。" : "使用验证码登录，或直接进入演示账号。" }}</p>
+      <form @submit.prevent="submit"><label v-if="registrationMode">姓名<input v-model="name" maxlength="80" autocomplete="name" /></label><label>手机号<input v-model="phone" inputmode="numeric" maxlength="11" autocomplete="tel" /></label><label>验证码<div class="code-row"><input v-model="code" maxlength="6" /><button type="button" class="secondary" :disabled="session.busy" @click="requestCode">获取验证码</button></div></label><button class="primary" :disabled="session.busy">{{ session.busy ? "处理中…" : registrationMode ? "注册并进入工作台" : "验证码登录" }}</button></form>
+      <button type="button" class="register-toggle" :disabled="session.busy" @click="toggleRegistration">{{ registrationMode ? "已有账号？返回登录" : "没有账号？注册学生账号" }}</button>
+      <button v-if="!registrationMode" class="demo" :disabled="session.busy" @click="demoLogin">快速进入演示</button><p class="status" :class="{ error }">{{ error || session.feedback || "等待登录" }}</p><p class="mode">数据来源：{{ session.mode === "api" ? "Java API" : session.mode === "mock" ? "Mock（仅 API 不可达时）" : "尚未连接" }}</p>
     </section>
   </main>
 </template>

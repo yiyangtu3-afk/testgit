@@ -58,6 +58,21 @@ class AuthControllerTest {
   }
 
   @Test
+  void registerCreatesAndSignsInStudent() throws Exception {
+    when(authService.register("新同学", "13900000001", "123456")).thenReturn(new LoginResponse(
+        "registered-jwt-token",
+        new CurrentUser("u-new", "新同学", "学生账号", "13900000001")));
+
+    mockMvc.perform(post("/api/auth/register")
+            .contentType("application/json")
+            .content("{\"name\":\"新同学\",\"phone\":\"13900000001\",\"code\":\"123456\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.token").value("registered-jwt-token"))
+        .andExpect(jsonPath("$.user.name").value("新同学"))
+        .andExpect(jsonPath("$.user.role").value("学生账号"));
+  }
+
+  @Test
   void demoLoginReturnsSelectedDemoUser() throws Exception {
     when(authService.demoLogin("u-2003")).thenReturn(new LoginResponse(
         "demo-admin-token",

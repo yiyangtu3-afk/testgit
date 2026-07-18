@@ -20,6 +20,13 @@ export function createMockAuthApi() {
       };
       return { token: `mock-jwt-token-${user.id}`, user };
     },
+    async register(name, phone, code) {
+      if (codes.get(phone) !== code) throw new Error("验证码不正确");
+      if (accounts.some((account) => account.phone === phone)) throw new Error("该手机号已注册，请直接登录");
+      const user = { id: `u-${Date.now()}`, name: name.trim(), role: "学生账号", phone };
+      accounts.push(user);
+      return { token: `mock-jwt-token-${user.id}`, user };
+    },
     async demoLogin(userId) {
       const user = accounts.find((account) => account.id === userId) || accounts[0];
       return { token: `mock-jwt-token-${user.id}`, user };

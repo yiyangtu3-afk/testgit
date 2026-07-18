@@ -6,7 +6,9 @@ import com.campuslink.dto.DemoDtos.LoginResponse;
 import com.campuslink.entity.DemoEntities.UserEntity;
 import com.campuslink.repository.UserRepository;
 import com.campuslink.repository.VerificationCodeRepository;
+import java.util.UUID;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AuthService {
@@ -43,6 +45,27 @@ public class AuthService {
     UserEntity user = userRepository.findByPhone(phone)
         .orElseThrow(() -> new IllegalArgumentException("手机号未注册演示账号"));
     auditService.addAudit("用户", phone + " 登录成功");
+    return loginResponseFor(user);
+  }
+
+  @Transactional
+  public LoginResponse register(String name, String phone, String code) {
+    boolean matched = verificationCodeRepository.findByPhone(phone)
+        .filter(code::equals)
+        .isPresent();
+    if (!matched) {
+      throw new IllegalArgumentException("验证码不正确");
+    }
+    if (userRepository.findByPhone(phone).isPresent()) {
+      throw new ConflictException("该手机号已注册，请直接登录");
+    }
+    UserEntity user = userRepository.saveNewUser(new UserEntity(
+        UUID.randomUUID().toString().replace("-", ""),
+        name.trim(),
+        "学生账号",
+        phone,
+        "online"));
+    auditService.addAudit("用户", user.name() + " 注册成功");
     return loginResponseFor(user);
   }
 

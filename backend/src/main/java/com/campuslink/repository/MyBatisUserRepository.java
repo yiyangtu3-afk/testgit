@@ -31,6 +31,13 @@ public class MyBatisUserRepository implements UserRepository {
   }
 
   @Override
+  public UserEntity saveNewUser(UserEntity user) {
+    String avatar = user.name().substring(0, 1);
+    userMapper.insert(user.id(), user.name(), user.phone(), user.role(), avatar, user.status());
+    return user;
+  }
+
+  @Override
   public void updatePresence(String userId, String presence) {
     userMapper.updatePresence(userId, presence);
   }

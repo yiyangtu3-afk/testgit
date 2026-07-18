@@ -5,6 +5,7 @@ import com.campuslink.dto.DemoDtos.DemoLoginRequest;
 import com.campuslink.dto.DemoDtos.LoginRequest;
 import com.campuslink.dto.DemoDtos.LoginResponse;
 import com.campuslink.dto.DemoDtos.PhoneRequest;
+import com.campuslink.dto.DemoDtos.RegisterRequest;
 import com.campuslink.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,6 +32,11 @@ public class AuthController {
   @PostMapping("/login")
   public LoginResponse login(@Valid @RequestBody LoginRequest request) {
     return authService.login(request.phone(), request.code());
+  }
+
+  @PostMapping("/register")
+  public LoginResponse register(@Valid @RequestBody RegisterRequest request) {
+    return authService.register(request.name(), request.phone(), request.code());
   }
 
   @PostMapping("/demo-login")

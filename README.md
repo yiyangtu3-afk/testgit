@@ -63,6 +63,10 @@ The demo supports these flows:
 
 - Log in with the student account; the login button gets a demo verification
   code automatically when the code field is empty.
+- Create a student account from the Vue login page with a name, phone number,
+  and verification code. When the Java API is available, the account is stored
+  in MySQL, audited, and signed in immediately. The same phone number can't be
+  registered twice.
 - Enter the workspace instantly through the quick demo button.
 - Use **切换账号** next to the current identity to move directly between the
   student, teacher, and administrator demo accounts without first leaving the
@@ -144,7 +148,10 @@ frontend sends that token in the `Authorization` header, and protected live API
 requests resolve the current user from the verified token and matching MySQL
 session instead of trusting query parameters or request body user IDs. The
 quick demo entry and account switcher use `POST /api/auth/demo-login` to issue
-the token for the selected demo account. JWTs expire after one hour by default;
+the token for the selected demo account. Student registration uses
+`POST /api/auth/register` after the same phone verification-code check, creates
+an `online` student record, adds an audit event, and issues a JWT in one
+transaction. JWTs expire after one hour by default;
 set `CAMPUSLINK_JWT_SECRET` before using a non-demo environment. The matching
 MySQL `auth_sessions` row supports server-side revocation: `POST /api/auth/logout`
 deletes only the presented session, so that token cannot authorize another
@@ -401,6 +408,7 @@ The current backend exposes these API paths:
 
 - `POST /api/auth/code`
 - `POST /api/auth/login`
+- `POST /api/auth/register`
 - `POST /api/auth/demo-login`
 - `GET /api/users`
 - `GET /api/friends`

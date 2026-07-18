@@ -12,5 +12,9 @@ public interface UserRepository {
 
   Optional<UserEntity> findByPhone(String phone);
 
+  default UserEntity saveNewUser(UserEntity user) {
+    throw new UnsupportedOperationException("当前用户仓库不支持注册");
+  }
+
   void updatePresence(String userId, String presence);
 }

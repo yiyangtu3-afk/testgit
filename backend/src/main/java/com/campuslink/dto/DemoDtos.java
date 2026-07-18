@@ -2,6 +2,7 @@ package com.campuslink.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 import java.util.Map;
 
@@ -15,6 +16,12 @@ public final class DemoDtos {
   }
 
   public record LoginRequest(
+      @Pattern(regexp = "^1\\d{10}$", message = "手机号格式不正确") String phone,
+      @NotBlank String code) {
+  }
+
+  public record RegisterRequest(
+      @NotBlank(message = "姓名不能为空") @Size(max = 80, message = "姓名不能超过 80 个字符") String name,
       @Pattern(regexp = "^1\\d{10}$", message = "手机号格式不正确") String phone,
       @NotBlank String code) {
   }

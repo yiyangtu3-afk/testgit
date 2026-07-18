@@ -43,4 +43,18 @@ describe("session store", () => {
     expect(session.token.value).toBe("student-jwt");
     expect(session.user.value.id).toBe("u-1001");
   });
+
+  it("persists the account returned after registration", async () => {
+    const api = {
+      register: vi.fn().mockResolvedValue({ mode: "api", data: { token: "registered-jwt", user: { id: "u-new", name: "新同学" } } })
+    };
+    const session = createSessionStore({ api, storage: storage() })();
+
+    await session.register("新同学", "13900000001", "123456");
+
+    expect(api.register).toHaveBeenCalledWith("新同学", "13900000001", "123456");
+    expect(session.isAuthenticated.value).toBe(true);
+    expect(session.token.value).toBe("registered-jwt");
+    expect(session.feedback.value).toContain("注册成功");
+  });
 });

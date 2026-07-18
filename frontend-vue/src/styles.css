@@ -22,6 +22,8 @@ input { width: 100%; padding: .78rem; border: 1px solid #bdc9bf; border-radius: 
 .primary { width: 100%; background: #173f33; color: #fff; }
 .secondary { background: #dce5db; color: #173f33; font-size: .82rem; }
 .demo { width: 100%; margin-top: .7rem; border: 1px solid #90a99b; background: transparent; color: #173f33; }
+.register-toggle { display: block; margin: 1rem auto 0; padding: .2rem; border: 0; border-bottom: 1px solid #a9b8ad; background: transparent; color: #436557; font-size: .78rem; }
+.register-toggle:hover { color: #173f33; }
 button:disabled { cursor: wait; opacity: .55; }
 .status { min-height: 1.5rem; margin: 1.25rem 0 .3rem; color: #40705d; }
 .status.error { color: #af3d37; }

@@ -9,6 +9,7 @@ import com.campuslink.entity.DemoEntities.UserEntity;
 import com.campuslink.repository.AuthSessionRepository;
 import com.campuslink.repository.UserRepository;
 import com.campuslink.repository.VerificationCodeRepository;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,6 +67,27 @@ class AuthServiceTest {
         .hasMessage("验证码不正确");
   }
 
+  @Test
+  void registerPersistsStudentAndIssuesSessionAfterMatchingCode() {
+    verificationCodes.save("13900000001", "123456");
+
+    LoginResponse response = authService.register("新同学", "13900000001", "123456");
+
+    assertThat(response.user().name()).isEqualTo("新同学");
+    assertThat(response.user().role()).isEqualTo("学生账号");
+    assertThat(users.findByPhone("13900000001")).containsInstanceOf(UserEntity.class);
+    assertThat(authSessions.findUserIdByToken(response.token())).contains(response.user().id());
+  }
+
+  @Test
+  void registerRejectsExistingPhoneWithoutCreatingAnotherUser() {
+    verificationCodes.save("13800000001", "123456");
+
+    assertThatThrownBy(() -> authService.register("重复账号", "13800000001", "123456"))
+        .isInstanceOf(ConflictException.class)
+        .hasMessage("该手机号已注册，请直接登录");
+  }
+
   private static final class InMemoryAuthSessionRepository implements AuthSessionRepository {
 
     private final Map<String, String> tokenUsers = new HashMap<>();
@@ -101,7 +123,7 @@ class AuthServiceTest {
     private final List<UserEntity> users;
 
     private InMemoryUserRepository(List<UserEntity> users) {
-      this.users = users;
+      this.users = new ArrayList<>(users);
     }
 
     @Override
@@ -117,6 +139,12 @@ class AuthServiceTest {
     @Override
     public Optional<UserEntity> findByPhone(String phone) {
       return users.stream().filter(user -> user.phone().equals(phone)).findFirst();
+    }
+
+    @Override
+    public UserEntity saveNewUser(UserEntity user) {
+      users.add(user);
+      return user;
     }
 
     @Override
