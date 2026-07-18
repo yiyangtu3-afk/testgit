@@ -402,6 +402,9 @@ http://127.0.0.1:8080
     `/api/activities/{name}/registrations`，旧 token 会得到 `401`“请先登录”。认证动作改为
     明确的 `registerStudent`，活动报名继续使用 `register`；组合 API 测试同时覆盖两条路径的
     URL 和 bearer-token 边界。
+50. 2026 年 7 月 18 日补齐 Vue 工作台的演示身份菜单：新增现有 MySQL 种子账号
+    **王社长**（`u-2004`、社团负责人），并同步补齐 Mock 账号。该身份可直接进入活动创建与
+    运营流程；Mock API 测试确认其 `demo-login` 返回正确的社团负责人角色。
 
 ## 下一项工作
 

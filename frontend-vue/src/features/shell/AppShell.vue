@@ -20,6 +20,7 @@ const switchError = ref("");
 const demoAccounts = [
   { id: "u-1001", name: "林一", role: "学生账号" },
   { id: "u-2001", name: "陈老师", role: "教师账号" },
+  { id: "u-2004", name: "王社长", role: "社团负责人" },
   { id: "u-2003", name: "教务管理员", role: "管理员" }
 ];
 let realtime;

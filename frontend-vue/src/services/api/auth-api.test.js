@@ -55,4 +55,9 @@ describe("authentication API boundary", () => {
     expect(registered.user).toMatchObject({ name: "Mock 新同学", role: "学生账号" });
     expect(loggedIn.user.id).toBe(registered.user.id);
   });
+  it("offers the club leader as a Mock demo identity", async () => {
+    const session = await createMockAuthApi().demoLogin("u-2004");
+
+    expect(session.user).toMatchObject({ id: "u-2004", name: "王社长", role: "社团负责人" });
+  });
 });
