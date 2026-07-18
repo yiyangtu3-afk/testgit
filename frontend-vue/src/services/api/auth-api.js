@@ -24,7 +24,7 @@ export function createAuthApi({ http, mockAuth }) {
         () => mockAuth.login(phone, code)
       );
     },
-    register(name, phone, code) {
+    registerStudent(name, phone, code) {
       return withApiFallback(
         () => http.request("/api/auth/register", { method: "POST", anonymous: true, body: JSON.stringify({ name, phone, code }) }),
         () => mockAuth.register(name, phone, code)

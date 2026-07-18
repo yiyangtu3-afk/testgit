@@ -52,7 +52,10 @@ export function createSessionStore({ api, storage = browserStorage() } = {}) {
         });
       },
       login: (phone, code) => run(() => api.login(phone, code), "登录成功"),
-      register: (name, phone, code) => run(() => api.register(name, phone, code), "注册成功，欢迎加入 CampusLink"),
+      register: (name, phone, code) => run(
+        () => api.registerStudent(name, phone, code),
+        "注册成功，欢迎加入 CampusLink"
+      ),
       demoLogin: (userId = "u-1001") => run(() => api.demoLogin(userId), "已进入演示"),
       async switchDemoAccount(userId) {
         const previousToken = token.value;

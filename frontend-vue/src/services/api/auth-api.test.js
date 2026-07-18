@@ -21,7 +21,7 @@ describe("authentication API boundary", () => {
 
     await api.createCode("13900000001");
     await api.login("13900000001", "123456");
-    await api.register("新同学", "13900000001", "123456");
+    await api.registerStudent("新同学", "13900000001", "123456");
     await api.demoLogin("u-1001");
 
     expect(fetchImpl.mock.calls).toHaveLength(4);
@@ -37,7 +37,7 @@ describe("authentication API boundary", () => {
     const mockAuth = { register: vi.fn() };
     const api = createAuthApi({ http: createHttpClient({ fetchImpl: vi.fn().mockResolvedValue(response(409, { message: "该手机号已注册" })) }), mockAuth });
 
-    await expect(api.register("新同学", "13900000001", "123456")).rejects.toMatchObject({ name: ApiHttpError.name, status: 409 });
+    await expect(api.registerStudent("新同学", "13900000001", "123456")).rejects.toMatchObject({ name: ApiHttpError.name, status: 409 });
     expect(mockAuth.register).not.toHaveBeenCalled();
   });
   it("uses mock only when the API is unreachable", async () => {

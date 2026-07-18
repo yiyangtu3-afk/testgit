@@ -66,7 +66,9 @@ The demo supports these flows:
 - Create a student account from the Vue login page with a name, phone number,
   and verification code. When the Java API is available, the account is stored
   in MySQL, audited, and signed in immediately. The same phone number can't be
-  registered twice.
+  registered twice. Student registration and activity registration use distinct
+  client API actions, so an expired saved session can't send registration to a
+  protected activity endpoint.
 - Enter the workspace instantly through the quick demo button.
 - Use **切换账号** next to the current identity to move directly between the
   student, teacher, and administrator demo accounts without first leaving the
