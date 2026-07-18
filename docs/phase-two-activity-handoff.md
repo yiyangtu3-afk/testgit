@@ -377,6 +377,11 @@ http://127.0.0.1:8080
     随后创建一条待审评论，管理员从内容审核队列删除该记录；本轮新生成的一条审计记录也已
     删除，并确认 `today` 报表返回正确范围、CSV 文件名与指标。除这些业务动作外，未重置、
     重种或清理本机 MySQL 历史数据。
+45. 2026 年 7 月 17 日在逐项等价验收和用户确认后切换 Vue 默认入口：
+    `run_frontend_demo.sh` 启动 5180 上的 Vue Vite 服务；Compose 在 5179 构建并服务 Vue
+    生产包，以 Nginx 代理相对 `/api`、`/ws` 并支持 History 路由刷新。根目录
+    `index.html`、`app.js`、`styles.css` 与 `frontend/js/` 保持不变；旧版仍可由
+    `run_legacy_frontend_demo.sh` 在 5179 提供，并在 Compose 的 `/legacy/` 使用。
 
 ## 下一项工作
 
@@ -388,9 +393,9 @@ token 确认当前收件人，并验证 `social.friend.requested`、通知发送
 Spring Security 安全链、GitHub Actions 验证、Docker Compose 演示与 Testcontainers
 MySQL 集成测试以及 Actuator/Micrometer 可观察性已经落地。CI
 在临时 MySQL 8.4 服务上运行完整测试，并在 Docker runner 构建和启动 Compose
-演示；本机 MySQL 历史数据不受影响。Vue 第一认证切片已完成，旧静态前端继续作为
-可演示基线。Vue 已完成认证、应用壳、联系人与聊天、动态、活动、通知和管理员切片；
-下一项是新旧逐项等价验收。不要切换默认入口或删除旧版。后续 AI 辅助审核仍需重新评估，并继续保持
+演示；本机 MySQL 历史数据不受影响。Vue 已完成认证、应用壳、联系人与聊天、动态、活动、
+通知和管理员切片，并在用户确认后成为默认入口；旧静态前端继续作为可演示回退与回归基线。
+后续 AI 辅助审核仍需重新评估，并继续保持
 真实 API 错误不回退 Mock、跨表写入事务和可回滚 MyBatis 集成测试。
 
 ## 必读文件

@@ -1,7 +1,7 @@
 # CampusLink demo
 
 This repository contains a verifiable full-stack demo for a campus social
-application. It combines a static browser frontend with a Spring Boot and
+application. It combines a Vue browser frontend with a Spring Boot and
 MySQL backend for authentication, social interaction, real-time chat, content
 moderation, and administrative workflows.
 
@@ -17,7 +17,8 @@ Open the local demo in a browser:
 ./script/run_frontend_demo.sh
 ```
 
-Then visit
+Then visit `http://127.0.0.1:5180`. The preserved static baseline remains
+available through `./script/run_legacy_frontend_demo.sh` at
 `http://127.0.0.1:5179/?v=20260715-signed-jwt-logout-v1`.
 
 ## Current handoff
@@ -30,15 +31,17 @@ accept or reject controls are shown. Start from
 [`docs/new-chat-handoff-2026-07-08.md`](docs/new-chat-handoff-2026-07-08.md)
 for the complete handoff, constraints, and local verification commands.
 
-The Vue 3 migration is underway in the separate `frontend-vue/` application.
+The Vue 3 migration is complete in the separate `frontend-vue/` application.
 The completed slices cover authentication, the application shell, contacts and
 chat, the campus feed, activities, and the unified notification desk. The
 notification desk merges persisted activity and social summaries, supports
 single or bulk read actions, resolves protected post and friend-request
 targets, and receives events through the authenticated chat WebSocket. The
 final Vue slice adds the administrator dashboard, moderation, activity review,
-audit cleanup, and CSV report generation. The root static frontend remains the
-functional baseline and default demo entry until an explicit parity decision.
+audit cleanup, and CSV report generation. After the completed parity checks,
+Vue is the default demo entry. The root static frontend is preserved intact as
+a legacy fallback at `/legacy/` in Compose and through its dedicated local
+script.
 The Vue feed comment panel keeps its own open state and comment draft state, so
 opening a post's comments now displays the loaded comment list and composer.
 Teachers and club leaders can also submit activities from the Vue activity page;
@@ -185,7 +188,7 @@ npm run build
 npm run dev
 ```
 
-Vite listens on `http://127.0.0.1:5180` and proxies `/api` and `/ws` to the
+The default local demo starts Vite on `http://127.0.0.1:5180` and proxies `/api` and `/ws` to the
 local Java API. The Vue client uses relative proxy paths. It shows Java API
 mode when the API responds and uses Mock only when the request cannot reach the
 API; HTTP `4xx` and `5xx` responses remain visible failures.
@@ -245,9 +248,11 @@ volume, not your local MySQL server.
 docker compose up --build
 ```
 
-Open `http://127.0.0.1:5179/?v=20260715-signed-jwt-logout-v1`, then confirm the
-API with `curl -fsS http://127.0.0.1:8080/api/database/health`. The Compose
-guide explains startup, health checks, persistence, and safe shutdown in
+Open `http://127.0.0.1:5179`, then confirm the API with
+`curl -fsS http://127.0.0.1:8080/api/database/health`. Compose serves the Vue
+build by default, proxies `/api` and `/ws` to the API service, and retains the
+static fallback at `http://127.0.0.1:5179/legacy/`. The Compose guide explains
+startup, health checks, persistence, and safe shutdown in
 [`docs/compose-demo.md`](docs/compose-demo.md). The repository doesn't publish
 a public online demo URL without explicit authorization.
 

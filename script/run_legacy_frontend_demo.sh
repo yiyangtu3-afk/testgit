@@ -2,6 +2,6 @@
 set -e
 
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-cd "$PROJECT_DIR/frontend-vue"
+cd "$PROJECT_DIR"
 
-npm run dev
+python3 -m http.server 5179

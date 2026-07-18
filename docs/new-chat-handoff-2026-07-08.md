@@ -20,11 +20,14 @@
 20260715-signed-jwt-logout-v1
 ```
 
-当前本地验证地址是：
+Vue 默认本地验证地址是：
 
 ```text
-http://127.0.0.1:5179/?v=20260715-signed-jwt-logout-v1
+http://127.0.0.1:5180
 ```
+
+保留的静态基线地址是 `http://127.0.0.1:5179/?v=20260715-signed-jwt-logout-v1`；使用
+`./script/run_legacy_frontend_demo.sh` 启动。
 
 当前功能稳定提交为 `98c2dad Add notification read and target actions`，已推送到
 `main`。后续仅文档交接提交可能比该提交更新；开始功能开发时，以此提交的行为和
@@ -32,13 +35,15 @@ http://127.0.0.1:5179/?v=20260715-signed-jwt-logout-v1
 
 ## Vue 迁移交接
 
-Vue 3 与 Vite 的渐进迁移已经完成第一认证切片，而不是 AI 审核。根目录静态入口和
-`frontend/js/` 仍是唯一功能基线与默认入口，不能删除或替换。独立
+Vue 3 与 Vite 的渐进迁移已经完成，且在逐项 live 等价验收和用户明确确认后成为默认
+入口。根目录静态入口和 `frontend/js/` 仍完整保留，作为回退演示和旧版回归基线，不能
+删除、移动、替换或重写。独立
 `frontend-vue/` 已提供 Vite 代理、Vue Router、Pinia 会话、统一 API/Mock 边界、
 验证码登录、演示登录、注销页面，以及应用壳、导航与统一状态提示。Vue 联系人切片
 包含好友搜索、申请处理、会话分页、附件、未读数与认证 WebSocket；动态和活动切片也
 已迁移。Vue 通知切片按时间合并活动和社交通知，支持已读、受限目标跳转和实时事件去重。
-Vue 管理员切片提供指标、活动与内容审核、审计记录和 CSV 报表；旧版仍是默认入口。
+Vue 管理员切片提供指标、活动与内容审核、审计记录和 CSV 报表。Compose 默认服务 Vue，
+并在 `/legacy/` 保留旧版。
 完整边界、目录设计、验证方式和下一切片见
 [`vue-migration-handoff.md`](vue-migration-handoff.md)。
 
