@@ -41,6 +41,9 @@ audit cleanup, and CSV report generation. The root static frontend remains the
 functional baseline and default demo entry until an explicit parity decision.
 The Vue feed comment panel keeps its own open state and comment draft state, so
 opening a post's comments now displays the loaded comment list and composer.
+Teachers and club leaders can also submit activities from the Vue activity page;
+the organizer identity remains derived from the bearer token and the activity
+stays pending until an administrator approves it.
 See
 [`docs/vue-migration-handoff.md`](docs/vue-migration-handoff.md) for the
 completed slice and next boundary.
