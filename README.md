@@ -39,6 +39,8 @@ targets, and receives events through the authenticated chat WebSocket. The
 final Vue slice adds the administrator dashboard, moderation, activity review,
 audit cleanup, and CSV report generation. The root static frontend remains the
 functional baseline and default demo entry until an explicit parity decision.
+The Vue feed comment panel keeps its own open state and comment draft state, so
+opening a post's comments now displays the loaded comment list and composer.
 See
 [`docs/vue-migration-handoff.md`](docs/vue-migration-handoff.md) for the
 completed slice and next boundary.
