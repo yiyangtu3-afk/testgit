@@ -44,6 +44,8 @@ opening a post's comments now displays the loaded comment list and composer.
 Teachers and club leaders can also submit activities from the Vue activity page;
 the organizer identity remains derived from the bearer token and the activity
 stays pending until an administrator approves it.
+Live parity checks now cover chat send, recipient unread counts, read clearing,
+withdrawal, and the `message.created` and `message.withdrawn` WebSocket events.
 See
 [`docs/vue-migration-handoff.md`](docs/vue-migration-handoff.md) for the
 completed slice and next boundary.
