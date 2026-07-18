@@ -49,6 +49,9 @@ withdrawal, and the `message.created` and `message.withdrawn` WebSocket events.
 They also cover single notification reads, social notification delivery and
 target resolution; the combined read-all behavior is covered by the Vue store
 test without changing historical notification state.
+Live administrator parity checks cover an activity rejection with its retained
+reason, content approval, pending-content and audit deletion, plus daily report
+generation through the Vue proxy.
 See
 [`docs/vue-migration-handoff.md`](docs/vue-migration-handoff.md) for the
 completed slice and next boundary.
