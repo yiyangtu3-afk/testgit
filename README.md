@@ -90,6 +90,8 @@ The demo supports these flows:
   conversation's complete history or changing its read state.
 - Open a conversation and load its most recent message page. When history is
   available, load earlier messages without losing the current scroll position.
+  The message history scrolls inside the conversation panel, while the composer
+  remains available at the bottom of that panel.
 - Keep unread counts in the API database so they survive a page refresh and
   account switch.
 - Render user-generated messages, posts, comments, audit events, and review
