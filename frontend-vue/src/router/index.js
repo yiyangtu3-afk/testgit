@@ -5,6 +5,7 @@ import AppShell from "../features/shell/AppShell.vue";
 import ContactsChatView from "../features/chat/ContactsChatView.vue";
 import FeedView from "../features/feed/FeedView.vue";
 import ActivitiesView from "../features/activities/ActivitiesView.vue";
+import NotificationsView from "../features/notifications/NotificationsView.vue";
 
 export default createRouter({
   history: createWebHistory(),
@@ -17,7 +18,8 @@ export default createRouter({
         { path: "", name: "workspace", component: WorkspaceView },
         { path: "contacts", name: "contacts", component: ContactsChatView },
         { path: "feed", name: "feed", component: FeedView },
-        { path: "activities", name: "activities", component: ActivitiesView }
+        { path: "activities", name: "activities", component: ActivitiesView },
+        { path: "notifications", name: "notifications", component: NotificationsView }
       ]
     }
   ]

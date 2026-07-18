@@ -35,10 +35,10 @@ http://127.0.0.1:5179/?v=20260715-signed-jwt-logout-v1
 Vue 3 与 Vite 的渐进迁移已经完成第一认证切片，而不是 AI 审核。根目录静态入口和
 `frontend/js/` 仍是唯一功能基线与默认入口，不能删除或替换。独立
 `frontend-vue/` 已提供 Vite 代理、Vue Router、Pinia 会话、统一 API/Mock 边界、
-验证码登录、演示登录、注销页面，以及应用壳、导航与统一状态提示。聊天、动态、
-活动、通知与管理员页面尚未迁移。Vue 联系人切片现在包含好友搜索、申请处理、
-会话分页、附件、未读数与认证 WebSocket。
-Vue 动态切片现在包含公开动态、个人动态、点赞、评论和审核状态反馈。
+验证码登录、演示登录、注销页面，以及应用壳、导航与统一状态提示。Vue 联系人切片
+包含好友搜索、申请处理、会话分页、附件、未读数与认证 WebSocket；动态和活动切片也
+已迁移。Vue 通知切片按时间合并活动和社交通知，支持已读、受限目标跳转和实时事件去重。
+管理员页面尚未迁移。
 完整边界、目录设计、验证方式和下一切片见
 [`vue-migration-handoff.md`](vue-migration-handoff.md)。
 
@@ -286,8 +286,8 @@ MySQL 集成测试已经完成。Compose
 并检查该演示的健康接口。Testcontainers 使用临时 `mysql:8.4` 容器覆盖 MyBatis、
 事务和权限边界，且不会访问本机 MySQL 历史数据。Actuator/Micrometer 已提供公开的
 状态摘要、管理员受保护的核心指标和请求诊断。阶段四已完成；Vue 第一认证切片也已
-完成，旧入口继续并行保留。Vue 应用壳、导航和统一状态提示也已完成；下一项是
-联系人、好友申请和聊天。最新边界见
+完成，旧入口继续并行保留。Vue 应用壳、联系人与聊天、动态、活动和通知切片也已
+完成；下一项是管理员模块。最新边界见
 [`vue-migration-handoff.md`](vue-migration-handoff.md)、
 [`phase-two-activity-handoff.md`](phase-two-activity-handoff.md) 和
 [`resume-project-roadmap.md`](resume-project-roadmap.md)。
@@ -360,7 +360,8 @@ http://127.0.0.1:5179/?v=20260715-signed-jwt-logout-v1
   `/Applications/IntelliJ IDEA.app/Contents/plugins/maven/lib/maven3/bin/mvn -f backend/pom.xml -DargLine=-javaagent:/Users/linus_k/.m2/repository/net/bytebuddy/byte-buddy-agent/1.17.5/byte-buddy-agent-1.17.5.jar test`；
   本机 Microsoft JDK 21 仍会输出 Byte Buddy 动态挂载兼容性警告，必须如实报告。
 - 每个验证完成的小阶段单独提交并推送 `main`，同时更新 README 和交接文档。
-- 本轮已完成 Vue 脚手架、Vite 代理、Vue Router、Pinia、认证和 API/Mock 边界。
-  不要替换根目录入口，不要删除或移动旧前端；下一切片迁移联系人、好友申请和聊天，
-  仍不要开始迁移动态、活动、通知或管理员页面。新旧应用必须能够并行启动和验证。
+- Vue 已完成脚手架、认证、应用壳、联系人与聊天、动态、活动和通知切片。通知复用
+  已认证 `/ws/chat` 连接，按通知 ID 去重，且 API `4xx`、`5xx` 仍不回退 Mock。不要
+  替换根目录入口或删除、移动旧前端；下一切片只迁移管理员模块。新旧应用必须继续并行
+  启动和验证。
 ```

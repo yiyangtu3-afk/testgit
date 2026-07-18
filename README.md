@@ -31,13 +31,13 @@ accept or reject controls are shown. Start from
 for the complete handoff, constraints, and local verification commands.
 
 The Vue 3 migration is underway in the separate `frontend-vue/` application.
-Its first slice provides the Vite proxy, Vue Router, Pinia session store, and
-the verification-code, demo-login, and logout loop. Its second slice adds the
-Vue application shell, navigation, and unified API/Mock status notice without
-migrating a business workspace. Its third slice migrates contacts, friend
-requests, direct conversations, paging, attachments, unread counts, and the
-authenticated chat WebSocket. The root static frontend remains the functional
-baseline and default demo entry. See
+The completed slices cover authentication, the application shell, contacts and
+chat, the campus feed, activities, and the unified notification desk. The
+notification desk merges persisted activity and social summaries, supports
+single or bulk read actions, resolves protected post and friend-request
+targets, and receives events through the authenticated chat WebSocket. The
+root static frontend remains the functional baseline and default demo entry.
+See
 [`docs/vue-migration-handoff.md`](docs/vue-migration-handoff.md) for the
 completed slice and next boundary.
 

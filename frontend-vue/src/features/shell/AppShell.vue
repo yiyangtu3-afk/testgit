@@ -1,19 +1,39 @@
 <script setup>
-import { computed, onMounted, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, watch } from "vue";
 import { RouterLink, RouterView, useRouter } from "vue-router";
 import { useSessionStore } from "../../stores/session";
 import { useAppShellStore } from "../../stores/app-shell";
 import { navigationItems } from "./navigation";
 import StatusNotice from "./StatusNotice.vue";
+import { useChatStore } from "../../stores/chat";
+import { useNotificationStore } from "../../stores/notifications";
+import { createChatRealtime } from "../../services/realtime/chat-realtime";
 
 const router = useRouter();
 const session = useSessionStore();
 const shell = useAppShellStore();
+const chat = useChatStore();
+const notifications = useNotificationStore();
 const source = computed(() => session.mode || "unknown");
+let realtime;
 
 onMounted(() => {
   if (!session.isAuthenticated) router.replace("/");
+  if (session.mode === "api") {
+    realtime = createChatRealtime({
+      token: () => session.token,
+      onMode: () => {},
+      onConversationEvent: async (peerId) => {
+        await chat.refreshLists();
+        if (peerId === chat.selectedId) await chat.loadMessages(peerId);
+      },
+      onNotificationEvent: (payload) => notifications.receive(payload)
+    });
+    realtime.connect();
+  }
 });
+
+onBeforeUnmount(() => realtime?.disconnect());
 
 watch(
   () => session.feedback,
@@ -31,6 +51,7 @@ async function logout() {
   try {
     await session.logout();
   } finally {
+    realtime?.disconnect();
     router.replace("/");
   }
 }
@@ -67,8 +88,8 @@ async function logout() {
 
       <div class="rail-footer">
         <p>迁移进度</p>
-        <strong>02 / 07</strong>
-        <span>应用壳已就绪</span>
+        <strong>06 / 07</strong>
+        <span>通知已迁移</span>
       </div>
     </aside>
 
