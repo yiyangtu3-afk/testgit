@@ -47,6 +47,9 @@ opening a post's comments now displays the loaded comment list and composer.
 Teachers and club leaders can also submit activities from the Vue activity page;
 the organizer identity remains derived from the bearer token and the activity
 stays pending until an administrator approves it.
+The workspace no longer repeats a persistent authentication-status banner above
+every page, keeping the main area available for the active feature. Page-level
+operation feedback remains in the feature that initiated it.
 Live parity checks now cover chat send, recipient unread counts, read clearing,
 withdrawal, and the `message.created` and `message.withdrawn` WebSocket events.
 They also cover single notification reads, social notification delivery and

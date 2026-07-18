@@ -1,10 +1,9 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { onBeforeUnmount, onMounted, ref } from "vue";
 import { RouterLink, RouterView, useRouter } from "vue-router";
 import { useSessionStore } from "../../stores/session";
 import { useAppShellStore } from "../../stores/app-shell";
 import { navigationItems } from "./navigation";
-import StatusNotice from "./StatusNotice.vue";
 import { useChatStore } from "../../stores/chat";
 import { useNotificationStore } from "../../stores/notifications";
 import { createChatRealtime } from "../../services/realtime/chat-realtime";
@@ -14,7 +13,6 @@ const session = useSessionStore();
 const shell = useAppShellStore();
 const chat = useChatStore();
 const notifications = useNotificationStore();
-const source = computed(() => session.mode || "unknown");
 const accountMenuOpen = ref(false);
 const switchError = ref("");
 const demoAccounts = [
@@ -42,14 +40,6 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => realtime?.disconnect());
-
-watch(
-  () => session.feedback,
-  (feedback) => {
-    if (feedback) shell.setNotice(feedback, session.mode === "mock" ? "info" : "success");
-  },
-  { immediate: true }
-);
 
 function explainPending(label) {
   shell.setNotice(`${label} 尚未迁移；请继续使用旧版功能基线。`, "info");
@@ -147,7 +137,6 @@ async function switchAccount(userId) {
         </div>
       </header>
 
-      <StatusNotice :mode="source" :notice="shell.notice" />
       <RouterView />
     </section>
   </main>
