@@ -13,4 +13,14 @@ describe("notification store", () => {
     expect(store.receive({ type: "social.notification.created", notification: { id: "s-1", title: "更新后的互动", read: false, createdAt: "2026-07-16T10:30:00" } })).toBe(true);
     expect(store.social.value).toHaveLength(1); expect(store.social.value[0].title).toBe("更新后的互动");
   });
+  it("marks activity and social summaries as read together", async () => {
+    const api = {
+      markAllActivityNotificationsRead: vi.fn().mockResolvedValue({ mode: "mock", data: { items: [{ id: "a-1", read: true, createdAt: "2026-07-16T09:00:00" }] } }),
+      markAllSocialNotificationsRead: vi.fn().mockResolvedValue({ mode: "mock", data: { items: [{ id: "s-1", read: true, createdAt: "2026-07-16T10:00:00" }] } })
+    };
+    const store = createNotificationStore({ api })();
+    await store.markAll();
+    expect(store.unreadCount.value).toBe(0);
+    expect(store.notice.value).toContain("全部标为已读");
+  });
 });

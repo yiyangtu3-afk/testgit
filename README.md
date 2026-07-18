@@ -46,6 +46,9 @@ the organizer identity remains derived from the bearer token and the activity
 stays pending until an administrator approves it.
 Live parity checks now cover chat send, recipient unread counts, read clearing,
 withdrawal, and the `message.created` and `message.withdrawn` WebSocket events.
+They also cover single notification reads, social notification delivery and
+target resolution; the combined read-all behavior is covered by the Vue store
+test without changing historical notification state.
 See
 [`docs/vue-migration-handoff.md`](docs/vue-migration-handoff.md) for the
 completed slice and next boundary.
