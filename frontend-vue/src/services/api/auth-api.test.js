@@ -13,6 +13,20 @@ describe("authentication API boundary", () => {
     await http.request("/api/auth/logout", { method: "POST" });
     expect(fetchImpl.mock.calls[0][1].headers.Authorization).toBe("Bearer saved-token");
   });
+  it("does not attach a stale bearer token to public authentication actions", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(response(200, { token: "new", user: {} }));
+    const http = createHttpClient({ fetchImpl, getToken: () => "stale-token" });
+    const mockAuth = { createCode: vi.fn(), login: vi.fn(), register: vi.fn(), demoLogin: vi.fn() };
+    const api = createAuthApi({ http, mockAuth });
+
+    await api.createCode("13900000001");
+    await api.login("13900000001", "123456");
+    await api.register("新同学", "13900000001", "123456");
+    await api.demoLogin("u-1001");
+
+    expect(fetchImpl.mock.calls).toHaveLength(4);
+    fetchImpl.mock.calls.forEach(([, options]) => expect(options.headers.Authorization).toBeUndefined());
+  });
   it.each([401, 403, 500])("does not fall back to mock for HTTP %i", async (status) => {
     const mockAuth = { login: vi.fn() };
     const api = createAuthApi({ http: createHttpClient({ fetchImpl: vi.fn().mockResolvedValue(response(status, { message: "denied" })) }), mockAuth });

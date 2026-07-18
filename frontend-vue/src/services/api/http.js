@@ -1,14 +1,14 @@
 import { ApiHttpError, ApiUnavailableError } from "./errors";
 
 export function createHttpClient({ fetchImpl = fetch, getToken = () => null } = {}) {
-  async function request(path, options = {}) {
+  async function request(path, { anonymous = false, ...options } = {}) {
     let response;
     try {
       response = await fetchImpl(path, {
         ...options,
         headers: {
           "Content-Type": "application/json",
-          ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
+          ...(!anonymous && getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
           ...options.headers
         }
       });
