@@ -80,9 +80,9 @@ async function switchAccount(userId) {
             v-if="item.available"
             :to="item.to"
             class="nav-item"
-            active-class="is-active"
+            exact-active-class="is-active"
           >
-            <span>{{ item.label }}</span><small>{{ item.caption }}</small>
+            <span>{{ item.label }}</span>
           </RouterLink>
           <button
             v-else
@@ -90,16 +90,11 @@ async function switchAccount(userId) {
             class="nav-item is-pending"
             @click="explainPending(item.label)"
           >
-            <span>{{ item.label }}</span><small>{{ item.caption }}</small>
+            <span>{{ item.label }}</span>
           </button>
         </template>
       </nav>
 
-      <div class="rail-footer">
-        <p>迁移进度</p>
-        <strong>07 / 07</strong>
-        <span>领域迁移完成</span>
-      </div>
     </aside>
 
     <section class="shell-main">

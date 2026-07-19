@@ -50,6 +50,8 @@ stays pending until an administrator approves it.
 The workspace no longer repeats a persistent authentication-status banner above
 every page, keeping the main area available for the active feature. Page-level
 operation feedback remains in the feature that initiated it.
+The sidebar uses only functional navigation labels and the active-page marker;
+it doesn't repeat migration progress or explanatory subtitles.
 Live parity checks now cover chat send, recipient unread counts, read clearing,
 withdrawal, and the `message.created` and `message.withdrawn` WebSocket events.
 They also cover single notification reads, social notification delivery and
