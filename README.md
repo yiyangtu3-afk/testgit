@@ -102,6 +102,8 @@ The demo supports these flows:
   loading older pages preserves the message currently being read.
   On wider screens, the workspace prioritizes the conversation by using a
   compact application rail and contacts column instead of a fixed chat width.
+  The chat page removes its redundant heading and lets the conversation panel
+  use the available viewport height for message history.
 - Keep unread counts in the API database so they survive a page refresh and
   account switch.
 - Render user-generated messages, posts, comments, audit events, and review
