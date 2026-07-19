@@ -24,7 +24,8 @@ available through `./script/run_legacy_frontend_demo.sh` at
 ## Current handoff
 
 The current functional stable point is
-`98c2dad Add notification read and target actions` on `main`. Friend-request
+`98c2dad Add notification read and target actions` on `main`. The latest Vue
+interface handoff commit is `6a87873 Increase Vue chat height`. Friend-request
 notifications now include a safe **处理申请** entry: the server resolves the
 notification to the current recipient's pending request before the existing
 accept or reject controls are shown. Start from
@@ -103,7 +104,9 @@ The demo supports these flows:
   On wider screens, the workspace prioritizes the conversation by using a
   compact application rail and contacts column instead of a fixed chat width.
   The chat page removes its redundant heading and lets the conversation panel
-  use the available viewport height for message history.
+  use the available viewport height for message history. At a 1440 by 900
+  viewport, the internal message stream is about 500 pixels high while the
+  composer remains visible.
 - Keep unread counts in the API database so they survive a page refresh and
   account switch.
 - Render user-generated messages, posts, comments, audit events, and review
