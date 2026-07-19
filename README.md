@@ -100,6 +100,8 @@ The demo supports these flows:
   keeps more history visible, and you can still resize it for a longer draft.
   Selecting a conversation or sending a message opens the latest content, while
   loading older pages preserves the message currently being read.
+  On wider screens, the workspace prioritizes the conversation by using a
+  compact application rail and contacts column instead of a fixed chat width.
 - Keep unread counts in the API database so they survive a page refresh and
   account switch.
 - Render user-generated messages, posts, comments, audit events, and review
