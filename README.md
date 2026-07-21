@@ -239,8 +239,8 @@ mvn test
 On this machine, Microsoft JDK 21 can't reliably let Mockito self-attach its
 Byte Buddy agent. The verified full run passes an explicit `-javaagent` through
 Maven's `argLine`; without it, Mockito-based tests can fail during test setup
-rather than on application behavior. The latest verified run completed all 151 tests
-with the explicit agent and only printed the JVM class-sharing warning:
+rather than on application behavior. The latest verified run completed all 151
+tests with the explicit agent and only printed the JVM class-sharing warning:
 
 ```bash
 /Applications/IntelliJ\ IDEA.app/Contents/plugins/maven/lib/maven3/bin/mvn \
@@ -273,6 +273,22 @@ Repository integration tests use transactions that roll back, so test rows
 don't remain in existing demo history. Chat repository coverage verifies
 that unread counts include only messages addressed to the current user, still
 count newly received messages, and clear after the read cursor advances.
+
+With the Vue server, legacy static server, and Java API already running, use
+the live equivalence check to compare the Vue proxy with the legacy client's
+direct API path. It creates temporary demo sessions and logs out those exact
+sessions before it exits. It doesn't create or modify activities, messages,
+moderation decisions, notifications, or MySQL history.
+
+```bash
+node script/run_live_equivalence_check.mjs
+```
+
+The check compares student feed, activities, notifications, chat unread and
+history, organizer operations and roster, admin metrics, moderation history,
+audit records, and moderation assistance. It also confirms that invalid
+notification targets and invalid chat withdrawal requests return the same safe
+error through both paths.
 
 ## Docker Compose demo
 
