@@ -29,7 +29,7 @@ public interface FeedMapper {
              ) as comments,
              p.moderation_status as moderationStatus,
              (
-               select m.reason
+                 select coalesce(m.review_comment, m.reason)
                from moderation_items m
                where m.content_type = 'post'
                  and m.content_id = p.id
@@ -59,7 +59,7 @@ public interface FeedMapper {
              ) as comments,
              p.moderation_status as moderationStatus,
              (
-               select m.reason
+                 select coalesce(m.review_comment, m.reason)
                from moderation_items m
                where m.content_type = 'post'
                  and m.content_id = p.id
@@ -107,7 +107,7 @@ public interface FeedMapper {
              ) as comments,
              p.moderation_status as moderationStatus,
              (
-               select m.reason
+                 select coalesce(m.review_comment, m.reason)
                from moderation_items m
                where m.content_type = 'post'
                  and m.content_id = p.id
@@ -137,7 +137,7 @@ public interface FeedMapper {
              ) as comments,
              p.moderation_status as moderationStatus,
              (
-               select m.reason
+                 select coalesce(m.review_comment, m.reason)
                from moderation_items m
                where m.content_type = 'post'
                  and m.content_id = p.id
@@ -171,7 +171,7 @@ public interface FeedMapper {
              ) as comments,
              p.moderation_status as moderationStatus,
              (
-               select m.reason
+                 select coalesce(m.review_comment, m.reason)
                from moderation_items m
                where m.content_type = 'post'
                  and m.content_id = p.id

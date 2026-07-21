@@ -54,6 +54,10 @@ public final class DemoDtos {
   public record DeleteAuditEventsRequest(List<String> eventIds) {
   }
 
+  public record ModerationDecisionRequest(
+      @Size(max = 500, message = "审核意见不能超过 500 个字符") String comment) {
+  }
+
   public record CodeResponse(String phone, String code) {
   }
 
@@ -134,6 +138,9 @@ public final class DemoDtos {
       String body,
       String status,
       String reason,
+      String reviewerName,
+      String reviewedAt,
+      String reviewComment,
       String submittedAt,
       String time) {
   }

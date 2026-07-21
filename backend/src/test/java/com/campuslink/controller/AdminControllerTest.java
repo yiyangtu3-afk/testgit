@@ -67,7 +67,7 @@ class AdminControllerTest {
   @Test
   void moderationReturnsQueue() throws Exception {
     when(authTokenService.requireAdmin("Bearer admin-token")).thenReturn(adminUser());
-    when(adminService.moderationItems()).thenReturn(List.of(
+    when(adminService.moderationItems(false)).thenReturn(List.of(
         new ModerationItemView(
             "m-1",
             "post",
@@ -78,6 +78,9 @@ class AdminControllerTest {
             "待审动态",
             "pending",
             "新动态待审核",
+            null,
+            null,
+            null,
             "2026-07-06 09:30",
             "09:30")));
 
@@ -92,7 +95,7 @@ class AdminControllerTest {
   @Test
   void resolveModerationReturnsDecision() throws Exception {
     when(authTokenService.requireAdmin("Bearer admin-token")).thenReturn(adminUser());
-    when(adminService.resolveModeration("m-1", "approve", "教务管理员")).thenReturn(
+    when(adminService.resolveModeration("m-1", "approve", "教务管理员", "内容符合规范")).thenReturn(
         new ModerationItemView(
             "m-1",
             "post",
@@ -103,12 +106,20 @@ class AdminControllerTest {
             "待审动态",
             "approved",
             "新动态待审核",
+            "教务管理员",
+            "2026-07-20 10:30",
+            "内容符合规范",
             "2026-07-06 09:30",
             "09:30"));
 
-    mockMvc.perform(post("/api/admin/moderation/m-1/approve").header("Authorization", "Bearer admin-token"))
+    mockMvc.perform(post("/api/admin/moderation/m-1/approve")
+            .header("Authorization", "Bearer admin-token")
+            .contentType("application/json")
+            .content("{\"comment\":\"内容符合规范\"}"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.status").value("approved"));
+        .andExpect(jsonPath("$.status").value("approved"))
+        .andExpect(jsonPath("$.reviewerName").value("教务管理员"))
+        .andExpect(jsonPath("$.reviewComment").value("内容符合规范"));
   }
 
   @Test

@@ -2,6 +2,7 @@ package com.campuslink.repository;
 
 import com.campuslink.entity.DemoEntities.ModerationItemEntity;
 import com.campuslink.mapper.ModerationMapper;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
@@ -45,8 +46,13 @@ public class MyBatisModerationRepository implements ModerationRepository {
   }
 
   @Override
-  public void updateStatus(String itemId, String status) {
-    moderationMapper.updateStatus(itemId, status);
+  public void completeReview(
+      String itemId,
+      String status,
+      String reviewerName,
+      LocalDateTime reviewedAt,
+      String reviewComment) {
+    moderationMapper.completeReview(itemId, status, reviewerName, reviewedAt, reviewComment);
   }
 
   @Override

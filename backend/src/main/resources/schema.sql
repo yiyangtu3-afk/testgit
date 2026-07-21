@@ -143,8 +143,38 @@ create table if not exists moderation_items (
   content_id varchar(32) not null,
   status varchar(20) not null,
   reason varchar(255) not null,
+  reviewer_name varchar(80) null,
+  reviewed_at datetime null,
+  review_comment varchar(500) null,
   created_at timestamp not null default current_timestamp
 );
+
+set @moderation_reviewer_name_ddl = if(
+  exists(select 1 from information_schema.columns where table_schema = database()
+      and table_name = 'moderation_items' and column_name = 'reviewer_name'),
+  'select 1',
+  'alter table moderation_items add column reviewer_name varchar(80) null');
+prepare moderation_reviewer_name_statement from @moderation_reviewer_name_ddl;
+execute moderation_reviewer_name_statement;
+deallocate prepare moderation_reviewer_name_statement;
+
+set @moderation_reviewed_at_ddl = if(
+  exists(select 1 from information_schema.columns where table_schema = database()
+      and table_name = 'moderation_items' and column_name = 'reviewed_at'),
+  'select 1',
+  'alter table moderation_items add column reviewed_at datetime null');
+prepare moderation_reviewed_at_statement from @moderation_reviewed_at_ddl;
+execute moderation_reviewed_at_statement;
+deallocate prepare moderation_reviewed_at_statement;
+
+set @moderation_review_comment_ddl = if(
+  exists(select 1 from information_schema.columns where table_schema = database()
+      and table_name = 'moderation_items' and column_name = 'review_comment'),
+  'select 1',
+  'alter table moderation_items add column review_comment varchar(500) null');
+prepare moderation_review_comment_statement from @moderation_review_comment_ddl;
+execute moderation_review_comment_statement;
+deallocate prepare moderation_review_comment_statement;
 
 create table if not exists audit_events (
   id varchar(32) primary key,

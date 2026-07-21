@@ -146,7 +146,9 @@ The demo supports these flows:
 - See the activity-review workspace immediately when opening the administrator
   console. An empty queue or a failed activity request shows clear feedback
   instead of hiding the workspace.
-- Review pending feed posts and comments from the admin content queue.
+- Review pending feed posts and comments from the admin content queue. Rejecting
+  content requires an audit comment; the review history shows the reviewer,
+  review time, and comment, and the audit event retains the same details.
 - Delete one or more moderation records from the admin queue.
 - Delete one or more audit records from the admin audit table.
 - Filter the admin report by **今日**, **本周**, or **全部**, then print a

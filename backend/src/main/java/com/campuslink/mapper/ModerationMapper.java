@@ -29,6 +29,9 @@ public interface ModerationMapper {
              coalesce(p.body, c.body, '') as body,
              m.status,
              m.reason,
+             m.reviewer_name as reviewerName,
+             date_format(m.reviewed_at, '%Y-%m-%d %H:%i') as reviewedAt,
+             m.review_comment as reviewComment,
              date_format(m.created_at, '%Y-%m-%d %H:%i') as submittedAt,
              date_format(m.created_at, '%H:%i') as time
       from moderation_items m
@@ -60,8 +63,20 @@ public interface ModerationMapper {
   @Select(MODERATION_SELECT + " where m.id = #{itemId}")
   ModerationItemEntity findById(@Param("itemId") String itemId);
 
-  @Update("update moderation_items set status = #{status} where id = #{itemId}")
-  void updateStatus(@Param("itemId") String itemId, @Param("status") String status);
+  @Update("""
+      update moderation_items
+      set status = #{status},
+          reviewer_name = #{reviewerName},
+          reviewed_at = #{reviewedAt},
+          review_comment = #{reviewComment}
+      where id = #{itemId}
+      """)
+  void completeReview(
+      @Param("itemId") String itemId,
+      @Param("status") String status,
+      @Param("reviewerName") String reviewerName,
+      @Param("reviewedAt") java.time.LocalDateTime reviewedAt,
+      @Param("reviewComment") String reviewComment);
 
   @Delete("""
       <script>

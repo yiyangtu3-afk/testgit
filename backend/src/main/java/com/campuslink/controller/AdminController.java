@@ -7,10 +7,12 @@ import com.campuslink.dto.DemoDtos.DeleteAuditEventsResponse;
 import com.campuslink.dto.DemoDtos.DeleteModerationRequest;
 import com.campuslink.dto.DemoDtos.DeleteModerationResponse;
 import com.campuslink.dto.DemoDtos.ModerationItemView;
+import com.campuslink.dto.DemoDtos.ModerationDecisionRequest;
 import com.campuslink.entity.DemoEntities.UserEntity;
 import com.campuslink.service.AuthTokenService;
 import com.campuslink.service.AdminService;
 import com.campuslink.service.AuditService;
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -48,18 +50,24 @@ public class AdminController {
 
   @GetMapping("/moderation")
   public List<ModerationItemView> moderationItems(
+      @RequestParam(defaultValue = "false") boolean includeResolved,
       @RequestHeader(value = "Authorization", required = false) String authorization) {
     authTokenService.requireAdmin(authorization);
-    return adminService.moderationItems();
+    return adminService.moderationItems(includeResolved);
   }
 
   @PostMapping("/moderation/{itemId}/{decision}")
   public ModerationItemView resolveModeration(
       @PathVariable String itemId,
       @PathVariable String decision,
+      @Valid @RequestBody(required = false) ModerationDecisionRequest request,
       @RequestHeader(value = "Authorization", required = false) String authorization) {
     UserEntity user = authTokenService.requireAdmin(authorization);
-    return adminService.resolveModeration(itemId, decision, user.name());
+    return adminService.resolveModeration(
+        itemId,
+        decision,
+        user.name(),
+        request == null ? null : request.comment());
   }
 
   @DeleteMapping("/moderation")

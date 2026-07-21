@@ -174,6 +174,9 @@ class FeedServiceTest {
           "审核内容",
           "pending",
           reason,
+          null,
+          null,
+          null,
           "2026-07-06 09:30",
           "09:30");
       items.add(0, item);
@@ -186,7 +189,12 @@ class FeedServiceTest {
     }
 
     @Override
-    public void updateStatus(String itemId, String status) {
+    public void completeReview(
+        String itemId,
+        String status,
+        String reviewerName,
+        java.time.LocalDateTime reviewedAt,
+        String reviewComment) {
     }
 
     @Override

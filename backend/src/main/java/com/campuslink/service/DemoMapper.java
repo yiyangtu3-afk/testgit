@@ -89,6 +89,9 @@ final class DemoMapper {
         item.body(),
         item.status(),
         item.reason(),
+        item.reviewerName(),
+        item.reviewedAt(),
+        item.reviewComment(),
         item.submittedAt(),
         item.time());
   }

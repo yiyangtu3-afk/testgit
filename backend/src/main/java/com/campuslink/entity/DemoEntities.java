@@ -54,6 +54,9 @@ public final class DemoEntities {
       String body,
       String status,
       String reason,
+      String reviewerName,
+      String reviewedAt,
+      String reviewComment,
       String submittedAt,
       String time) {
   }

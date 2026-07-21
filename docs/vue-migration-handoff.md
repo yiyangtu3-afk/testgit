@@ -169,7 +169,9 @@ Pinia，也不要让组件直接散落 `fetch` 调用。
 2. `admin` Pinia store 在组件加载前确认管理员角色；非管理员只看到权限说明，且不会
    请求管理员 API。
 3. 管理界面提供活动同意/拒绝、内容同意/拒绝、审核及审计记录批量删除、今日/本周/全部
-   报表和 CSV 下载。待审核内容支持按类型、提交人和状态组合筛选，并可清除筛选条件。
+   报表和 CSV 下载。内容拒绝必须填写审核意见；Vue 通过兼容查询读取审核历史，展示
+   审核人、审核时间和审核意见。待审核内容支持按类型、提交人和状态组合筛选，并可清除
+   筛选条件。
 4. API 边界测试覆盖 `401`、`403`、`500` 不回退 Mock；store 测试覆盖管理员加载、审核
    刷新和非管理员不请求数据。`npm test`、`npm run build` 和旧版前端检查均通过。
 
@@ -257,6 +259,13 @@ Vue 聊天页：http://127.0.0.1:5180/workspace/contacts
 旧版回退入口：http://127.0.0.1:5179/?v=20260715-signed-jwt-logout-v1
 Java API：http://127.0.0.1:8080
 ```
+
+内容审核现在为每次决定保存 `reviewerName`、`reviewedAt` 和 `reviewComment`。
+`POST /api/admin/moderation/{itemId}/{decision}` 接受可选的 `comment` 请求字段，但
+`reject` 必须提供非空审核意见；默认的队列查询仍只返回 `pending`，Vue 以
+`includeResolved=true` 显示审核历史。架构脚本使用 `information_schema` 条件迁移，
+只在现有 MySQL 缺少字段时添加列，不重置或重种历史数据。审核审计事件同时写入审核人、
+时间和意见；MySQL 回滚集成测试覆盖这三个字段的持久化。
 
 近期 Vue 体验调整包括：
 

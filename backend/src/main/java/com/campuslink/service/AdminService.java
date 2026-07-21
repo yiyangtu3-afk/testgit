@@ -51,14 +51,21 @@ public class AdminService {
     return metrics;
   }
 
-  public List<ModerationItemView> moderationItems() {
-    return moderationRepository.findPending().stream()
+  public List<ModerationItemView> moderationItems(boolean includeResolved) {
+    List<ModerationItemEntity> items = includeResolved
+        ? moderationRepository.findAll()
+        : moderationRepository.findPending();
+    return items.stream()
         .map(DemoMapper::toModerationItemView)
         .toList();
   }
 
   @Transactional
-  public ModerationItemView resolveModeration(String itemId, String decision, String operatorName) {
+  public ModerationItemView resolveModeration(
+      String itemId,
+      String decision,
+      String operatorName,
+      String reviewComment) {
     String status = switch (decision) {
       case "approve" -> "approved";
       case "reject" -> "rejected";
@@ -67,22 +74,21 @@ public class AdminService {
 
     ModerationItemEntity item = moderationRepository.findById(itemId)
         .orElseThrow(() -> new IllegalArgumentException("审核记录不存在"));
-    moderationRepository.updateStatus(itemId, status);
-    ModerationItemEntity updated = new ModerationItemEntity(
-        item.id(),
-        item.type(),
-        item.targetId(),
-        item.postId(),
-        item.title(),
-        item.author(),
-        item.body(),
-        status,
-        item.reason(),
-        item.submittedAt(),
-        item.time());
+    if (!"pending".equals(item.status())) {
+      throw new IllegalArgumentException("内容已完成审核");
+    }
+    String normalizedComment = reviewComment == null ? "" : reviewComment.trim();
+    if ("rejected".equals(status) && normalizedComment.isEmpty()) {
+      throw new IllegalArgumentException("拒绝内容时必须填写审核意见");
+    }
+    moderationRepository.completeReview(itemId, status, operatorName, clock.now(), normalizedComment);
+    ModerationItemEntity updated = moderationRepository.findById(itemId)
+        .orElseThrow(() -> new IllegalArgumentException("审核记录不存在"));
     applyModeration(updated);
     auditService.addAudit("审核", operatorName + ("approved".equals(status) ? "通过" : "拒绝")
-        + item.author() + "的" + ("post".equals(item.type()) ? "动态" : "评论"));
+        + item.author() + "的" + ("post".equals(item.type()) ? "动态" : "评论")
+        + "；审核时间：" + updated.reviewedAt()
+        + "；审核意见：" + (normalizedComment.isEmpty() ? "未填写" : normalizedComment));
     return DemoMapper.toModerationItemView(updated);
   }
 
