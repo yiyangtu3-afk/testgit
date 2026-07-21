@@ -145,6 +145,14 @@ public final class DemoDtos {
       String time) {
   }
 
+  public record ModerationAssistanceView(
+      String suggestedDecision,
+      String riskLevel,
+      List<String> signals,
+      String suggestedComment,
+      String provider) {
+  }
+
   public record AdminReportView(
       String generatedAt,
       String fileName,

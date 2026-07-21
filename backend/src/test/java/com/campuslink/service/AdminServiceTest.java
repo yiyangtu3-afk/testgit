@@ -24,7 +24,14 @@ class AdminServiceTest {
     AuditRepository audits = Mockito.mock(AuditRepository.class);
     AdminMetricsRepository metrics = Mockito.mock(AdminMetricsRepository.class);
     AuditService auditService = new AuditService(audits);
-    AdminService service = new AdminService(feed, moderation, audits, metrics, auditService, fixedClock());
+    AdminService service = new AdminService(
+        feed,
+        moderation,
+        audits,
+        metrics,
+        auditService,
+        new ModerationAssistanceService(),
+        fixedClock());
     when(moderation.findById("m-1")).thenReturn(Optional.of(pendingItem()));
 
     assertThatThrownBy(() -> service.resolveModeration("m-1", "reject", "教务管理员", "  "))

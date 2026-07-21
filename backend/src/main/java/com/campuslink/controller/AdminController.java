@@ -7,6 +7,7 @@ import com.campuslink.dto.DemoDtos.DeleteAuditEventsResponse;
 import com.campuslink.dto.DemoDtos.DeleteModerationRequest;
 import com.campuslink.dto.DemoDtos.DeleteModerationResponse;
 import com.campuslink.dto.DemoDtos.ModerationItemView;
+import com.campuslink.dto.DemoDtos.ModerationAssistanceView;
 import com.campuslink.dto.DemoDtos.ModerationDecisionRequest;
 import com.campuslink.entity.DemoEntities.UserEntity;
 import com.campuslink.service.AuthTokenService;
@@ -54,6 +55,14 @@ public class AdminController {
       @RequestHeader(value = "Authorization", required = false) String authorization) {
     authTokenService.requireAdmin(authorization);
     return adminService.moderationItems(includeResolved);
+  }
+
+  @GetMapping("/moderation/{itemId}/assistance")
+  public ModerationAssistanceView moderationAssistance(
+      @PathVariable String itemId,
+      @RequestHeader(value = "Authorization", required = false) String authorization) {
+    authTokenService.requireAdmin(authorization);
+    return adminService.moderationAssistance(itemId);
   }
 
   @PostMapping("/moderation/{itemId}/{decision}")

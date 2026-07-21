@@ -11,6 +11,7 @@ import com.campuslink.dto.DemoDtos.AuditEventView;
 import com.campuslink.dto.DemoDtos.DeleteAuditEventsResponse;
 import com.campuslink.dto.DemoDtos.DeleteModerationResponse;
 import com.campuslink.dto.DemoDtos.ModerationItemView;
+import com.campuslink.dto.DemoDtos.ModerationAssistanceView;
 import com.campuslink.entity.DemoEntities.UserEntity;
 import com.campuslink.config.GlobalExceptionHandler;
 import com.campuslink.service.AuthTokenService;
@@ -120,6 +121,24 @@ class AdminControllerTest {
         .andExpect(jsonPath("$.status").value("approved"))
         .andExpect(jsonPath("$.reviewerName").value("教务管理员"))
         .andExpect(jsonPath("$.reviewComment").value("内容符合规范"));
+  }
+
+  @Test
+  void moderationAssistanceReturnsNonBindingGuidanceForAdmins() throws Exception {
+    when(authTokenService.requireAdmin("Bearer admin-token")).thenReturn(adminUser());
+    when(adminService.moderationAssistance("m-1")).thenReturn(new ModerationAssistanceView(
+        "manual_review",
+        "medium",
+        List.of("包含疑似手机号"),
+        "建议人工复核：请确认联系方式是否符合规范。",
+        "local-policy-v1"));
+
+    mockMvc.perform(get("/api/admin/moderation/m-1/assistance")
+            .header("Authorization", "Bearer admin-token"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.suggestedDecision").value("manual_review"))
+        .andExpect(jsonPath("$.riskLevel").value("medium"))
+        .andExpect(jsonPath("$.signals[0]").value("包含疑似手机号"));
   }
 
   @Test

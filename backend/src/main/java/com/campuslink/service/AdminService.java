@@ -4,6 +4,7 @@ import com.campuslink.dto.DemoDtos.AdminReportView;
 import com.campuslink.dto.DemoDtos.AuditEventView;
 import com.campuslink.dto.DemoDtos.DeleteModerationResponse;
 import com.campuslink.dto.DemoDtos.ModerationItemView;
+import com.campuslink.dto.DemoDtos.ModerationAssistanceView;
 import com.campuslink.dto.DemoDtos.ReportRangeView;
 import com.campuslink.entity.DemoEntities.ModerationItemEntity;
 import com.campuslink.repository.AuditRepository;
@@ -24,6 +25,7 @@ public class AdminService {
   private final AuditRepository auditRepository;
   private final AdminMetricsRepository metricsRepository;
   private final AuditService auditService;
+  private final ModerationAssistanceService moderationAssistanceService;
   private final DemoClock clock;
 
   public AdminService(
@@ -32,12 +34,14 @@ public class AdminService {
       AuditRepository auditRepository,
       AdminMetricsRepository metricsRepository,
       AuditService auditService,
+      ModerationAssistanceService moderationAssistanceService,
       DemoClock clock) {
     this.feedRepository = feedRepository;
     this.moderationRepository = moderationRepository;
     this.auditRepository = auditRepository;
     this.metricsRepository = metricsRepository;
     this.auditService = auditService;
+    this.moderationAssistanceService = moderationAssistanceService;
     this.clock = clock;
   }
 
@@ -58,6 +62,15 @@ public class AdminService {
     return items.stream()
         .map(DemoMapper::toModerationItemView)
         .toList();
+  }
+
+  public ModerationAssistanceView moderationAssistance(String itemId) {
+    ModerationItemEntity item = moderationRepository.findById(itemId)
+        .orElseThrow(() -> new IllegalArgumentException("审核记录不存在"));
+    if (!"pending".equals(item.status())) {
+      throw new IllegalArgumentException("已完成审核的内容无需生成辅助建议");
+    }
+    return moderationAssistanceService.analyze(item);
   }
 
   @Transactional

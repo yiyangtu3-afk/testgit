@@ -149,6 +149,9 @@ The demo supports these flows:
 - Review pending feed posts and comments from the admin content queue. Rejecting
   content requires an audit comment; the review history shows the reviewer,
   review time, and comment, and the audit event retains the same details.
+- Generate a non-binding moderation assistance suggestion for a pending item.
+  The local, explainable policy reports matched risk signals and a suggested
+  reason, but never approves, rejects, or records a decision automatically.
 - Delete one or more moderation records from the admin queue.
 - Delete one or more audit records from the admin audit table.
 - Filter the admin report by **今日**, **本周**, or **全部**, then print a
@@ -236,7 +239,7 @@ mvn test
 On this machine, Microsoft JDK 21 can't reliably let Mockito self-attach its
 Byte Buddy agent. The verified full run passes an explicit `-javaagent` through
 Maven's `argLine`; without it, Mockito-based tests can fail during test setup
-rather than on application behavior. The July 15 run completed all 142 tests
+rather than on application behavior. The latest verified run completed all 151 tests
 with the explicit agent and only printed the JVM class-sharing warning:
 
 ```bash
@@ -260,7 +263,7 @@ The suite also includes MockMvc controller tests for the auth, users, friends,
 chat, feed, activity notifications, social notifications, and admin API
 boundaries, plus direct WebSocket handler tests for chat and recipient-only
 activity and social notification events, plus the Spring Security API chain.
-The full suite currently contains 142 tests. `TestcontainersMySqlIntegrationTest`
+The full suite currently contains 151 tests. `TestcontainersMySqlIntegrationTest`
 starts an isolated `mysql:8.4` container and initializes it from the existing
 `schema.sql` and `data.sql` files. It verifies MyBatis visibility filtering,
 the transactional friend-acceptance and notification writes, and the JWT
