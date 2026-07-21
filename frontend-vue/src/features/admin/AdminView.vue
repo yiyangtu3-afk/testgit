@@ -15,6 +15,8 @@ const visibleModeration = computed(() => filterModerationItems(admin.moderation,
   author: authorFilter.value,
   status: statusFilter.value
 }));
+const allAuditsSelected = computed(() => admin.audits.length > 0
+  && admin.audits.every((item) => admin.selectedAudits.includes(item.id)));
 
 function clearModerationFilters() {
   filter.value = "all";
@@ -28,6 +30,10 @@ function resolveModeration(item, decision) {
 
 function loadModerationAssistance(item) {
   admin.loadModerationAssistance(item.id);
+}
+
+function toggleAllAudits() {
+  admin.selectedAudits = admin.toggleAll(admin.selectedAudits, admin.audits);
 }
 
 function label(type) {
@@ -131,7 +137,13 @@ onMounted(() => admin.load());
       </section>
 
       <section class="admin-panel">
-        <header><div><p class="eyebrow">AUDIT LOG</p><h3>审计记录</h3></div><button class="danger-outline" :disabled="!admin.selectedAudits.length" @click="deleteAudits">删除所选 {{ admin.selectedAudits.length || '' }}</button></header>
+        <header>
+          <div><p class="eyebrow">AUDIT LOG</p><h3>审计记录</h3></div>
+          <div class="audit-actions">
+            <button class="quiet-action" :disabled="!admin.audits.length" @click="toggleAllAudits">{{ allAuditsSelected ? "取消全选" : `全选 ${admin.audits.length} 条` }}</button>
+            <button class="danger-outline" :disabled="!admin.selectedAudits.length" @click="deleteAudits">删除所选 {{ admin.selectedAudits.length || '' }}</button>
+          </div>
+        </header>
         <div class="audit-table"><article v-for="item in admin.audits" :key="item.id"><label><input type="checkbox" :checked="admin.selectedAudits.includes(item.id)" @change="admin.selectedAudits = admin.toggle(admin.selectedAudits, item.id)"></label><time>{{ item.time }}</time><span>{{ item.module }}</span><p>{{ item.event }}</p></article><p v-if="!admin.audits.length" class="admin-empty">当前没有审计记录。</p></div>
       </section>
 
@@ -151,4 +163,9 @@ onMounted(() => admin.load());
 .moderation-assistance ul { margin:.45rem 0; padding-left:1.2rem; color:#5d6545; font-size:.76rem; }
 .moderation-assistance small { display:block; margin-top:.5rem; }
 .admin-review-card footer .assistance-button { border:1px solid #8b6d28; background:#fff8df; color:#6d571b; }
+.audit-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:.45rem; }
+.audit-actions button { border:0; padding:.48rem .8rem; }
+.audit-actions .quiet-action { border:1px solid #a9b9ad; background:transparent; color:#476556; }
+.audit-actions .danger-outline { border:1px solid #b66d4b; background:transparent; color:#9a4d31; }
+.audit-actions button:disabled { opacity:.55; cursor:not-allowed; }
 </style>
