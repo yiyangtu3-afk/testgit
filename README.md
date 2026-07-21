@@ -146,9 +146,9 @@ The demo supports these flows:
 - See the activity-review workspace immediately when opening the administrator
   console. An empty queue or a failed activity request shows clear feedback
   instead of hiding the workspace.
-- Review pending feed posts and comments from the admin content queue. Rejecting
-  content requires an audit comment; the review history shows the reviewer,
-  review time, and comment, and the audit event retains the same details.
+- Review only pending feed posts and comments from the admin content queue.
+  Rejecting content requires an audit comment; completed decisions leave this
+  workspace, while the audit event retains the reviewer, review time, and comment.
 - Generate a non-binding moderation assistance suggestion for a pending item.
   The local, explainable policy reports matched risk signals and a suggested
   reason, but never approves, rejects, or records a decision automatically.

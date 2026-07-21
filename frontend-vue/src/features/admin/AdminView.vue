@@ -6,14 +6,13 @@ import { filterModerationItems } from "./moderation-filters";
 const admin = useAdminStore();
 const filter = ref("all");
 const authorFilter = ref("");
-const statusFilter = ref("all");
 const activityReasons = ref({});
 const moderationComments = ref({});
 const reportRange = ref("today");
 const visibleModeration = computed(() => filterModerationItems(admin.moderation, {
   type: filter.value,
   author: authorFilter.value,
-  status: statusFilter.value
+  status: "pending"
 }));
 const allAuditsSelected = computed(() => admin.audits.length > 0
   && admin.audits.every((item) => admin.selectedAudits.includes(item.id)));
@@ -21,7 +20,6 @@ const allAuditsSelected = computed(() => admin.audits.length > 0
 function clearModerationFilters() {
   filter.value = "all";
   authorFilter.value = "";
-  statusFilter.value = "all";
 }
 
 function resolveModeration(item, decision) {
@@ -112,7 +110,6 @@ onMounted(() => admin.load());
         <div class="admin-toolbar">
           <div><button :class="{ active: filter === 'all' }" @click="filter = 'all'">全部</button><button :class="{ active: filter === 'post' }" @click="filter = 'post'">动态</button><button :class="{ active: filter === 'comment' }" @click="filter = 'comment'">评论</button></div>
           <input v-model="authorFilter" aria-label="按提交人筛选" placeholder="提交人">
-          <select v-model="statusFilter" aria-label="按状态筛选"><option value="all">全部状态</option><option value="pending">待审核</option><option value="approved">已通过</option><option value="rejected">已拒绝</option></select>
           <button @click="clearModerationFilters">清除筛选</button>
           <button class="danger-outline" :disabled="!admin.selectedModeration.length" @click="deleteModeration">删除所选 {{ admin.selectedModeration.length || '' }}</button>
         </div>
@@ -120,16 +117,15 @@ onMounted(() => admin.load());
         <article v-for="item in visibleModeration" :key="item.id" class="admin-review-card">
           <label class="admin-check"><input type="checkbox" :checked="admin.selectedModeration.includes(item.id)" @change="admin.selectedModeration = admin.toggle(admin.selectedModeration, item.id)"> 选择</label>
           <div>
-            <span>{{ label(item.type) }} · {{ item.status || "pending" }}</span><h4>{{ item.title || item.body }}</h4><p>{{ item.body }}</p><small>{{ item.author }} · 提交于 {{ item.submittedAt || item.time }}</small>
+            <span>{{ label(item.type) }} · 待审核</span><h4>{{ item.title || item.body }}</h4><p>{{ item.body }}</p><small>{{ item.author }} · 提交于 {{ item.submittedAt || item.time }}</small>
             <aside v-if="admin.moderationAssistance[item.id]" class="moderation-assistance">
               <p><strong>审核辅助建议</strong> · {{ assistanceRiskLabel(admin.moderationAssistance[item.id].riskLevel) }} · {{ assistanceDecisionLabel(admin.moderationAssistance[item.id].suggestedDecision) }}</p>
               <ul><li v-for="signal in admin.moderationAssistance[item.id].signals" :key="signal">{{ signal }}</li></ul>
               <p>{{ admin.moderationAssistance[item.id].suggestedComment }}</p>
               <small>规则来源：{{ admin.moderationAssistance[item.id].provider }}；管理员必须独立作出最终审核决定。</small>
             </aside>
-            <p v-if="item.reviewerName" class="review-detail">审核人：{{ item.reviewerName }} · 审核时间：{{ item.reviewedAt }}<br>审核意见：{{ item.reviewComment || "未填写" }}</p>
           </div>
-          <footer v-if="item.status === 'pending'">
+          <footer>
             <button class="assistance-button" :disabled="admin.assistanceLoadingId === item.id" @click="loadModerationAssistance(item)">{{ admin.assistanceLoadingId === item.id ? "生成中…" : "生成审核辅助建议" }}</button>
             <textarea v-model="moderationComments[item.id]" maxlength="500" placeholder="审核意见（拒绝时必填）"></textarea><button @click="resolveModeration(item, 'approve')">同意</button><button class="danger" @click="resolveModeration(item, 'reject')">拒绝</button>
           </footer>
