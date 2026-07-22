@@ -4,6 +4,9 @@ import com.campuslink.dto.DemoDtos.ConversationPageView;
 import com.campuslink.dto.DemoDtos.MessageView;
 import com.campuslink.dto.DemoDtos.PresenceResponse;
 import com.campuslink.dto.DemoDtos.SendMessageRequest;
+import com.campuslink.dto.DemoDtos.AttachmentRequest;
+import com.campuslink.entity.DemoEntities.AttachmentContentEntity;
+import com.campuslink.entity.DemoEntities.AttachmentEntity;
 import com.campuslink.entity.DemoEntities.MessageEntity;
 import com.campuslink.repository.ChatRepository;
 import com.campuslink.repository.FriendRepository;
@@ -11,11 +14,17 @@ import com.campuslink.repository.UserRepository;
 import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Base64;
+import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ChatService {
+
+  private static final int MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+  private static final Set<String> IMAGE_TYPES = Set.of(
+      "image/png", "image/jpeg", "image/webp", "image/gif");
 
   private final ChatRepository chatRepository;
   private final FriendRepository friendRepository;
@@ -75,12 +84,21 @@ public class ChatService {
         peerId,
         currentUserId,
         request.text(),
-        DemoMapper.toAttachmentEntities(request.attachments()));
+        attachmentsFor(request.attachments()));
     String attachmentCopy = message.attachments().isEmpty() ? "" : "，包含 " + message.attachments().size() + " 个附件";
     auditService.addAudit("聊天", userService.userName(currentUserId) + "向" + userService.userName(peerId) + "发送消息" + attachmentCopy);
     MessageView view = DemoMapper.toMessageView(message);
     chatRealtimeNotifier.publishMessage(peerId, view);
     return view;
+  }
+
+  public AttachmentContentEntity attachmentContent(
+      String peerId,
+      String currentUserId,
+      String attachmentId) {
+    requireFriendship(currentUserId, peerId);
+    return chatRepository.findAttachmentContent(peerId, currentUserId, attachmentId)
+        .orElseThrow(() -> new IllegalArgumentException("图片附件不存在、尚未上传或已撤回"));
   }
 
   @Transactional
@@ -111,6 +129,46 @@ public class ChatService {
       case "offline" -> "离线";
       default -> "在线";
     };
+  }
+
+  private List<AttachmentEntity> attachmentsFor(List<AttachmentRequest> attachments) {
+    if (attachments == null) {
+      return List.of();
+    }
+    return attachments.stream().map(this::attachmentFor).toList();
+  }
+
+  private AttachmentEntity attachmentFor(AttachmentRequest attachment) {
+    if (attachment.dataUrl() == null || attachment.dataUrl().isBlank()) {
+      return DemoMapper.toAttachmentEntity(attachment);
+    }
+    if (!IMAGE_TYPES.contains(attachment.type())) {
+      throw new IllegalArgumentException("仅支持 PNG、JPEG、WebP 或 GIF 图片");
+    }
+    String prefix = "data:" + attachment.type() + ";base64,";
+    if (!attachment.dataUrl().startsWith(prefix)) {
+      throw new IllegalArgumentException("图片数据格式不正确");
+    }
+
+    byte[] content;
+    try {
+      content = Base64.getDecoder().decode(attachment.dataUrl().substring(prefix.length()));
+    } catch (IllegalArgumentException error) {
+      throw new IllegalArgumentException("图片数据格式不正确");
+    }
+    if (content.length == 0 || content.length > MAX_IMAGE_BYTES) {
+      throw new IllegalArgumentException("单张图片不能超过 5 MB");
+    }
+    if (attachment.size() != content.length) {
+      throw new IllegalArgumentException("图片大小校验失败");
+    }
+    return new AttachmentEntity(
+        attachment.id(),
+        attachment.name(),
+        content.length,
+        attachment.type(),
+        "image",
+        content);
   }
 
   private void requireFriendship(String currentUserId, String peerId) {

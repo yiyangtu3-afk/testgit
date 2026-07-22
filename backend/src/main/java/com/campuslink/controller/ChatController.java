@@ -7,10 +7,14 @@ import com.campuslink.dto.DemoDtos.UnreadCountsView;
 import com.campuslink.dto.DemoDtos.PresenceRequest;
 import com.campuslink.dto.DemoDtos.PresenceResponse;
 import com.campuslink.dto.DemoDtos.SendMessageRequest;
+import com.campuslink.entity.DemoEntities.AttachmentContentEntity;
 import com.campuslink.service.AuthTokenService;
 import com.campuslink.service.ChatService;
 import jakarta.validation.Valid;
 import java.util.List;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -61,6 +65,22 @@ public class ChatController {
     return chatService.sendMessage(peerId, authTokenService.requireUserId(authorization), request);
   }
 
+  @GetMapping("/conversations/{peerId}/attachments/{attachmentId}")
+  public ResponseEntity<byte[]> attachment(
+      @PathVariable String peerId,
+      @PathVariable String attachmentId,
+      @RequestHeader(value = "Authorization", required = false) String authorization) {
+    AttachmentContentEntity attachment = chatService.attachmentContent(
+        peerId,
+        authTokenService.requireUserId(authorization),
+        attachmentId);
+    return ResponseEntity.ok()
+        .contentType(imageMediaType(attachment.type()))
+        .contentLength(attachment.content().length)
+        .header(HttpHeaders.CACHE_CONTROL, "private, no-store")
+        .body(attachment.content());
+  }
+
   @PostMapping("/conversations/{peerId}/messages/{messageId}/withdraw")
   public MessageView withdrawMessage(
       @PathVariable String peerId,
@@ -74,5 +94,15 @@ public class ChatController {
       @Valid @RequestBody PresenceRequest request,
       @RequestHeader(value = "Authorization", required = false) String authorization) {
     return chatService.updatePresence(authTokenService.requireUserId(authorization), request.presence());
+  }
+
+  private static MediaType imageMediaType(String type) {
+    return switch (type) {
+      case "image/jpeg" -> MediaType.IMAGE_JPEG;
+      case "image/png" -> MediaType.IMAGE_PNG;
+      case "image/gif" -> MediaType.IMAGE_GIF;
+      case "image/webp" -> MediaType.parseMediaType("image/webp");
+      default -> throw new IllegalArgumentException("图片类型不支持");
+    };
   }
 }

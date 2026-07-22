@@ -2,6 +2,8 @@ package com.campuslink.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -13,11 +15,13 @@ import com.campuslink.service.FeedService;
 import com.campuslink.service.FriendService;
 import com.campuslink.service.SocialNotificationService;
 import com.campuslink.support.MySqlTestcontainersIntegrationTest;
+import java.util.Base64;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -92,5 +96,34 @@ class TestcontainersMySqlIntegrationTest extends MySqlTestcontainersIntegrationT
     assertThat(saved.attachments())
         .extracting(AttachmentEntity::id)
         .containsExactly(attachmentId);
+  }
+
+  @Test
+  void storesAndServesAnAuthenticatedChatImage() throws Exception {
+    String attachmentId = "6df2d20d-2b9c-4fbb-9e96-0e38ffaf4fc8";
+    byte[] image = Base64.getDecoder().decode(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/"
+            + "r8eByAAAAABJRU5ErkJggg==");
+    String token = authTokens.issueToken("u-1001");
+    String dataUrl = "data:image/png;base64," + Base64.getEncoder().encodeToString(image);
+
+    mockMvc.perform(post("/api/conversations/u-2001/messages")
+            .header("Authorization", "Bearer " + token)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("""
+                {"text":"图片","attachments":[{
+                  "id":"%s","name":"campus-card.png","size":%d,
+                  "type":"image/png","kind":"image","dataUrl":"%s"
+                }]}
+                """.formatted(attachmentId, image.length, dataUrl)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.attachments[0].id").value(attachmentId))
+        .andExpect(jsonPath("$.attachments[0].hasContent").value(true));
+
+    mockMvc.perform(get("/api/conversations/u-2001/attachments/{attachmentId}", attachmentId)
+            .header("Authorization", "Bearer " + token))
+        .andExpect(status().isOk())
+        .andExpect(content().contentType(MediaType.IMAGE_PNG))
+        .andExpect(content().bytes(image));
   }
 }

@@ -69,7 +69,8 @@ create table if not exists message_attachments (
   file_name varchar(255) not null,
   file_size bigint not null,
   mime_type varchar(120) not null,
-  display_kind varchar(40) not null
+  display_kind varchar(40) not null,
+  content longblob null
 );
 
 set @message_attachment_id_length = (
@@ -87,6 +88,22 @@ set @message_attachment_id_migration = if(
 prepare update_message_attachment_id from @message_attachment_id_migration;
 execute update_message_attachment_id;
 deallocate prepare update_message_attachment_id;
+
+set @message_attachment_content_exists = (
+  select count(*)
+  from information_schema.columns
+  where table_schema = database()
+    and table_name = 'message_attachments'
+    and column_name = 'content'
+);
+set @message_attachment_content_migration = if(
+  @message_attachment_content_exists = 0,
+  'alter table message_attachments add column content longblob null',
+  'select 1'
+);
+prepare add_message_attachment_content from @message_attachment_content_migration;
+execute add_message_attachment_content;
+deallocate prepare add_message_attachment_content;
 
 create table if not exists conversation_reads (
   user_id varchar(32) not null,

@@ -37,6 +37,7 @@ export function createMockSocialApi(getUser) {
     async unreadCounts() { const counts = {}; friends().forEach((friend) => { const count = (messages[friend.id] || []).filter((item) => item.from === friend.id && !item.deleted && item.id > (reads[friend.id] || 0)).length; if (count) counts[friend.id] = count; }); return { counts }; },
     async conversationPreviews() { return { previews: Object.fromEntries(friends().map((friend) => [friend.id, (messages[friend.id] || []).at(-1)]).filter(([, item]) => item)) }; },
     async sendMessage(peerId, text, attachments = []) { if (!areFriends(peerId)) throw new Error("仅能与已建立好友关系的用户聊天"); const message = { id: Date.now(), from: user().id, text, time: "刚刚", deleted: false, attachments }; (messages[peerId] ||= []).push(message); return message; },
+    async attachment(peerId, attachmentId) { const attachment = (messages[peerId] || []).flatMap((message) => message.attachments || []).find((item) => item.id === attachmentId); if (!attachment?.dataUrl) throw new Error("图片附件不存在或尚未上传"); const [header, encoded] = attachment.dataUrl.split(",", 2); const binary = atob(encoded); const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0)); return new Blob([bytes], { type: header.slice(5, header.indexOf(";")) }); },
     async withdrawMessage(peerId, messageId) { const message = (messages[peerId] || []).find((item) => item.id === messageId); if (!message || message.from !== user().id) throw new Error("只能撤回自己发送的消息"); message.deleted = true; return message; }
   };
 }

@@ -1,6 +1,7 @@
 package com.campuslink.repository;
 
 import com.campuslink.entity.DemoEntities.AttachmentEntity;
+import com.campuslink.entity.DemoEntities.AttachmentContentEntity;
 import com.campuslink.entity.DemoEntities.MessageEntity;
 import com.campuslink.mapper.ChatMapper;
 import com.campuslink.mapper.ChatMapper.AttachmentRow;
@@ -59,7 +60,8 @@ public class MyBatisChatRepository implements ChatRepository {
           attachment.name(),
           attachment.size(),
           attachment.type(),
-          attachment.kind());
+          attachment.kind(),
+          attachment.content());
     }
     return findMessage(peerId, fromUserId, messageId).orElseThrow();
   }
@@ -68,6 +70,16 @@ public class MyBatisChatRepository implements ChatRepository {
   public Optional<MessageEntity> findMessage(String peerId, String currentUserId, Long messageId) {
     MessageRow row = chatMapper.findMessage(peerId, currentUserId, String.valueOf(messageId));
     return Optional.ofNullable(row).map(this::toMessageEntity);
+  }
+
+  @Override
+  public Optional<AttachmentContentEntity> findAttachmentContent(
+      String peerId,
+      String currentUserId,
+      String attachmentId) {
+    return Optional.ofNullable(chatMapper.findAttachmentContent(peerId, currentUserId, attachmentId))
+        .filter(row -> row.content() != null)
+        .map(row -> new AttachmentContentEntity(row.fileName(), row.mimeType(), row.content()));
   }
 
   @Override
@@ -97,6 +109,8 @@ public class MyBatisChatRepository implements ChatRepository {
         row.fileName(),
         row.fileSize(),
         row.mimeType(),
-        row.displayKind());
+        row.displayKind(),
+        null,
+        row.hasContent());
   }
 }

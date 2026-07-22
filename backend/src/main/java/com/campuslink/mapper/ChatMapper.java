@@ -92,8 +92,12 @@ public interface ChatMapper {
       @Param("body") String body);
 
   @Insert("""
-      insert into message_attachments (id, message_id, file_name, file_size, mime_type, display_kind)
-      values (#{id}, #{messageId}, #{fileName}, #{fileSize}, #{mimeType}, #{displayKind})
+      insert into message_attachments (
+        id, message_id, file_name, file_size, mime_type, display_kind, content
+      )
+      values (
+        #{id}, #{messageId}, #{fileName}, #{fileSize}, #{mimeType}, #{displayKind}, #{content}
+      )
       """)
   void insertAttachment(
       @Param("id") String id,
@@ -101,19 +105,39 @@ public interface ChatMapper {
       @Param("fileName") String fileName,
       @Param("fileSize") long fileSize,
       @Param("mimeType") String mimeType,
-      @Param("displayKind") String displayKind);
+      @Param("displayKind") String displayKind,
+      @Param("content") byte[] content);
 
   @Select("""
       select id,
              file_name as fileName,
              file_size as fileSize,
              mime_type as mimeType,
-             display_kind as displayKind
+             display_kind as displayKind,
+             content is not null as hasContent
       from message_attachments
       where message_id = #{messageId}
       order by id
       """)
   List<AttachmentRow> findAttachments(@Param("messageId") String messageId);
+
+  @Select("""
+      select a.file_name as fileName,
+             a.mime_type as mimeType,
+             a.content
+      from message_attachments a
+      join messages m on m.id = a.message_id
+      where a.id = #{attachmentId}
+        and m.status = 'active'
+        and (
+          (m.peer_id = #{peerId} and m.from_user_id = #{currentUserId})
+          or (m.peer_id = #{currentUserId} and m.from_user_id = #{peerId})
+        )
+      """)
+  AttachmentContentRow findAttachmentContent(
+      @Param("peerId") String peerId,
+      @Param("currentUserId") String currentUserId,
+      @Param("attachmentId") String attachmentId);
 
   @Update("""
       update messages
@@ -132,7 +156,16 @@ public interface ChatMapper {
   record MessageRow(Long id, String fromUserId, String body, String status, String time) {
   }
 
-  record AttachmentRow(String id, String fileName, long fileSize, String mimeType, String displayKind) {
+  record AttachmentRow(
+      String id,
+      String fileName,
+      long fileSize,
+      String mimeType,
+      String displayKind,
+      boolean hasContent) {
+  }
+
+  record AttachmentContentRow(String fileName, String mimeType, byte[] content) {
   }
 
   record UnreadCountRow(String peerId, int count) {

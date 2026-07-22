@@ -10,7 +10,31 @@ public final class DemoEntities {
   public record UserEntity(String id, String name, String role, String phone, String status) {
   }
 
-  public record AttachmentEntity(String id, String name, long size, String type, String kind) {
+  public record AttachmentEntity(
+      String id,
+      String name,
+      long size,
+      String type,
+      String kind,
+      byte[] content,
+      boolean hasContent) {
+
+    public AttachmentEntity(String id, String name, long size, String type, String kind) {
+      this(id, name, size, type, kind, null, false);
+    }
+
+    public AttachmentEntity(
+        String id,
+        String name,
+        long size,
+        String type,
+        String kind,
+        byte[] content) {
+      this(id, name, size, type, kind, content, content != null);
+    }
+  }
+
+  public record AttachmentContentEntity(String name, String type, byte[] content) {
   }
 
   public record MessageEntity(

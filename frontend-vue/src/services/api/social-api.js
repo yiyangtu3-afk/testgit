@@ -2,6 +2,7 @@ import { withApiFallback } from "./auth-api";
 
 export function createSocialApi({ http, mockSocial }) {
   const call = (path, options, fallback) => withApiFallback(() => http.request(path, options), fallback);
+  const blobCall = (path, options, fallback) => withApiFallback(() => http.requestBlob(path, options), fallback);
   return {
     users: (keyword = "") => call(`/api/users?keyword=${encodeURIComponent(keyword)}`, {}, () => mockSocial.users(keyword)),
     friends: () => call("/api/friends", {}, () => mockSocial.friends()),
@@ -12,6 +13,7 @@ export function createSocialApi({ http, mockSocial }) {
     unreadCounts: () => call("/api/conversations/unread-counts", {}, () => mockSocial.unreadCounts()),
     conversationPreviews: () => call("/api/conversations/previews", {}, () => mockSocial.conversationPreviews()),
     sendMessage: (peerId, text, attachments) => call(`/api/conversations/${peerId}/messages`, { method: "POST", body: JSON.stringify({ text, attachments }) }, () => mockSocial.sendMessage(peerId, text, attachments)),
+    attachment: (peerId, attachmentId) => blobCall(`/api/conversations/${peerId}/attachments/${attachmentId}`, {}, () => mockSocial.attachment(peerId, attachmentId)),
     withdrawMessage: (peerId, messageId) => call(`/api/conversations/${peerId}/messages/${messageId}/withdraw`, { method: "POST" }, () => mockSocial.withdrawMessage(peerId, messageId))
   };
 }

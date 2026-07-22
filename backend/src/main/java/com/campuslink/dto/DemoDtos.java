@@ -2,7 +2,9 @@ package com.campuslink.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
 
@@ -29,7 +31,9 @@ public final class DemoDtos {
   public record DemoLoginRequest(@NotBlank String userId) {
   }
 
-  public record SendMessageRequest(@NotBlank String text, List<AttachmentRequest> attachments) {
+  public record SendMessageRequest(
+      @NotBlank String text,
+      List<@Valid AttachmentRequest> attachments) {
   }
 
   public record FriendRequest(String fromUserId, @NotBlank String userId) {
@@ -86,10 +90,30 @@ public final class DemoDtos {
   public record UserView(String id, String name, String role, String phone, String status) {
   }
 
-  public record AttachmentRequest(String id, String name, long size, String type, String kind) {
+  public record AttachmentRequest(
+      @NotBlank(message = "附件标识不能为空") @Size(max = 64, message = "附件标识过长") String id,
+      @NotBlank(message = "附件名称不能为空") @Size(max = 255, message = "附件名称过长") String name,
+      @PositiveOrZero(message = "附件大小不正确") long size,
+      @NotBlank(message = "附件类型不能为空") @Size(max = 120, message = "附件类型过长") String type,
+      @NotBlank(message = "附件类别不能为空") @Size(max = 40, message = "附件类别过长") String kind,
+      @Size(max = 7_000_000, message = "图片数据过大") String dataUrl) {
+
+    public AttachmentRequest(String id, String name, long size, String type, String kind) {
+      this(id, name, size, type, kind, null);
+    }
   }
 
-  public record AttachmentView(String id, String name, long size, String type, String kind) {
+  public record AttachmentView(
+      String id,
+      String name,
+      long size,
+      String type,
+      String kind,
+      boolean hasContent) {
+
+    public AttachmentView(String id, String name, long size, String type, String kind) {
+      this(id, name, size, type, kind, false);
+    }
   }
 
   public record MessageView(

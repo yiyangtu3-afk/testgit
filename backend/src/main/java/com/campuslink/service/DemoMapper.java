@@ -43,7 +43,8 @@ final class DemoMapper {
         attachment.name(),
         attachment.size(),
         attachment.type(),
-        attachment.kind());
+        attachment.kind(),
+        attachment.hasContent());
   }
 
   static MessageView toMessageView(MessageEntity message) {
