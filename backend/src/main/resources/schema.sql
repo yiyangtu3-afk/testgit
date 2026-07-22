@@ -64,13 +64,29 @@ create table if not exists messages (
 );
 
 create table if not exists message_attachments (
-  id varchar(32) primary key,
+  id varchar(64) primary key,
   message_id varchar(32) not null,
   file_name varchar(255) not null,
   file_size bigint not null,
   mime_type varchar(120) not null,
   display_kind varchar(40) not null
 );
+
+set @message_attachment_id_length = (
+  select coalesce(character_maximum_length, 0)
+  from information_schema.columns
+  where table_schema = database()
+    and table_name = 'message_attachments'
+    and column_name = 'id'
+);
+set @message_attachment_id_migration = if(
+  @message_attachment_id_length >= 64,
+  'select 1',
+  'alter table message_attachments modify id varchar(64) not null'
+);
+prepare update_message_attachment_id from @message_attachment_id_migration;
+execute update_message_attachment_id;
+deallocate prepare update_message_attachment_id;
 
 create table if not exists conversation_reads (
   user_id varchar(32) not null,

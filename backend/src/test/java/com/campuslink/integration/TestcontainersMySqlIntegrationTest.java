@@ -6,11 +6,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.campuslink.CampusLinkApplication;
+import com.campuslink.entity.DemoEntities.AttachmentEntity;
+import com.campuslink.repository.ChatRepository;
 import com.campuslink.service.AuthTokenService;
 import com.campuslink.service.FeedService;
 import com.campuslink.service.FriendService;
 import com.campuslink.service.SocialNotificationService;
 import com.campuslink.support.MySqlTestcontainersIntegrationTest;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -31,6 +34,7 @@ class TestcontainersMySqlIntegrationTest extends MySqlTestcontainersIntegrationT
   @Autowired private FriendService friends;
   @Autowired private SocialNotificationService notifications;
   @Autowired private AuthTokenService authTokens;
+  @Autowired private ChatRepository chatRepository;
   @Autowired private MockMvc mockMvc;
 
   @Test
@@ -72,5 +76,21 @@ class TestcontainersMySqlIntegrationTest extends MySqlTestcontainersIntegrationT
             .header("Authorization", "Bearer " + studentToken))
         .andExpect(status().isForbidden())
         .andExpect(jsonPath("$.message").value("需要管理员账号"));
+  }
+
+  @Test
+  void persistsBrowserGeneratedAttachmentUuid() {
+    String attachmentId = "d7d3b4f2-5c2d-4d2b-8f92-6f9c965ca5d0";
+
+    var saved = chatRepository.saveMessage(
+        "u-1001",
+        "u-2001",
+        "浏览器 UUID 附件",
+        List.of(new AttachmentEntity(
+            attachmentId, "campus-card.png", 2048, "image/png", "image")));
+
+    assertThat(saved.attachments())
+        .extracting(AttachmentEntity::id)
+        .containsExactly(attachmentId);
   }
 }
