@@ -7,6 +7,7 @@ const a = useActivityStore();
 const route = useRoute();
 const draft = ref({ title: "", category: "", capacity: 40, location: "", startsAt: "", endsAt: "", description: "" });
 const verificationCodes = ref({});
+const operationsSection = ref(null);
 
 onMounted(a.load);
 
@@ -19,11 +20,16 @@ async function verifyCredential(activityId) {
   const entry = await a.verifyCredential(activityId, verificationCodes.value[activityId] || "");
   if (entry) verificationCodes.value[activityId] = "";
 }
+
+function openFieldCheckIn() {
+  operationsSection.value?.scrollIntoView({ behavior: "smooth", block: "start" });
+  requestAnimationFrame(() => operationsSection.value?.querySelector("input")?.focus());
+}
 </script>
 
 <template>
   <section class="activity-workspace">
-    <header><div><p class="eyebrow">CAMPUS ACTIVITIES</p><h2>校园活动</h2></div></header>
+    <header class="activities-heading"><div><p class="eyebrow">CAMPUS ACTIVITIES</p><h2>校园活动</h2></div><button v-if="a.managed.length" class="field-check-in-link" @click="openFieldCheckIn"><span>现场签到</span><small>核验学生凭证 ↓</small></button></header>
     <form class="activity-filters" @submit.prevent="a.load"><input v-model="a.filters.from" type="date"/><input v-model="a.filters.to" type="date"/><input v-model="a.filters.category" placeholder="活动类别"/><button>筛选</button></form>
     <p v-if="a.notice" class="feed-notice">{{ a.notice }}</p>
 
@@ -31,12 +37,16 @@ async function verifyCredential(activityId) {
 
     <article v-for="item in a.items" :key="item.id" class="activity-card" :class="{ 'is-target': String(item.id) === String(route.query.activity || '') }"><header><span>{{ item.category }}</span><h3>{{ item.title }}</h3></header><p>{{ item.description }}</p><small>{{ item.startsAt }} · {{ item.location }} · {{ item.capacity }} 人</small><footer><template v-if="a.registrations[item.id]?.status === 'registered'"><strong>已报名</strong><button @click="a.credential(item.id)">展示签到凭证</button><button class="quiet" @click="a.cancel(item.id)">取消报名</button></template><template v-else-if="a.registrations[item.id]?.status === 'waitlisted'"><strong>候补中</strong><button @click="a.cancel(item.id)">取消候补</button></template><button v-else @click="a.register(item.id)">立即报名</button></footer><aside v-if="a.credentials[item.id]" class="attendance-pass"><div><p>YOUR ATTENDANCE PASS</p><strong>{{ a.credentials[item.id].code }}</strong><small>此凭证会在再次展示时更新。仅向活动组织者出示。</small></div><span aria-hidden="true">✓</span></aside></article>
 
-    <section v-if="a.managed.length" class="managed"><p class="eyebrow">MY ACTIVITY OPERATIONS</p><article v-for="item in a.managed" :key="item.id"><header><div><strong>{{ item.title }}</strong><small v-if="item.reviewDecision === 'pending'">等待管理员审核</small></div><button @click="a.roster(item.id)">查看名单</button></header><form class="credential-check" @submit.prevent="verifyCredential(item.id)"><label :for="`credential-${item.id}`">签到凭证核验</label><div><input :id="`credential-${item.id}`" v-model="verificationCodes[item.id]" required maxlength="128" autocomplete="off" placeholder="输入学生出示的签到凭证"/><button>核验签到</button></div><small>核验由服务端确认组织者身份、活动归属和报名状态。</small></form><div v-if="a.rosters[item.id]" class="roster-list"><p v-for="entry in a.rosters[item.id].entries" :key="entry.registrationId"><span>{{ entry.attendeeName }} / {{ entry.status }}</span><button v-if="entry.status === 'registered'" @click="a.checkIn(item.id, entry.registrationId)">手动签到</button></p></div></article></section>
+    <section v-if="a.managed.length" ref="operationsSection" class="managed"><header class="operations-heading"><div><p class="eyebrow">MY ACTIVITY OPERATIONS</p><h3>现场签到</h3></div><p>输入学生出示的签到凭证，核验结果会即时写入活动名单。</p></header><article v-for="item in a.managed" :key="item.id"><header><div><strong>{{ item.title }}</strong><small v-if="item.reviewDecision === 'pending'">等待管理员审核</small></div><button @click="a.roster(item.id)">查看名单</button></header><form class="credential-check" @submit.prevent="verifyCredential(item.id)"><label :for="`credential-${item.id}`">签到凭证核验</label><div><input :id="`credential-${item.id}`" v-model="verificationCodes[item.id]" required maxlength="128" autocomplete="off" placeholder="输入学生出示的签到凭证"/><button>核验签到</button></div><small>核验由服务端确认组织者身份、活动归属和报名状态。</small></form><div v-if="a.rosters[item.id]" class="roster-list"><p v-for="entry in a.rosters[item.id].entries" :key="entry.registrationId"><span>{{ entry.attendeeName }} / {{ entry.status }}</span><button v-if="entry.status === 'registered'" @click="a.checkIn(item.id, entry.registrationId)">手动签到</button></p></div></article></section>
   </section>
 </template>
 
 <style scoped>
 .activity-card footer .quiet { border: 1px solid #9aafa0; background: transparent; color: #496757; }
+.activities-heading { display: flex; align-items: end; justify-content: space-between; gap: 1rem; }
+.field-check-in-link { display: grid; gap: .18rem; min-width: 8.8rem; padding: .65rem .85rem; border: 1px solid #b48a29; border-left: 4px solid #b48a29; background: #183d31; color: #fff; text-align: left; box-shadow: .28rem .28rem 0 #e8dcae; }
+.field-check-in-link span { font-size: .9rem; font-weight: 800; }
+.field-check-in-link small { color: #e6ce80; font-size: .67rem; }
 .attendance-pass { display: flex; align-items: stretch; justify-content: space-between; gap: 1rem; margin-top: 1rem; padding: .9rem 1rem; border: 1px dashed #b88d2f; background: linear-gradient(135deg, #203e32 0 72%, #d9bd6c 72%); color: #f5f1df; }
 .attendance-pass p { margin: 0 0 .45rem; color: #dfc56f; font: .6rem/1 ui-monospace, monospace; letter-spacing: .14em; }
 .attendance-pass strong { display: block; max-width: 100%; overflow-wrap: anywhere; color: #fff; font: 700 clamp(.82rem, 2vw, 1rem)/1.35 ui-monospace, monospace; letter-spacing: .04em; }
@@ -44,6 +54,10 @@ async function verifyCredential(activityId) {
 .attendance-pass > span { display: grid; align-self: center; width: 2.1rem; height: 2.1rem; place-items: center; border: 1px solid rgba(255,255,255,.72); border-radius: 50%; background: #d9bd6c; color: #203e32; font-weight: 800; }
 .managed article > header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .managed article > header > div { display: grid; gap: .1rem; }
+.operations-heading { display: flex; align-items: end; justify-content: space-between; gap: 1rem; padding: 1rem 1rem .9rem; border-top: 3px solid #b88d2f; background: #183d31; color: #f3f6ed; }
+.operations-heading .eyebrow { margin: 0; color: #e6ce80; }
+.operations-heading h3 { margin: .3rem 0 0; font-size: 1.35rem; }
+.operations-heading > p { max-width: 20rem; margin: 0; color: #d1dfd2; font-size: .78rem; line-height: 1.55; text-align: right; }
 .credential-check { margin-top: 1rem; padding: .75rem .85rem; border-left: 3px solid #c89c35; background: #eef3ed; }
 .credential-check label { display: block; color: #355747; font-size: .76rem; font-weight: 700; }
 .credential-check div { display: flex; gap: .5rem; margin-top: .45rem; }
@@ -52,5 +66,5 @@ async function verifyCredential(activityId) {
 .roster-list { margin-top: .75rem; }
 .roster-list p { display: flex; align-items: center; justify-content: space-between; gap: .8rem; }
 .roster-list p:last-child { border-bottom: 0; }
-@media (max-width: 760px) { .attendance-pass { background: linear-gradient(135deg, #203e32 0 84%, #d9bd6c 84%); } .credential-check div, .managed article > header, .roster-list p { align-items: flex-start; flex-direction: column; } }
+@media (max-width: 760px) { .attendance-pass { background: linear-gradient(135deg, #203e32 0 84%, #d9bd6c 84%); } .activities-heading, .operations-heading, .credential-check div, .managed article > header, .roster-list p { align-items: flex-start; flex-direction: column; } .field-check-in-link { width: 100%; } .operations-heading > p { text-align: left; } }
 </style>
