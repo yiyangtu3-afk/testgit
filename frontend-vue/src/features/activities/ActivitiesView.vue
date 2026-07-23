@@ -29,7 +29,7 @@ function openFieldCheckIn() {
 
 <template>
   <section class="activity-workspace">
-    <header class="activities-heading"><div><p class="eyebrow">CAMPUS ACTIVITIES</p><h2>校园活动</h2></div><button v-if="a.managed.length" class="field-check-in-link" @click="openFieldCheckIn"><span>现场签到</span><small>核验学生凭证 ↓</small></button></header>
+    <header class="activities-heading"><div><p class="eyebrow">CAMPUS ACTIVITIES</p><h2>校园活动</h2></div><button v-if="a.isOrganizer" class="field-check-in-link" @click="openFieldCheckIn"><span>现场签到</span><small>核验学生凭证 ↓</small></button></header>
     <form class="activity-filters" @submit.prevent="a.load"><input v-model="a.filters.from" type="date"/><input v-model="a.filters.to" type="date"/><input v-model="a.filters.category" placeholder="活动类别"/><button>筛选</button></form>
     <p v-if="a.notice" class="feed-notice">{{ a.notice }}</p>
 
@@ -37,7 +37,7 @@ function openFieldCheckIn() {
 
     <article v-for="item in a.items" :key="item.id" class="activity-card" :class="{ 'is-target': String(item.id) === String(route.query.activity || '') }"><header><span>{{ item.category }}</span><h3>{{ item.title }}</h3></header><p>{{ item.description }}</p><small>{{ item.startsAt }} · {{ item.location }} · {{ item.capacity }} 人</small><footer><template v-if="a.registrations[item.id]?.status === 'registered'"><strong>已报名</strong><button @click="a.credential(item.id)">展示签到凭证</button><button class="quiet" @click="a.cancel(item.id)">取消报名</button></template><template v-else-if="a.registrations[item.id]?.status === 'waitlisted'"><strong>候补中</strong><button @click="a.cancel(item.id)">取消候补</button></template><button v-else @click="a.register(item.id)">立即报名</button></footer><aside v-if="a.credentials[item.id]" class="attendance-pass"><div><p>YOUR ATTENDANCE PASS</p><strong>{{ a.credentials[item.id].code }}</strong><small>此凭证会在再次展示时更新。仅向活动组织者出示。</small></div><span aria-hidden="true">✓</span></aside></article>
 
-    <section v-if="a.managed.length" ref="operationsSection" class="managed"><header class="operations-heading"><div><p class="eyebrow">MY ACTIVITY OPERATIONS</p><h3>现场签到</h3></div><p>输入学生出示的签到凭证，核验结果会即时写入活动名单。</p></header><article v-for="item in a.managed" :key="item.id"><header><div><strong>{{ item.title }}</strong><small v-if="item.reviewDecision === 'pending'">等待管理员审核</small></div><button @click="a.roster(item.id)">查看名单</button></header><form class="credential-check" @submit.prevent="verifyCredential(item.id)"><label :for="`credential-${item.id}`">签到凭证核验</label><div><input :id="`credential-${item.id}`" v-model="verificationCodes[item.id]" required maxlength="128" autocomplete="off" placeholder="输入学生出示的签到凭证"/><button>核验签到</button></div><small>核验由服务端确认组织者身份、活动归属和报名状态。</small></form><div v-if="a.rosters[item.id]" class="roster-list"><p v-for="entry in a.rosters[item.id].entries" :key="entry.registrationId"><span>{{ entry.attendeeName }} / {{ entry.status }}</span><button v-if="entry.status === 'registered'" @click="a.checkIn(item.id, entry.registrationId)">手动签到</button></p></div></article></section>
+    <section v-if="a.isOrganizer" ref="operationsSection" class="managed"><header class="operations-heading"><div><p class="eyebrow">MY ACTIVITY OPERATIONS</p><h3>现场签到</h3></div><p v-if="a.managed.length">输入学生出示的签到凭证，核验结果会即时写入活动名单。</p><p v-else>此账号目前没有可核验的活动。</p></header><p v-if="!a.managed.length" class="managed-empty">请切换到创建该活动的教师或社团负责人账号，再核验学生展示的签到凭证。</p><article v-for="item in a.managed" :key="item.id"><header><div><strong>{{ item.title }}</strong><small v-if="item.reviewDecision === 'pending'">等待管理员审核</small></div><button @click="a.roster(item.id)">查看名单</button></header><form class="credential-check" @submit.prevent="verifyCredential(item.id)"><label :for="`credential-${item.id}`">签到凭证核验</label><div><input :id="`credential-${item.id}`" v-model="verificationCodes[item.id]" required maxlength="128" autocomplete="off" placeholder="输入学生出示的签到凭证"/><button>核验签到</button></div><small>核验由服务端确认组织者身份、活动归属和报名状态。</small></form><div v-if="a.rosters[item.id]" class="roster-list"><p v-for="entry in a.rosters[item.id].entries" :key="entry.registrationId"><span>{{ entry.attendeeName }} / {{ entry.status }}</span><button v-if="entry.status === 'registered'" @click="a.checkIn(item.id, entry.registrationId)">手动签到</button></p></div></article></section>
   </section>
 </template>
 
@@ -58,6 +58,7 @@ function openFieldCheckIn() {
 .operations-heading .eyebrow { margin: 0; color: #e6ce80; }
 .operations-heading h3 { margin: .3rem 0 0; font-size: 1.35rem; }
 .operations-heading > p { max-width: 20rem; margin: 0; color: #d1dfd2; font-size: .78rem; line-height: 1.55; text-align: right; }
+.managed-empty { margin: 0; padding: .85rem 1rem; border: 1px solid #d8e0d4; border-top: 0; background: #f4f7f1; color: #486052; line-height: 1.55; }
 .credential-check { margin-top: 1rem; padding: .75rem .85rem; border-left: 3px solid #c89c35; background: #eef3ed; }
 .credential-check label { display: block; color: #355747; font-size: .76rem; font-weight: 700; }
 .credential-check div { display: flex; gap: .5rem; margin-top: .45rem; }
