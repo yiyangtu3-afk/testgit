@@ -28,6 +28,15 @@ describe("activity store", () => {
     expect(api.managed).toHaveBeenCalledOnce();
     expect(store.managed.value).toMatchObject([{ title: "揍康鹏" }]);
   });
+  it("marks only student accounts as eligible to register for activities", () => {
+    const student = createActivityStore({ getUser: () => ({ role: "学生账号" }) })();
+    const organizer = createActivityStore({ getUser: () => ({ role: "社团负责人" }) })();
+    const administrator = createActivityStore({ getUser: () => ({ role: "管理员" }) })();
+
+    expect(student.isStudent.value).toBe(true);
+    expect(organizer.isStudent.value).toBe(false);
+    expect(administrator.isStudent.value).toBe(false);
+  });
   it("keeps a student credential in memory and refreshes the organizer roster after verification", async () => {
     const api = {
       credential: vi.fn().mockResolvedValue({ mode: "api", data: { activityId: "a-1", code: "opaque-code" } }),
