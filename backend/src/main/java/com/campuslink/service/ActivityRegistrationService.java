@@ -1,6 +1,7 @@
 package com.campuslink.service;
 
 import com.campuslink.dto.ActivityRegistrationDtos.ActivityMetricsView;
+import com.campuslink.dto.ActivityRegistrationDtos.CheckInCredentialView;
 import com.campuslink.dto.ActivityRegistrationDtos.RegistrationView;
 import com.campuslink.dto.ActivityRegistrationDtos.RosterEntryView;
 import com.campuslink.dto.ActivityRegistrationDtos.RosterView;
@@ -8,7 +9,13 @@ import com.campuslink.entity.ActivityEntity;
 import com.campuslink.entity.ActivityRegistrationEntity;
 import com.campuslink.entity.DemoEntities.UserEntity;
 import com.campuslink.repository.ActivityRegistrationRepository;
+import com.campuslink.repository.ActivityCheckInCredentialRepository;
 import com.campuslink.repository.ActivityRepository;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.ArrayList;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,14 +25,17 @@ public class ActivityRegistrationService {
 
   private final ActivityRepository activities;
   private final ActivityRegistrationRepository registrations;
+  private final ActivityCheckInCredentialRepository credentials;
   private final ActivityNotificationService notifications;
 
   public ActivityRegistrationService(
       ActivityRepository activities,
       ActivityRegistrationRepository registrations,
+      ActivityCheckInCredentialRepository credentials,
       ActivityNotificationService notifications) {
     this.activities = activities;
     this.registrations = registrations;
+    this.credentials = credentials;
     this.notifications = notifications;
   }
 
@@ -99,10 +109,48 @@ public class ActivityRegistrationService {
   }
 
   @Transactional
+  public CheckInCredentialView credential(UserEntity attendee, String activityId) {
+    requireStudent(attendee);
+    ActivityRegistrationEntity registration = registrations.findForUpdate(activityId, attendee.id());
+    if (registration == null || !"registered".equals(registration.status())) {
+      throw new ConflictException("只有已报名且未签到的参与者可以领取签到凭证");
+    }
+    var existing = credentials.findByRegistrationId(registration.id());
+    String code = newCredentialCode();
+    if (existing == null) {
+      credentials.create(registration.id(), hash(code));
+    } else {
+      credentials.replaceTokenHash(existing.id(), hash(code));
+    }
+    return new CheckInCredentialView(activityId, code);
+  }
+
+  @Transactional
+  public RosterEntryView verifyCredential(UserEntity organizer, String activityId, String code) {
+    requireOrganizer(organizer);
+    requireOwnedActivity(organizer, activityId, true);
+    var credential = credentials.findByTokenHashForUpdate(hash(code));
+    if (credential == null) {
+      throw new ConflictException("签到凭证无效");
+    }
+    ActivityRegistrationEntity registration =
+        registrations.findByIdForUpdate(activityId, credential.registrationId());
+    if (registration == null) {
+      throw new ConflictException("签到凭证不属于当前活动");
+    }
+    return checkInRegistration(organizer, activityId, registration);
+  }
+
+  @Transactional
   public RosterEntryView checkIn(UserEntity organizer, String activityId, String registrationId) {
     requireOrganizer(organizer);
     requireOwnedActivity(organizer, activityId, true);
     ActivityRegistrationEntity registration = registrations.findByIdForUpdate(activityId, registrationId);
+    return checkInRegistration(organizer, activityId, registration);
+  }
+
+  private RosterEntryView checkInRegistration(UserEntity organizer, String activityId,
+      ActivityRegistrationEntity registration) {
     if (registration == null) {
       throw new IllegalArgumentException("报名记录不存在");
     }
@@ -118,7 +166,7 @@ public class ActivityRegistrationService {
     registrations.addEvent(registration.id(), activityId, registration.attendeeId(), organizer.id(),
         "checked_in", "registered", "checked_in");
     return registrations.findRoster(activityId).stream()
-        .filter(item -> item.registrationId().equals(registrationId))
+        .filter(item -> item.registrationId().equals(registration.id()))
         .findFirst()
         .map(item -> new RosterEntryView(item.registrationId(), item.attendeeId(), item.attendeeName(),
             item.status(), 0, item.registeredAt(), item.waitlistedAt(), item.checkedInAt()))
@@ -197,5 +245,21 @@ public class ActivityRegistrationService {
   private RegistrationView view(ActivityRegistrationEntity registration, String status, int queuePosition) {
     return new RegistrationView(registration.id(), registration.activityId(), status, queuePosition,
         registration.registeredAt(), registration.waitlistedAt());
+  }
+
+  private String newCredentialCode() {
+    byte[] bytes = new byte[24];
+    new SecureRandom().nextBytes(bytes);
+    return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+  }
+
+  private String hash(String value) {
+    try {
+      byte[] digest = MessageDigest.getInstance("SHA-256")
+          .digest(value.strip().getBytes(StandardCharsets.UTF_8));
+      return java.util.HexFormat.of().formatHex(digest);
+    } catch (NoSuchAlgorithmException error) {
+      throw new IllegalStateException("无法生成签到凭证摘要", error);
+    }
   }
 }

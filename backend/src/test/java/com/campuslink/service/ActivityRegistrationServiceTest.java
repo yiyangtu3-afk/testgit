@@ -8,6 +8,7 @@ import com.campuslink.dto.ActivityDtos.ReviewActivityRequest;
 import com.campuslink.entity.DemoEntities.UserEntity;
 import com.campuslink.support.InMemoryActivityRegistrationRepository;
 import com.campuslink.support.InMemoryActivityNotificationRepository;
+import com.campuslink.support.InMemoryActivityCheckInCredentialRepository;
 import com.campuslink.support.InMemoryActivityRepository;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,7 +23,8 @@ class ActivityRegistrationServiceTest {
   private final ActivityNotificationService notifications =
       new ActivityNotificationService(notificationRepository);
   private final ActivityRegistrationService service =
-      new ActivityRegistrationService(activities, registrations, notifications);
+      new ActivityRegistrationService(activities, registrations,
+          new InMemoryActivityCheckInCredentialRepository(), notifications);
   private String activityId;
 
   @BeforeEach void publishCapacityOneActivity() {
@@ -109,6 +111,23 @@ class ActivityRegistrationServiceTest {
     assertThat(checkedIn.status()).isEqualTo("checked_in");
     assertThat(checkedIn.checkedInAt()).isNotNull();
     assertThat(service.roster(teacher, activityId).checkedInCount()).isEqualTo(1);
+    assertThat(registrations.findEvents(activityId)).extracting("eventType")
+        .containsExactly("registered", "checked_in");
+  }
+
+  @Test void organizerVerifiesOnlyTheLatestOpaqueCredentialForARegisteredAttendee() {
+    var teacher = user("u-teacher", "教师");
+    var student = user("u-one", "学生");
+    service.register(student, activityId);
+    String outdatedCode = service.credential(student, activityId).code();
+    String activeCode = service.credential(student, activityId).code();
+
+    assertThatThrownBy(() -> service.verifyCredential(teacher, activityId, outdatedCode))
+        .isInstanceOf(ConflictException.class).hasMessage("签到凭证无效");
+
+    var checkedIn = service.verifyCredential(teacher, activityId, activeCode);
+    assertThat(checkedIn.attendeeId()).isEqualTo(student.id());
+    assertThat(checkedIn.status()).isEqualTo("checked_in");
     assertThat(registrations.findEvents(activityId)).extracting("eventType")
         .containsExactly("registered", "checked_in");
   }

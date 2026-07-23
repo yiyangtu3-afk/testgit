@@ -11,6 +11,7 @@ import com.campuslink.service.ActivityNotificationService;
 import com.campuslink.service.ActivityRegistrationService;
 import com.campuslink.service.AuthTokenService;
 import com.campuslink.support.InMemoryActivityNotificationRepository;
+import com.campuslink.support.InMemoryActivityCheckInCredentialRepository;
 import com.campuslink.support.InMemoryActivityRegistrationRepository;
 import com.campuslink.support.InMemoryActivityRepository;
 import com.campuslink.support.InMemoryAuthSessionRepository;
@@ -32,6 +33,7 @@ class ActivityOperationsAdminControllerTest {
     };
     var service = new ActivityRegistrationService(new InMemoryActivityRepository(),
         new InMemoryActivityRegistrationRepository(),
+        new InMemoryActivityCheckInCredentialRepository(),
         new ActivityNotificationService(new InMemoryActivityNotificationRepository()));
     var authTokens = new AuthTokenService(sessions, users);
     var mockMvc = MockMvcBuilders.standaloneSetup(new ActivityOperationsAdminController(

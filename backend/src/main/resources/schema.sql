@@ -312,6 +312,15 @@ create table if not exists activity_registration_events (
   key idx_activity_registration_events_registration (registration_id, created_at)
 );
 
+create table if not exists activity_check_in_credentials (
+  id varchar(32) primary key,
+  registration_id varchar(32) not null,
+  token_hash char(64) not null,
+  issued_at timestamp(6) not null default current_timestamp(6),
+  unique key uk_activity_check_in_credentials_registration (registration_id),
+  unique key uk_activity_check_in_credentials_token (token_hash)
+);
+
 create table if not exists activity_notifications (
   id varchar(32) primary key,
   recipient_id varchar(32) not null,

@@ -452,10 +452,21 @@ http://127.0.0.1:8080
 63. 2026 年 7 月 21 日调整 Vue 内容审核工作台：它仅请求并显示 `pending` 内容，审核通过或
     拒绝后会从功能框移除，不再作为历史记录占用审核操作区。审核人、时间和意见仍保留在
     审计记录与持久化审核数据中。
+64. 2026 年 7 月 23 日完成 Vue 活动签到凭证切片：已报名学生可主动展示当前不透明凭证，
+    组织者在 **我的活动运营** 输入凭证后完成签到。`activity_check_in_credentials` 只保存
+    SHA-256 摘要；再次展示会轮换凭证并使旧码失效。`POST`
+    `/api/activities/{activityId}/registrations/current/check-in-credential` 从 JWT 确认学生和
+    `registered` 状态；`POST /api/activities/{activityId}/registrations/check-in-credential`
+    从 JWT 确认组织者、活动归属、凭证和报名状态，再复用同一事务写入 `checked_in` 与追加式
+    事件。Vue 与 Mock 保持同一返回结构，真实 API 的失败不会回退 Mock；旧静态入口没有改动。
+    本轮还修正了 Vue 名单手动签到使用 `registrationId` 的真实响应字段。完整 Maven
+    测试 156 项、Vue 测试 43 项（16 个文件）、生产构建和旧版前端回归检查均通过；新增
+    MySQL 集成测试使用 `@Transactional` 与 `@Rollback`，没有清理本机历史数据。
 
 ## 下一项工作
 
-阶段二和阶段三点赞、好友申请、评论通知、实时推送和通知操作切片已经完成。
+阶段二和阶段三点赞、好友申请、评论通知、实时推送和通知操作切片，以及 Vue 现场签到凭证
+切片已经完成。
 `GET /api/social-notifications/{notificationId}/friend-request-target` 从 bearer
 token 确认当前收件人，并验证 `social.friend.requested`、通知发送者、申请目标
 与 `pending` 状态；前端只用返回的申请 ID 定位已有待处理申请卡片，复用同意、

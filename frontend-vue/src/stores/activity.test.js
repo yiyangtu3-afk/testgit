@@ -14,4 +14,20 @@ describe("activity store", () => {
     await expect(store.create({ startsAt: "2026-08-20T10:00", endsAt: "2026-08-20T09:00" })).resolves.toBeNull();
     expect(api.createActivity).not.toHaveBeenCalled();
   });
+  it("keeps a student credential in memory and refreshes the organizer roster after verification", async () => {
+    const api = {
+      credential: vi.fn().mockResolvedValue({ mode: "api", data: { activityId: "a-1", code: "opaque-code" } }),
+      verifyCredential: vi.fn().mockResolvedValue({ mode: "api", data: { attendeeName: "林一", status: "checked_in" } }),
+      roster: vi.fn().mockResolvedValue({ mode: "api", data: { entries: [{ registrationId: "r-1", status: "checked_in" }] } })
+    };
+    const store = createActivityStore({ api })();
+
+    await store.credential("a-1");
+    await expect(store.verifyCredential("a-1", "opaque-code")).resolves.toMatchObject({ status: "checked_in" });
+
+    expect(store.credentials.value["a-1"].code).toBe("opaque-code");
+    expect(api.verifyCredential).toHaveBeenCalledWith("a-1", "opaque-code");
+    expect(store.rosters.value["a-1"].entries[0].status).toBe("checked_in");
+    expect(store.notice.value).toContain("林一");
+  });
 });

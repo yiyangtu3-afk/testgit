@@ -24,11 +24,11 @@ available through `./script/run_legacy_frontend_demo.sh` at
 ## Current handoff
 
 The current functional stable point is
-`98c2dad Add notification read and target actions` on `main`. The latest Vue
-interface handoff commit is `6a87873 Increase Vue chat height`. Friend-request
-notifications now include a safe **处理申请** entry: the server resolves the
-notification to the current recipient's pending request before the existing
-accept or reject controls are shown. Start from
+`98c2dad Add notification read and target actions` on `main`. The latest
+delivery adds activity check-in credentials. Friend-request notifications now
+include a safe **处理申请** entry: the server resolves the notification to the
+current recipient's pending request before the existing accept or reject
+controls are shown. Start from
 [`docs/new-chat-handoff-2026-07-08.md`](docs/new-chat-handoff-2026-07-08.md)
 for the complete handoff, constraints, and local verification commands.
 
@@ -141,6 +141,9 @@ The demo supports these flows:
 - Open **我的活动运营** as the organizer, inspect the persisted registration
   and waitlist roster, check in registered students, and export the roster as
   CSV.
+- As a registered student, display a fresh one-time **签到凭证** from the Vue
+  activity card. The organizer can enter that opaque code in **我的活动运营** to
+  check in the participant without accepting any client-provided identity.
 - Switch to the administrator account, approve or reject pending activities,
   and provide a required reason for rejection.
 - See the activity-review workspace immediately when opening the administrator
@@ -257,13 +260,13 @@ messages, chat attachments, feed posts, comments, moderation, and audit
 records. Activity tests cover organizer permissions, review transitions,
 date/category filters, registration and waitlist promotion, organizer rosters,
 transactional check-in, persistent notifications, user-scoped post likes,
-comment and friend-request outcomes, HTTP boundaries, MyBatis mapping, and
-rollback-safe history.
+comment and friend-request outcomes, HTTP boundaries, MyBatis mapping,
+credential-hash verification, and rollback-safe history.
 The suite also includes MockMvc controller tests for the auth, users, friends,
 chat, feed, activity notifications, social notifications, and admin API
 boundaries, plus direct WebSocket handler tests for chat and recipient-only
 activity and social notification events, plus the Spring Security API chain.
-The full suite currently contains 151 tests. `TestcontainersMySqlIntegrationTest`
+The full suite currently contains 156 tests. `TestcontainersMySqlIntegrationTest`
 starts an isolated `mysql:8.4` container and initializes it from the existing
 `schema.sql` and `data.sql` files. It verifies MyBatis visibility filtering,
 the transactional friend-acceptance and notification writes, and the JWT

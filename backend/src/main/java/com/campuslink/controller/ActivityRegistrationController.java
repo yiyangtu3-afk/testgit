@@ -3,6 +3,8 @@ package com.campuslink.controller;
 import com.campuslink.dto.ActivityRegistrationDtos.RegistrationView;
 import com.campuslink.dto.ActivityRegistrationDtos.RosterView;
 import com.campuslink.dto.ActivityRegistrationDtos.RosterEntryView;
+import com.campuslink.dto.ActivityRegistrationDtos.CheckInCredentialView;
+import com.campuslink.dto.ActivityRegistrationDtos.VerifyCheckInCredentialRequest;
 import com.campuslink.entity.DemoEntities.UserEntity;
 import com.campuslink.service.ActivityRegistrationService;
 import com.campuslink.service.AuthTokenService;
@@ -16,6 +18,8 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestBody;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/activities/{activityId}/registrations")
@@ -58,6 +62,21 @@ public class ActivityRegistrationController {
       @PathVariable String activityId,
       @RequestHeader(value = "Authorization", required = false) String authorization) {
     return service.roster(authTokens.requireUser(authorization), activityId);
+  }
+
+  @PostMapping("/current/check-in-credential")
+  public CheckInCredentialView credential(
+      @PathVariable String activityId,
+      @RequestHeader(value = "Authorization", required = false) String authorization) {
+    return service.credential(authTokens.requireUser(authorization), activityId);
+  }
+
+  @PostMapping("/check-in-credential")
+  public RosterEntryView verifyCredential(
+      @PathVariable String activityId,
+      @Valid @RequestBody VerifyCheckInCredentialRequest request,
+      @RequestHeader(value = "Authorization", required = false) String authorization) {
+    return service.verifyCredential(authTokens.requireUser(authorization), activityId, request.code());
   }
 
   @PostMapping("/{registrationId}/check-in")

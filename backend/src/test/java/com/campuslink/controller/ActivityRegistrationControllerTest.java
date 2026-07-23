@@ -15,6 +15,7 @@ import com.campuslink.service.ActivityNotificationService;
 import com.campuslink.service.ActivityService;
 import com.campuslink.service.AuthTokenService;
 import com.campuslink.support.InMemoryActivityRegistrationRepository;
+import com.campuslink.support.InMemoryActivityCheckInCredentialRepository;
 import com.campuslink.support.InMemoryActivityNotificationRepository;
 import com.campuslink.support.InMemoryActivityRepository;
 import com.campuslink.support.InMemoryAuthSessionRepository;
@@ -52,6 +53,7 @@ class ActivityRegistrationControllerTest {
     };
     var service = new ActivityRegistrationService(activityRepository,
         new InMemoryActivityRegistrationRepository(),
+        new InMemoryActivityCheckInCredentialRepository(),
         new ActivityNotificationService(new InMemoryActivityNotificationRepository()));
     var authTokens = new AuthTokenService(sessions, userRepository);
     studentAuthorization = "Bearer " + authTokens.issueToken(student.id());
@@ -96,5 +98,28 @@ class ActivityRegistrationControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.status").value("checked_in"))
         .andExpect(jsonPath("$.checkedInAt").isNotEmpty());
+  }
+
+  @Test void studentCredentialIsVerifiedByTheOwningOrganizerWithoutClientIdentityFields()
+      throws Exception {
+    mockMvc.perform(post("/api/activities/{activityId}/registrations", activityId)
+        .header("Authorization", studentAuthorization))
+        .andExpect(status().isCreated());
+
+    String response = mockMvc.perform(post(
+            "/api/activities/{activityId}/registrations/current/check-in-credential", activityId)
+        .header("Authorization", studentAuthorization))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.code").isNotEmpty())
+        .andReturn().getResponse().getContentAsString();
+    String code = new com.fasterxml.jackson.databind.ObjectMapper().readTree(response).get("code").asText();
+
+    mockMvc.perform(post("/api/activities/{activityId}/registrations/check-in-credential", activityId)
+        .header("Authorization", teacherAuthorization)
+        .contentType("application/json")
+        .content("{\"code\":\"" + code + "\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.attendeeId").value("u-student"))
+        .andExpect(jsonPath("$.status").value("checked_in"));
   }
 }

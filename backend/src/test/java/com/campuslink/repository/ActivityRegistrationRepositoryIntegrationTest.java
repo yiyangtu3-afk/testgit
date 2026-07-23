@@ -22,6 +22,7 @@ class ActivityRegistrationRepositoryIntegrationTest {
   @Autowired ActivityService activities;
   @Autowired ActivityRegistrationService registrations;
   @Autowired ActivityRegistrationRepository repository;
+  @Autowired ActivityCheckInCredentialRepository credentials;
   @Autowired UserRepository users;
 
   @Test void registrationAndPromotionHistoryRollBackWithTestTransaction() {
@@ -61,5 +62,24 @@ class ActivityRegistrationRepositoryIntegrationTest {
     assertThat(repository.find(published.id(), student.id()).status()).isEqualTo("checked_in");
     assertThat(repository.findEvents(published.id())).extracting("eventType")
         .containsExactly("registered", "checked_in");
+  }
+
+  @Test void credentialHashAndCredentialCheckInRollBackWithTheRegistrationTransaction() {
+    var teacher = users.findById("u-2001").orElseThrow();
+    var admin = users.findById("u-2003").orElseThrow();
+    var student = users.findById("u-1001").orElseThrow();
+    var pending = activities.create(teacher, new CreateActivityRequest("凭证事务测试", "验证凭证摘要和核验签到",
+        "测试", "T203", LocalDateTime.of(2026, 9, 5, 9, 0),
+        LocalDateTime.of(2026, 9, 5, 11, 0), 10));
+    var published = activities.review(admin, pending.id(), new ReviewActivityRequest("approve", null));
+    var registration = registrations.register(student, published.id());
+
+    var credential = registrations.credential(student, published.id());
+    var stored = credentials.findByRegistrationId(registration.id());
+    assertThat(stored.tokenHash()).hasSize(64).isNotEqualTo(credential.code());
+
+    var checkedIn = registrations.verifyCredential(teacher, published.id(), credential.code());
+    assertThat(checkedIn.status()).isEqualTo("checked_in");
+    assertThat(repository.find(published.id(), student.id()).checkedInAt()).isNotNull();
   }
 }
