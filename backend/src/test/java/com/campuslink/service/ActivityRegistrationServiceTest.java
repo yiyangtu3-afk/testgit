@@ -158,6 +158,19 @@ class ActivityRegistrationServiceTest {
         .hasMessage("只能管理自己创建的活动");
   }
 
+  @Test void organizerCannotCheckInAnActivityBeforeItIsApproved() {
+    var teacher = user("u-teacher", "教师");
+    var activityService = new ActivityService(activities,
+        new ActivityNotificationService(new InMemoryActivityNotificationRepository()));
+    var pending = activityService.create(teacher, new CreateActivityRequest("待审签到测试", "测试审核边界",
+        "科技", "A202", LocalDateTime.of(2026, 8, 2, 9, 0),
+        LocalDateTime.of(2026, 8, 2, 11, 0), 1));
+
+    assertThatThrownBy(() -> service.checkIn(teacher, pending.id(), "missing-registration"))
+        .isInstanceOf(ConflictException.class)
+        .hasMessage("当前活动暂不支持签到");
+  }
+
   private UserEntity user(String id, String role) {
     return new UserEntity(id, id, role, "13800000000", "online");
   }

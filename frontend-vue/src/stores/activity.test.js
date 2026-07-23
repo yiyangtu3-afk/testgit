@@ -37,6 +37,19 @@ describe("activity store", () => {
     expect(organizer.isStudent.value).toBe(false);
     expect(administrator.isStudent.value).toBe(false);
   });
+  it("keeps API failures visible for activity actions instead of rejecting in the view", async () => {
+    const rejected = () => Promise.reject(new Error("权限不足"));
+    const api = { activities: rejected, register: rejected, cancel: rejected, roster: rejected, checkIn: rejected };
+    const store = createActivityStore({ api, getUser: () => ({ role: "教师" }) })();
+
+    await expect(store.load()).resolves.toBeUndefined();
+    expect(store.notice.value).toBe("权限不足");
+    await expect(store.register("a-1")).resolves.toBeNull();
+    await expect(store.cancel("a-1")).resolves.toBeNull();
+    await expect(store.roster("a-1")).resolves.toBeNull();
+    await expect(store.checkIn("a-1", "r-1")).resolves.toBe(false);
+    expect(store.notice.value).toBe("权限不足");
+  });
   it("keeps a student credential in memory and refreshes the organizer roster after verification", async () => {
     const api = {
       credential: vi.fn().mockResolvedValue({ mode: "api", data: { activityId: "a-1", code: "opaque-code" } }),

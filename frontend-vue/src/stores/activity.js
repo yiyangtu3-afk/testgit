@@ -18,13 +18,18 @@ export function createActivityStore({ api, getUser = () => null, setMode = () =>
       return result.data;
     };
     const load = async () => {
-      items.value = await run(() => api.activities(filters.value));
-      const pairs = isStudent.value
-        ? await Promise.all(items.value.map(async (activity) =>
-          [activity.id, await run(() => api.current(activity.id))]))
-        : [];
-      registrations.value = Object.fromEntries(pairs);
-      managed.value = isOrganizer.value ? await run(() => api.managed()) : [];
+      notice.value = "";
+      try {
+        items.value = await run(() => api.activities(filters.value));
+        const pairs = isStudent.value
+          ? await Promise.all(items.value.map(async (activity) =>
+            [activity.id, await run(() => api.current(activity.id))]))
+          : [];
+        registrations.value = Object.fromEntries(pairs);
+        managed.value = isOrganizer.value ? await run(() => api.managed()) : [];
+      } catch (error) {
+        notice.value = error.message || "活动数据加载失败。";
+      }
     };
     const create = async (activity) => {
       if (activity.endsAt <= activity.startsAt) {
@@ -42,21 +47,48 @@ export function createActivityStore({ api, getUser = () => null, setMode = () =>
       }
     };
     const register = async (id) => {
-      registrations.value = { ...registrations.value, [id]: await run(() => api.register(id)) };
-      notice.value = "报名状态已更新。";
+      try {
+        const registration = await run(() => api.register(id));
+        registrations.value = { ...registrations.value, [id]: registration };
+        notice.value = "报名状态已更新。";
+        return registration;
+      } catch (error) {
+        notice.value = error.message || "活动报名失败。";
+        return null;
+      }
     };
     const cancel = async (id) => {
-      registrations.value = { ...registrations.value, [id]: await run(() => api.cancel(id)) };
-      delete credentials.value[id];
-      notice.value = "已取消报名。";
+      try {
+        const registration = await run(() => api.cancel(id));
+        registrations.value = { ...registrations.value, [id]: registration };
+        delete credentials.value[id];
+        notice.value = "已取消报名。";
+        return registration;
+      } catch (error) {
+        notice.value = error.message || "取消报名失败。";
+        return null;
+      }
     };
     const roster = async (id) => {
-      rosters.value = { ...rosters.value, [id]: await run(() => api.roster(id)) };
+      try {
+        const roster = await run(() => api.roster(id));
+        rosters.value = { ...rosters.value, [id]: roster };
+        return roster;
+      } catch (error) {
+        notice.value = error.message || "活动名单加载失败。";
+        return null;
+      }
     };
     const checkIn = async (id, registrationId) => {
-      await run(() => api.checkIn(id, registrationId));
-      await roster(id);
-      notice.value = "参与者已签到。";
+      try {
+        await run(() => api.checkIn(id, registrationId));
+        await roster(id);
+        notice.value = "参与者已签到。";
+        return true;
+      } catch (error) {
+        notice.value = error.message || "手动签到失败。";
+        return false;
+      }
     };
     const credential = async (id) => {
       try {

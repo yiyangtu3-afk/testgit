@@ -128,7 +128,7 @@ public class ActivityRegistrationService {
   @Transactional
   public RosterEntryView verifyCredential(UserEntity organizer, String activityId, String code) {
     requireOrganizer(organizer);
-    requireOwnedActivity(organizer, activityId, true);
+    requireCheckInOpen(requireOwnedActivity(organizer, activityId, true));
     var credential = credentials.findByTokenHashForUpdate(hash(code));
     if (credential == null) {
       throw new ConflictException("签到凭证无效");
@@ -144,7 +144,7 @@ public class ActivityRegistrationService {
   @Transactional
   public RosterEntryView checkIn(UserEntity organizer, String activityId, String registrationId) {
     requireOrganizer(organizer);
-    requireOwnedActivity(organizer, activityId, true);
+    requireCheckInOpen(requireOwnedActivity(organizer, activityId, true));
     ActivityRegistrationEntity registration = registrations.findByIdForUpdate(activityId, registrationId);
     return checkInRegistration(organizer, activityId, registration);
   }
@@ -239,6 +239,12 @@ public class ActivityRegistrationService {
   private void requireOpen(ActivityEntity activity) {
     if (!"published".equals(activity.status()) && !"full".equals(activity.status())) {
       throw new ConflictException("当前活动暂不接受报名");
+    }
+  }
+
+  private void requireCheckInOpen(ActivityEntity activity) {
+    if (!"published".equals(activity.status()) && !"full".equals(activity.status())) {
+      throw new ConflictException("当前活动暂不支持签到");
     }
   }
 
