@@ -11,6 +11,7 @@ export function createActivityStore({ api, getUser = () => null, setMode = () =>
       const role = getUser()?.role || "";
       return role.includes("教师") || role.includes("社团负责人");
     });
+    const isStudent = computed(() => (getUser()?.role || "").includes("学生"));
     const run = async (call) => {
       const result = await call();
       setMode(result.mode);
@@ -18,8 +19,10 @@ export function createActivityStore({ api, getUser = () => null, setMode = () =>
     };
     const load = async () => {
       items.value = await run(() => api.activities(filters.value));
-      const pairs = await Promise.all(items.value.map(async (activity) =>
-        [activity.id, await run(() => api.current(activity.id))]));
+      const pairs = isStudent.value
+        ? await Promise.all(items.value.map(async (activity) =>
+          [activity.id, await run(() => api.current(activity.id))]))
+        : [];
       registrations.value = Object.fromEntries(pairs);
       managed.value = isOrganizer.value ? await run(() => api.managed()) : [];
     };
@@ -75,7 +78,7 @@ export function createActivityStore({ api, getUser = () => null, setMode = () =>
         return null;
       }
     };
-    return { items, registrations, filters, managed, rosters, credentials, notice, isOrganizer, load,
+    return { items, registrations, filters, managed, rosters, credentials, notice, isOrganizer, isStudent, load,
       create, register, cancel, roster, checkIn, credential, verifyCredential };
   };
 }

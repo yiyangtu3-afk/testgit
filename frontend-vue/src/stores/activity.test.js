@@ -14,6 +14,20 @@ describe("activity store", () => {
     await expect(store.create({ startsAt: "2026-08-20T10:00", endsAt: "2026-08-20T09:00" })).resolves.toBeNull();
     expect(api.createActivity).not.toHaveBeenCalled();
   });
+  it("loads an organizer's managed activities without requesting student registrations", async () => {
+    const api = {
+      activities: vi.fn().mockResolvedValue({ mode: "api", data: [{ id: "a-1" }] }),
+      current: vi.fn(),
+      managed: vi.fn().mockResolvedValue({ mode: "api", data: [{ id: "a-1", title: "揍康鹏" }] })
+    };
+    const store = createActivityStore({ api, getUser: () => ({ role: "社团负责人" }) })();
+
+    await store.load();
+
+    expect(api.current).not.toHaveBeenCalled();
+    expect(api.managed).toHaveBeenCalledOnce();
+    expect(store.managed.value).toMatchObject([{ title: "揍康鹏" }]);
+  });
   it("keeps a student credential in memory and refreshes the organizer roster after verification", async () => {
     const api = {
       credential: vi.fn().mockResolvedValue({ mode: "api", data: { activityId: "a-1", code: "opaque-code" } }),
