@@ -32,7 +32,7 @@ controls are shown. Start from
 [`docs/new-chat-handoff-2026-07-08.md`](docs/new-chat-handoff-2026-07-08.md)
 for the complete handoff, constraints, and local verification commands.
 
-The first five event-driven migration slices are now available. Activity
+The first six event-driven migration slices are now available. Activity
 registration, waitlist, promotion, cancellation, and check-in transitions
 write a versioned Transactional Outbox event in the same MySQL transaction as
 their current business state. The normal local backend keeps Kafka disabled and
@@ -42,11 +42,16 @@ failures with a bounded policy, and sends exhausted failures to a dead-letter
 topic. Administrators can inspect and explicitly replay retained Outbox or
 consumer dead letters through the protected eventing operations API.
 Spring Cloud Gateway provides the public API and WebSocket boundary on port
-`8081`. The extracted `notification-service` owns activity-registration
+`8081`. The extracted `activity-service` owns published activity browsing,
+organizer creation, and administrator review on port `8083`; it writes a
+review event to the Transactional Outbox in the same transaction as the
+decision. The extracted `notification-service` owns activity-registration
 notification projection, read actions, and unread counts on port `8082`; the
 existing Spring MVC application remains the activity-producing API on port
-`8080`. The gateway sends only `/api/activity-notifications/**` to the
-notification service and keeps all other API routes on the existing service.
+`8080`. The gateway sends activity-notification routes to notification-service,
+the activity root, managed, and administrator-review routes to activity-service,
+and keeps registration and check-in child routes on the existing service until
+phase seven.
 The Compose stack uses the maintained `apache/kafka:3.9.0` KRaft image. Its
 Kafka listeners are separate components from Kafka bean configuration, so the
 eventing profile can start without a Spring dependency cycle.

@@ -13,6 +13,10 @@ spring:
               uri: ${CAMPUSLINK_NOTIFICATION_SERVICE_URI:http://127.0.0.1:8082}
               predicates:
                 - Path=/api/activity-notifications/**
+            - id: campuslink-activity-api
+              uri: ${CAMPUSLINK_ACTIVITY_SERVICE_URI:http://127.0.0.1:8083}
+              predicates:
+                - Path=/api/activities,/api/activities/managed,/api/admin/activities/**
             - id: campuslink-api
               uri: ${CAMPUSLINK_API_HTTP_URI:http://127.0.0.1:8080}
               predicates:

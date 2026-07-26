@@ -1,0 +1,21 @@
+server:
+  port: 8083
+spring:
+  application:
+    name: campuslink-activity-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://127.0.0.1:3306/campuslink?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false}
+    username: ${SPRING_DATASOURCE_USERNAME:campuslink}
+    password: ${SPRING_DATASOURCE_PASSWORD:campuslink123}
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+campuslink:
+  security:
+    jwt:
+      secret: ${CAMPUSLINK_JWT_SECRET:campuslink-demo-signing-secret-change-in-production-2026}

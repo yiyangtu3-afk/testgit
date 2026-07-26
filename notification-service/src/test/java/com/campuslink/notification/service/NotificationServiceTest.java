@@ -46,6 +46,21 @@ class NotificationServiceTest {
     assertThat(service.summary("student-1").items()).singleElement().extracting("read").isEqualTo(true);
   }
 
+  @Test
+  void projectsReviewRejectionForTheActivityOrganizer() {
+    var notifications = new RecordingNotificationMapper();
+    var service = service(notifications, new RecordingReceiptMapper());
+
+    service.project(new ActivityRegistrationMessage("event-review", "activity.review.rejected.v1",
+        null, "activity-1", "teacher-1", "admin-1", "pending", "时间信息不完整",
+        LocalDateTime.of(2026, 7, 26, 12, 0), "编程赛", null));
+
+    assertThat(notifications.items.values()).singleElement().satisfies(notification -> {
+      assertThat(notification.type()).isEqualTo("activity.review.rejected");
+      assertThat(notification.body()).contains("编程赛").contains("时间信息不完整");
+    });
+  }
+
   @SuppressWarnings("unchecked")
   private NotificationService service(
       ActivityNotificationMapper notifications, EventReceiptMapper receipts) {

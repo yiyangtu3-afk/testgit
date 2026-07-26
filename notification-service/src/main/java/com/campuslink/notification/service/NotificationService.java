@@ -67,7 +67,16 @@ public class NotificationService {
     String type;
     String heading;
     String body;
-    if ("activity.registration.promoted.v1".equals(event.eventType())) {
+    if ("activity.review.approved.v1".equals(event.eventType())) {
+      type = "activity.review.approved";
+      heading = "活动已发布";
+      body = "你提交的“" + title + "”已通过审核并公开发布。";
+    } else if ("activity.review.rejected.v1".equals(event.eventType())) {
+      type = "activity.review.rejected";
+      heading = "活动审核未通过";
+      String reason = event.toStatus() == null || event.toStatus().isBlank() ? "请修改后重新提交。" : "原因：" + event.toStatus();
+      body = "你提交的“" + title + "”未通过审核。" + reason;
+    } else if ("activity.registration.promoted.v1".equals(event.eventType())) {
       type = "activity.registration.promoted";
       heading = "候补已递补";
       body = "“" + title + "”已释放名额，你已获得活动名额。";
@@ -89,7 +98,9 @@ public class NotificationService {
   private boolean isNotificationEvent(String eventType) {
     return "activity.registration.registered.v1".equals(eventType)
         || "activity.registration.waitlisted.v1".equals(eventType)
-        || "activity.registration.promoted.v1".equals(eventType);
+        || "activity.registration.promoted.v1".equals(eventType)
+        || "activity.review.approved.v1".equals(eventType)
+        || "activity.review.rejected.v1".equals(eventType);
   }
 
   private NotificationView view(ActivityNotification notification) {

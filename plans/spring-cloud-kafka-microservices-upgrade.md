@@ -153,11 +153,11 @@ the gateway and keep all current role checks.
 
 ### Acceptance criteria
 
-- [ ] Published activity filtering, creation, and review work through
+- [x] Published activity filtering, creation, and review work through
   `activity-service`.
-- [ ] Existing roles and review audit data remain enforced and available.
-- [ ] The activity service owns the migrated activity data boundary.
-- [ ] Vue activities and administrator review flows remain functional.
+- [x] Existing roles and review audit data remain enforced and available.
+- [x] The activity service owns the migrated activity data boundary.
+- [x] Vue activities and administrator review flows remain functional.
 
 ---
 

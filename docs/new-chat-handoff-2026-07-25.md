@@ -1,7 +1,7 @@
 # CampusLink new-chat handoff — July 25, 2026
 
-This handoff captures the repository and local-runtime state after the first
-two Kafka upgrade slices. Read it before starting a new feature so you can
+This handoff captures the repository and local-runtime state after the sixth
+Kafka and microservice upgrade slice. Read it before starting a new feature so you can
 preserve the Vue migration baseline, the local MySQL history, and the legacy
 frontend regression boundary.
 
@@ -254,6 +254,31 @@ isolated activity. The core API returned `registered`, and
 `notification-service` consumed the event and returned the persisted
 `activity.registration.registered` notification with the expected activity
 title and unread count.
+
+## Phase six: Activity query and review service extraction
+
+The sixth migration slice extracts published activity browsing, organizer
+creation, and administrator review into `activity-service/` on port `8083`.
+Gateway routes `/api/activities`, `/api/activities/managed`, and
+`/api/admin/activities/**` to it; registration and check-in child routes stay
+on the core API until phase seven.
+
+The service revalidates the signed JWT and persisted session, applies the
+existing organizer and administrator role rules, and owns direct access to
+`activities` and `activity_reviews`. It uses a separate user-directory lookup
+for display names instead of a cross-service join. A review decision and its
+versioned `activity.review.*.v1` message are persisted in the same transaction
+in the transitional Outbox. The core publisher sends it to Kafka, and the
+notification service creates the organizer notification idempotently.
+
+Validation used the isolated Compose stack only. An activity was created and
+approved through activity-service; another was rejected, its Outbox row reached
+`published`, and notification-service persisted **活动审核未通过** with the
+stored reason. A temporary Gateway on port `18082` returned the published
+activity with its diagnostic response header; a registration child route stayed
+with the core API and returned the expected `403` for a teacher. Activity
+service has two passing unit tests, notification-service has three, Gateway has
+five, and the explicit-Byte-Buddy core Maven suite has 168 passing tests.
 
 ## Local runtime status
 
