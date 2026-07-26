@@ -5,6 +5,7 @@ import com.campuslink.dto.ActivityRegistrationDtos.CheckInCredentialView;
 import com.campuslink.dto.ActivityRegistrationDtos.RegistrationView;
 import com.campuslink.dto.ActivityRegistrationDtos.RosterEntryView;
 import com.campuslink.dto.ActivityRegistrationDtos.RosterView;
+import com.campuslink.eventing.ActivityRegistrationEventContext;
 import com.campuslink.eventing.ActivityRegistrationEventOutbox;
 import com.campuslink.entity.ActivityEntity;
 import com.campuslink.entity.ActivityRegistrationEntity;
@@ -27,14 +28,14 @@ public class ActivityRegistrationService {
   private final ActivityRepository activities;
   private final ActivityRegistrationRepository registrations;
   private final ActivityCheckInCredentialRepository credentials;
-  private final ActivityNotificationService notifications;
+  private final ActivityRegistrationNotificationDispatcher notifications;
   private final ActivityRegistrationEventOutbox outbox;
 
   public ActivityRegistrationService(
       ActivityRepository activities,
       ActivityRegistrationRepository registrations,
       ActivityCheckInCredentialRepository credentials,
-      ActivityNotificationService notifications,
+      ActivityRegistrationNotificationDispatcher notifications,
       ActivityRegistrationEventOutbox outbox) {
     this.activities = activities;
     this.registrations = registrations;
@@ -61,13 +62,13 @@ public class ActivityRegistrationService {
     ActivityRegistrationEntity registration = current == null
         ? registrations.create(activityId, attendee.id(), status)
         : reactivate(current, status);
-    recordOutboxEvent(registrations.addEvent(registration.id(), activityId, attendee.id(), attendee.id(), status,
-        current == null ? null : current.status(), status));
     if ("registered".equals(status) && registrations.countOccupied(activityId) == activity.capacity()) {
       activities.updateRegistrationStatus(activityId, "full");
     }
     int queuePosition = "waitlisted".equals(status)
         ? registrations.queuePosition(registration.id()) : 0;
+    recordOutboxEvent(registrations.addEvent(registration.id(), activityId, attendee.id(), attendee.id(), status,
+        current == null ? null : current.status(), status), activity.title(), queuePosition);
     notifications.recordRegistrationResult(activity, attendee.id(), status, queuePosition);
     return view(registration, status, queuePosition);
   }
@@ -132,7 +133,8 @@ public class ActivityRegistrationService {
   @Transactional
   public RosterEntryView verifyCredential(UserEntity organizer, String activityId, String code) {
     requireOrganizer(organizer);
-    requireCheckInOpen(requireOwnedActivity(organizer, activityId, true));
+    ActivityEntity activity = requireOwnedActivity(organizer, activityId, true);
+    requireCheckInOpen(activity);
     var credential = credentials.findByTokenHashForUpdate(hash(code));
     if (credential == null) {
       throw new ConflictException("签到凭证无效");
@@ -142,18 +144,19 @@ public class ActivityRegistrationService {
     if (registration == null) {
       throw new ConflictException("签到凭证不属于当前活动");
     }
-    return checkInRegistration(organizer, activityId, registration);
+    return checkInRegistration(organizer, activity, registration);
   }
 
   @Transactional
   public RosterEntryView checkIn(UserEntity organizer, String activityId, String registrationId) {
     requireOrganizer(organizer);
-    requireCheckInOpen(requireOwnedActivity(organizer, activityId, true));
+    ActivityEntity activity = requireOwnedActivity(organizer, activityId, true);
+    requireCheckInOpen(activity);
     ActivityRegistrationEntity registration = registrations.findByIdForUpdate(activityId, registrationId);
-    return checkInRegistration(organizer, activityId, registration);
+    return checkInRegistration(organizer, activity, registration);
   }
 
-  private RosterEntryView checkInRegistration(UserEntity organizer, String activityId,
+  private RosterEntryView checkInRegistration(UserEntity organizer, ActivityEntity activity,
       ActivityRegistrationEntity registration) {
     if (registration == null) {
       throw new IllegalArgumentException("报名记录不存在");
@@ -167,9 +170,9 @@ public class ActivityRegistrationService {
     if (registrations.updateStatus(registration.id(), "checked_in") != 1) {
       throw new ConflictException("签到状态更新失败");
     }
-    recordOutboxEvent(registrations.addEvent(registration.id(), activityId, registration.attendeeId(), organizer.id(),
-        "checked_in", "registered", "checked_in"));
-    return registrations.findRoster(activityId).stream()
+    recordOutboxEvent(registrations.addEvent(registration.id(), activity.id(), registration.attendeeId(), organizer.id(),
+        "checked_in", "registered", "checked_in"), activity.title(), null);
+    return registrations.findRoster(activity.id()).stream()
         .filter(item -> item.registrationId().equals(registration.id()))
         .findFirst()
         .map(item -> new RosterEntryView(item.registrationId(), item.attendeeId(), item.attendeeName(),
@@ -192,7 +195,7 @@ public class ActivityRegistrationService {
     String previous = registration.status();
     registrations.updateStatus(registration.id(), "cancelled");
     recordOutboxEvent(registrations.addEvent(registration.id(), activityId, attendee.id(), attendee.id(), "cancelled", previous,
-        "cancelled"));
+        "cancelled"), activity.title(), null);
     if ("registered".equals(previous)) {
       ActivityRegistrationEntity next = registrations.findFirstWaitlistedForUpdate(activityId);
       if (next == null) {
@@ -200,7 +203,7 @@ public class ActivityRegistrationService {
       } else {
         registrations.updateStatus(next.id(), "registered");
         recordOutboxEvent(registrations.addEvent(next.id(), activityId, next.attendeeId(), attendee.id(), "promoted",
-            "waitlisted", "registered"));
+            "waitlisted", "registered"), activity.title(), null);
         notifications.recordPromotion(activity, next.attendeeId());
       }
     }
@@ -213,8 +216,11 @@ public class ActivityRegistrationService {
     return registrations.findForUpdate(registration.activityId(), registration.attendeeId());
   }
 
-  private void recordOutboxEvent(com.campuslink.entity.ActivityRegistrationEventEntity event) {
-    outbox.enqueue(event);
+  private void recordOutboxEvent(
+      com.campuslink.entity.ActivityRegistrationEventEntity event,
+      String activityTitle,
+      Integer queuePosition) {
+    outbox.enqueue(event, new ActivityRegistrationEventContext(activityTitle, queuePosition));
   }
 
   private void requireStudent(UserEntity attendee) {

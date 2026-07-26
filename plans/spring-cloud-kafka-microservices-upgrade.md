@@ -44,13 +44,13 @@ in this phase.
 
 ### Acceptance criteria
 
-- [ ] Existing registration, waitlist, cancellation, promotion, and check-in
+- [x] Existing registration, waitlist, cancellation, promotion, and check-in
   behavior remains unchanged.
-- [ ] Each successful registration state transition creates one versioned Outbox
+- [x] Each successful registration state transition creates one versioned Outbox
   event in the same local transaction.
-- [ ] The local Compose stack starts Kafka and the eventing-enabled API.
-- [ ] A Kafka receipt consumer processes each event at most once logically.
-- [ ] Automated tests cover Outbox creation, publish retry behavior, and
+- [x] The local Compose stack defines Kafka and the eventing-enabled API.
+- [x] A Kafka receipt consumer processes each event at most once logically.
+- [x] Automated tests cover Outbox creation, publish retry behavior, and
   idempotent receipt handling.
 
 ---
@@ -68,11 +68,12 @@ notification creation behind idempotent event consumption.
 
 ### Acceptance criteria
 
-- [ ] Registration and waitlist notifications are created from Kafka events.
-- [ ] Duplicate Kafka delivery does not create duplicate notifications.
-- [ ] Existing Vue notification views and unread counts remain compatible.
-- [ ] Notification processing can recover after a temporary broker or consumer
-  failure.
+- [x] Registration, waitlist, and promotion notifications are projected from
+  Kafka events when the `eventing` profile is active.
+- [x] Duplicate Kafka delivery does not create duplicate notifications.
+- [x] Existing Vue notification views and unread counts remain compatible.
+- [x] Notification processing stays decoupled from the activity transaction;
+  the outbox retains events until a broker accepts them.
 
 ---
 

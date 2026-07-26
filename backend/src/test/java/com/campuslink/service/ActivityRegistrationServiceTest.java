@@ -26,10 +26,11 @@ class ActivityRegistrationServiceTest {
       new ActivityNotificationService(notificationRepository);
   private final ArrayList<com.campuslink.entity.ActivityRegistrationEventEntity> outboxEvents =
       new ArrayList<>();
-  private final ActivityRegistrationEventOutbox outbox = outboxEvents::add;
+  private final ActivityRegistrationEventOutbox outbox = (event, context) -> outboxEvents.add(event);
   private final ActivityRegistrationService service =
       new ActivityRegistrationService(activities, registrations,
-          new InMemoryActivityCheckInCredentialRepository(), notifications, outbox);
+          new InMemoryActivityCheckInCredentialRepository(),
+          new InProcessActivityRegistrationNotificationDispatcher(notifications), outbox);
   private String activityId;
 
   @BeforeEach void publishCapacityOneActivity() {

@@ -17,6 +17,11 @@ public class ActivityEventReceiptService {
 
   @Transactional
   public boolean recordIfFirst(ActivityRegistrationMessage event) {
-    return receipts.recordIfFirst(CONSUMER_NAME, event.eventId());
+    return recordIfFirst(CONSUMER_NAME, event.eventId());
+  }
+
+  @Transactional
+  public boolean recordIfFirst(String consumerName, String eventId) {
+    return receipts.recordIfFirst(consumerName, eventId);
   }
 }

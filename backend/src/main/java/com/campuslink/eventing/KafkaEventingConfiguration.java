@@ -19,9 +19,13 @@ import org.springframework.kafka.core.KafkaTemplate;
 public class KafkaEventingConfiguration {
 
   private final ActivityEventReceiptService receipts;
+  private final ActivityRegistrationNotificationProjection notificationProjection;
 
-  public KafkaEventingConfiguration(ActivityEventReceiptService receipts) {
+  public KafkaEventingConfiguration(
+      ActivityEventReceiptService receipts,
+      ActivityRegistrationNotificationProjection notificationProjection) {
     this.receipts = receipts;
+    this.notificationProjection = notificationProjection;
   }
 
   @Bean
@@ -55,5 +59,12 @@ public class KafkaEventingConfiguration {
       groupId = ActivityEventReceiptService.CONSUMER_NAME)
   void recordActivityEvent(ActivityRegistrationMessage event) {
     receipts.recordIfFirst(event);
+  }
+
+  @KafkaListener(
+      topics = "${campuslink.eventing.activity-topic}",
+      groupId = ActivityRegistrationNotificationProjection.CONSUMER_NAME)
+  void projectActivityNotification(ActivityRegistrationMessage event) {
+    notificationProjection.project(event);
   }
 }

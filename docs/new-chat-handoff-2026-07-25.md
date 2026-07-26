@@ -1,7 +1,7 @@
 # CampusLink new-chat handoff — July 25, 2026
 
-This handoff captures the repository and local-runtime state after the activity
-check-in work was completed. Read it before starting a new feature so you can
+This handoff captures the repository and local-runtime state after the first
+two Kafka upgrade slices. Read it before starting a new feature so you can
 preserve the Vue migration baseline, the local MySQL history, and the legacy
 frontend regression boundary.
 
@@ -13,7 +13,9 @@ The remote is `https://github.com/yiyangtu3-afk/testgit.git`.
 On July 25, 2026, `git status --short --branch` reported a clean worktree on
 `main...origin/main`. The latest commits are:
 
-- `df19538 Harden activity check-in workflow` — latest functional change.
+- `580ecdf Add Kafka transactional outbox foundation` — phase-one eventing
+  foundation.
+- `df19538 Harden activity check-in workflow` — latest pre-eventing feature.
 - `5dd1a72 Restrict activity registration to students`.
 - `48c511c Fix organizer activity check-in loading`.
 - `2c363f5 Refresh project handoff snapshot` — earlier handoff-only commit.
@@ -110,11 +112,43 @@ reactivated student `u-1001`'s previously cancelled registration for activity
 `activity.registration.registered.v1` Outbox row with `pending` status. That
 normal acceptance history remains in MySQL and must not be cleaned.
 
+## Phase two: Kafka-backed activity notification projection
+
+The second eventing slice is complete. It keeps the current notification API,
+unread count, WebSocket delivery, Vue UI, JWT checks, and legacy frontend
+unchanged while making activity-derived notification creation asynchronous in
+the `eventing` profile.
+
+- Registration, waitlist, and promotion Outbox messages now include the
+  activity title and waitlist position needed to render a notification without
+  a cross-service lookup. The projection can still read a title and queue
+  position from the current repositories for phase-one messages that lack the
+  new fields.
+- With `eventing` disabled, the existing in-process dispatcher keeps ordinary
+  local development behavior unchanged. With `eventing` enabled, the activity
+  transaction defers these notifications to a Kafka listener in consumer group
+  `campuslink-activity-notification-v1`.
+- The projection records its `(consumer_name, event_id)` receipt and creates
+  the notification in one transaction. A duplicate Kafka delivery therefore
+  cannot create a duplicate notification. After commit, the existing real-time
+  notification listener delivers the same WebSocket event as before.
+
+The explicit-Byte-Buddy targeted Maven suite ran 22 tests and passed. It covers
+the existing registration service and controller boundaries, Outbox messages,
+publisher retry behavior, receipt idempotency, duplicate notification delivery,
+waitlist and promotion copy, and compatibility with phase-one messages. A full
+Maven attempt again could not access MySQL from the restricted runner and could
+not start Testcontainers without Docker; its failures were environmental
+initialization failures. A host-capable backend restart connected to preserved
+MySQL and returned the normal `UP` health response. The Vue default page also
+opened; the isolated browser reports "数据来源：尚未连接" because it cannot reach
+the host loopback API, while the host health request succeeds.
+
 ## Local runtime status
 
-At handoff time, local MySQL was listening at `127.0.0.1:3306`. Vue on `5180`
-and the Java API on `8080` were not running, so do not assume they are alive in
-a new session.
+At handoff time, local MySQL was listening at `127.0.0.1:3306`, and the Java
+API had been restarted on `8080` against the current phase-two code. Do not
+assume either it or Vue remains alive in a new session.
 
 On July 24, starting the backend from a host-capable environment successfully
 connected to the existing MySQL database. Its health response was:
@@ -161,9 +195,8 @@ The important local addresses are:
 
 ## Recommended next action
 
-The user approved phase two: turn registration-result notifications into an
-idempotent Kafka consumer projection while preserving the current notification
-API, Vue behavior, JWT boundary, and legacy frontend regression baseline.
+Proceed only after user approval with phase three: bounded retry, dead-letter,
+and replay operations for Kafka notification events.
 
 ## Related records
 

@@ -11,6 +11,7 @@ import com.campuslink.dto.ActivityDtos.ReviewActivityRequest;
 import com.campuslink.entity.DemoEntities.UserEntity;
 import com.campuslink.repository.UserRepository;
 import com.campuslink.service.ActivityRegistrationService;
+import com.campuslink.service.InProcessActivityRegistrationNotificationDispatcher;
 import com.campuslink.service.ActivityNotificationService;
 import com.campuslink.service.ActivityService;
 import com.campuslink.service.AuthTokenService;
@@ -54,7 +55,9 @@ class ActivityRegistrationControllerTest {
     var service = new ActivityRegistrationService(activityRepository,
         new InMemoryActivityRegistrationRepository(),
         new InMemoryActivityCheckInCredentialRepository(),
-        new ActivityNotificationService(new InMemoryActivityNotificationRepository()), event -> { });
+        new InProcessActivityRegistrationNotificationDispatcher(
+            new ActivityNotificationService(new InMemoryActivityNotificationRepository())),
+        (event, context) -> { });
     var authTokens = new AuthTokenService(sessions, userRepository);
     studentAuthorization = "Bearer " + authTokens.issueToken(student.id());
     teacherAuthorization = "Bearer " + authTokens.issueToken(teacher.id());

@@ -18,10 +18,11 @@ public class ActivityRegistrationOutboxService implements ActivityRegistrationEv
   }
 
   @Override
-  public void enqueue(ActivityRegistrationEventEntity event) {
+  public void enqueue(ActivityRegistrationEventEntity event, ActivityRegistrationEventContext context) {
     ActivityRegistrationMessage message = new ActivityRegistrationMessage(event.id(),
         eventType(event.eventType()), event.registrationId(), event.activityId(), event.attendeeId(),
-        event.actorId(), event.fromStatus(), event.toStatus(), event.createdAt());
+        event.actorId(), event.fromStatus(), event.toStatus(), event.createdAt(),
+        context.activityTitle(), context.queuePosition());
     events.create("activity-registration", event.registrationId(), message.eventType(), json(message));
   }
 

@@ -192,6 +192,19 @@ Vue 活动卡显示紧凑的 **签到凭证** 通行证，组织者的 **我的�
 定向 Service/MockMvc 测试、MySQL `@Transactional`/`@Rollback` 集成测试、Vue 单元测试
 和生产构建均已覆盖；后续新增扫码能力必须是浏览器兼容的渐进增强，不能绕过上述服务端核验。
 
+## 阶段七：事件驱动与微服务演进
+
+本阶段按 `plans/spring-cloud-kafka-microservices-upgrade.md` 渐进引入 Spring
+Cloud、Kafka 与服务边界，先保持模块化单体的 API 与数据行为，再独立部署领域服务。
+当前已完成前两个切片：Spring Cloud 2025.0.3 BOM、Kafka KRaft Compose 配置和事务
+Outbox；以及活动报名、候补、递补通知的 Kafka 幂等投影。普通本地启动不启用
+`eventing`，因此仍保留同步通知和 `pending` Outbox 记录；启用 `eventing` 后，活动事务
+只保存状态与事件，由 `campuslink-activity-notification-v1` 消费组在独立事务内写入通知，
+并以 `(consumer_name, event_id)` 防止重复投递产生重复通知。Vue API、未读数、WebSocket、
+JWT 边界与旧版静态回归均不变。
+
+下一切片是失败重试、死信与管理员重放，之后才进入网关、通知服务和活动服务的逐步拆分。
+
 ## 下一步
 
 阶段一至阶段四已经完成；CI 在临时 MySQL 8.4 服务上运行完整测试，并在 Docker

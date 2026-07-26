@@ -57,32 +57,41 @@ public class ActivityNotificationService {
 
   public void recordRegistrationResult(
       ActivityEntity activity, String attendeeId, String status, int queuePosition) {
+    recordRegistrationResult(activity.id(), activity.title(), attendeeId, status, queuePosition);
+  }
+
+  public void recordRegistrationResult(
+      String activityId, String activityTitle, String attendeeId, String status, int queuePosition) {
     if ("registered".equals(status)) {
       create(
           attendeeId,
-          activity.id(),
+          activityId,
           "activity.registration.registered",
           "活动报名成功",
-          "你已成功报名“" + activity.title() + "”。");
+          "你已成功报名“" + activityTitle + "”。");
       return;
     }
     if ("waitlisted".equals(status)) {
       create(
           attendeeId,
-          activity.id(),
+          activityId,
           "activity.registration.waitlisted",
           "已加入活动候补",
-          "“" + activity.title() + "”当前已满，你位于候补第 " + queuePosition + " 位。");
+          "“" + activityTitle + "”当前已满，你位于候补第 " + queuePosition + " 位。");
     }
   }
 
   public void recordPromotion(ActivityEntity activity, String attendeeId) {
+    recordPromotion(activity.id(), activity.title(), attendeeId);
+  }
+
+  public void recordPromotion(String activityId, String activityTitle, String attendeeId) {
     create(
         attendeeId,
-        activity.id(),
+        activityId,
         "activity.registration.promoted",
         "候补已递补",
-        "“" + activity.title() + "”已释放名额，你已获得活动名额。");
+        "“" + activityTitle + "”已释放名额，你已获得活动名额。");
   }
 
   @Transactional

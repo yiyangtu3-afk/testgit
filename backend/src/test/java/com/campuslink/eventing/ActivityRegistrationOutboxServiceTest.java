@@ -20,7 +20,8 @@ class ActivityRegistrationOutboxServiceTest {
 
     service.enqueue(new ActivityRegistrationEventEntity("event-1", "registration-1", "activity-1",
         "student-1", "student-1", "registered", null, "registered",
-        LocalDateTime.of(2026, 7, 25, 12, 0)));
+        LocalDateTime.of(2026, 7, 25, 12, 0)),
+        new ActivityRegistrationEventContext("校园编程赛", 2));
 
     assertThat(events.created).singleElement().satisfies(event -> {
       assertThat(event.aggregateType()).isEqualTo("activity-registration");
@@ -30,8 +31,9 @@ class ActivityRegistrationOutboxServiceTest {
     ActivityRegistrationMessage message = new ObjectMapper().findAndRegisterModules().readValue(
         events.created.getFirst().payload(), ActivityRegistrationMessage.class);
     assertThat(message).extracting(ActivityRegistrationMessage::eventId,
-        ActivityRegistrationMessage::activityId, ActivityRegistrationMessage::toStatus)
-        .containsExactly("event-1", "activity-1", "registered");
+        ActivityRegistrationMessage::activityId, ActivityRegistrationMessage::toStatus,
+        ActivityRegistrationMessage::activityTitle, ActivityRegistrationMessage::queuePosition)
+        .containsExactly("event-1", "activity-1", "registered", "校园编程赛", 2);
   }
 
   private static final class RecordingOutboxEventRepository implements OutboxEventRepository {

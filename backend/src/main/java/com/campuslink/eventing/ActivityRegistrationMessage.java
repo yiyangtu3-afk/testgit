@@ -11,5 +11,7 @@ public record ActivityRegistrationMessage(
     String actorId,
     String fromStatus,
     String toStatus,
-    LocalDateTime occurredAt) {
+    LocalDateTime occurredAt,
+    String activityTitle,
+    Integer queuePosition) {
 }

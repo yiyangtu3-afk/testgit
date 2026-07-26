@@ -42,7 +42,8 @@ class OutboxPublisherTest {
     var mapper = new ObjectMapper().findAndRegisterModules();
     String payload = mapper.writeValueAsString(new ActivityRegistrationMessage("event-1",
         "activity.registration.registered.v1", "registration-1", "activity-1", "student-1",
-        "student-1", null, "registered", LocalDateTime.of(2026, 7, 25, 12, 0)));
+        "student-1", null, "registered", LocalDateTime.of(2026, 7, 25, 12, 0),
+        "校园编程赛", 0));
     return new OutboxEventEntity(id, "activity-registration", "registration-1",
         "activity.registration.registered.v1", payload, "pending", 0,
         LocalDateTime.now(), null, null, LocalDateTime.now());
