@@ -16,7 +16,7 @@ const login = read("frontend-vue/src/features/auth/LoginView.vue");
 assert.match(dockerfile, /FROM node:22-alpine AS build/);
 assert.match(dockerfile, /COPY --from=build \/app\/dist \/usr\/share\/nginx\/html/);
 assert.match(dockerfile, /\/usr\/share\/nginx\/html\/legacy\//);
-assert.match(nginx, /location \/api\/ \{[\s\S]*proxy_pass http:\/\/api:8080;/);
+assert.match(nginx, /location \/api\/ \{[\s\S]*proxy_pass http:\/\/gateway:8081;/);
 assert.match(nginx, /location \/ws\/ \{[\s\S]*Upgrade \$http_upgrade;/);
 assert.match(nginx, /location \/ \{[\s\S]*try_files \$uri \$uri\/ \/index\.html;/);
 assert.match(nginx, /location \/legacy\/ \{/);

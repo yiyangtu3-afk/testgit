@@ -196,17 +196,21 @@ Vue 活动卡显示紧凑的 **签到凭证** 通行证，组织者的 **我的�
 
 本阶段按 `plans/spring-cloud-kafka-microservices-upgrade.md` 渐进引入 Spring
 Cloud、Kafka 与服务边界，先保持模块化单体的 API 与数据行为，再独立部署领域服务。
-当前已完成前三个切片：Spring Cloud 2025.0.3 BOM、Kafka KRaft Compose 配置和事务
-Outbox；活动报名、候补、递补通知的 Kafka 幂等投影；以及有界重试、死信与管理员
-重放。普通本地启动不启用
+当前已完成四个切片：Spring Cloud 2025.0.3 BOM、Kafka KRaft Compose 配置和事务
+Outbox；活动报名、候补、递补通知的 Kafka 幂等投影；有界重试、死信与管理员重放；以及
+独立 Spring Cloud Gateway。普通本地启动不启用
 `eventing`，因此仍保留同步通知和 `pending` Outbox 记录；启用 `eventing` 后，活动事务
 只保存状态与事件，由 `campuslink-activity-notification-v1` 消费组在独立事务内写入通知，
 并以 `(consumer_name, event_id)` 防止重复投递产生重复通知。Outbox 和消费者都采用
 三次上限重试；失败后分别保留 `dead_letter` 状态或写入 `event_dead_letters`，管理员在
 Vue 控制台确认后才能重放，且每次操作写入审计。Vue API、未读数、WebSocket、JWT 边界
-与旧版静态回归均不变。
+与旧版静态回归均不变。网关运行在 `8081`，Vue Vite 和 Compose Nginx 的 `/api`、`/ws`
+都先到达网关；网关验证 JWT 签名和过期时间，再原样转发 token 到仍在 `8080` 的 MVC API。
+下游继续验证 MySQL 会话、注销状态和角色，因此不会因为网关迁移削弱既有权限边界。
+Compose 的 KRaft broker 已切换到可用的 `apache/kafka:3.9.0` 官方镜像；同时拆分 Kafka
+监听组件与配置类，保证 `eventing` profile 可以独立启动。
 
-下一切片是 Spring Cloud Gateway，之后才进入通知服务和活动服务的逐步拆分。
+下一切片是通知服务提取，之后才进入活动服务的逐步拆分。
 
 ## 下一步
 

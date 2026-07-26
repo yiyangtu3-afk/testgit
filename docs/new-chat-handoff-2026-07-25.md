@@ -173,10 +173,50 @@ the preserved MySQL database, and returned `401` for an unauthenticated event
 operations request. Kafka/Docker are unavailable in this environment, so the
 live broker-to-DLT route still needs Compose or another Kafka-capable host.
 
+## Phase four: Spring Cloud Gateway migration
+
+The fourth eventing slice is complete. Spring Cloud Gateway is a separate
+WebFlux application in `gateway/`; it is not mixed into the existing MVC API.
+
+- The gateway listens on `8081` and routes `/api/**` to the current API on
+  `8080`, and `/ws/**` to its existing chat WebSocket endpoint. Vue Vite and
+  Compose Nginx now use `8081` as their only live API target.
+- The gateway verifies the existing HS256 JWT signature and expiration before
+  forwarding a protected request. It forwards the original bearer token rather
+  than trusting a forwarded identity header. The downstream API still verifies
+  the corresponding MySQL session, immediate logout revocation, and all role
+  checks.
+- Public login and database-health routes retain their existing behavior. A
+  rejected protected request still returns the established JSON
+  `{ "message": "..." }` shape, so Vue displays a real `401`, `403`, `409`, or
+  `500` instead of using Mock data.
+- Compose now starts `gateway` after `api`; the frontend waits for the gateway
+  health check. The gateway adds `X-CampusLink-Gateway: campuslink-gateway` to
+  responses as a non-sensitive routing diagnostic.
+
+The gateway unit suite has five passing tests. Vue has 48 passing tests, the
+production build and legacy smoke checks pass, and the live equivalence check
+passes through the Vue proxy while the legacy client continues to reach its
+direct API path. Real local acceptance returned `200` for gateway health and
+proxied database health, and returned the expected JSON `401` before an
+unauthenticated administrator request reached the downstream API.
+
+During Compose verification, the historical `bitnami/kafka:3.9.0` reference no
+longer resolved from the registry. Compose now uses the available official
+`apache/kafka:3.9.0` KRaft image with equivalent single-node listener and
+transaction settings. The verification also exposed a pre-existing eventing
+startup cycle: Kafka listener methods on the configuration class required an
+event replay bean from that same class. Receipt, notification, and dead-letter
+listeners now live in separate components, leaving the configuration class to
+declare Kafka beans only. The full explicit-Byte-Buddy Maven suite now has 168
+passing tests. A temporary `eventing` API on `18080` connected to the preserved
+MySQL history and the healthy Compose Kafka broker, then returned the normal
+database health response.
+
 ## Local runtime status
 
 At handoff time, local MySQL was listening at `127.0.0.1:3306`, and the Java
-API had been restarted on `8080` against the current phase-three code. Do not
+API had been restarted on `8080` against the current phase-four code. Do not
 assume either it or Vue remains alive in a new session.
 
 On July 24, starting the backend from a host-capable environment successfully
@@ -198,14 +238,17 @@ Start and verify local services in this order:
 1. Confirm MySQL is running on `127.0.0.1:3306`.
 2. Run `./script/run_backend_idea.sh` from the repository root.
 3. Verify `curl -fsS http://127.0.0.1:8080/api/database/health`.
-4. Run `./script/run_frontend_demo.sh` from the repository root.
-5. Open `http://127.0.0.1:5180`.
+4. Run `./script/run_gateway_idea.sh` from the repository root.
+5. Verify `curl -fsS http://127.0.0.1:8081/api/database/health`.
+6. Run `./script/run_frontend_demo.sh` from the repository root.
+7. Open `http://127.0.0.1:5180`.
 
 The important local addresses are:
 
 - Vue default entry: `http://127.0.0.1:5180`
 - Vue chat: `http://127.0.0.1:5180/workspace/contacts`
-- Java API: `http://127.0.0.1:8080`
+- Public gateway: `http://127.0.0.1:8081`
+- Downstream Java API: `http://127.0.0.1:8080`
 - Legacy fallback: `http://127.0.0.1:5179/?v=20260715-signed-jwt-logout-v1`
 
 ## Required boundaries
@@ -224,8 +267,8 @@ The important local addresses are:
 
 ## Recommended next action
 
-Proceed only after user approval with phase four: route the existing API and
-WebSocket boundary through Spring Cloud Gateway.
+Proceed only after user approval with phase five: extract the notification
+service while preserving the gateway API and Kafka event contracts.
 
 ## Related records
 

@@ -32,7 +32,7 @@ controls are shown. Start from
 [`docs/new-chat-handoff-2026-07-08.md`](docs/new-chat-handoff-2026-07-08.md)
 for the complete handoff, constraints, and local verification commands.
 
-The first three event-driven migration slices are now available. Activity
+The first four event-driven migration slices are now available. Activity
 registration, waitlist, promotion, cancellation, and check-in transitions
 write a versioned Transactional Outbox event in the same MySQL transaction as
 their current business state. The normal local backend keeps Kafka disabled and
@@ -41,6 +41,12 @@ Kafka projects registration notifications idempotently, retries consumer
 failures with a bounded policy, and sends exhausted failures to a dead-letter
 topic. Administrators can inspect and explicitly replay retained Outbox or
 consumer dead letters through the protected eventing operations API.
+Spring Cloud Gateway now provides the public API and WebSocket boundary on
+port `8081`; the existing Spring MVC application remains the downstream API on
+port `8080` while later phases extract services.
+The Compose stack uses the maintained `apache/kafka:3.9.0` KRaft image. Its
+Kafka listeners are separate components from Kafka bean configuration, so the
+eventing profile can start without a Spring dependency cycle.
 
 The Vue 3 migration is complete in the separate `frontend-vue/` application.
 The completed slices cover authentication, the application shell, contacts and
@@ -174,16 +180,21 @@ The demo supports these flows:
   **注册用户**、**今日消息**、**动态总数** and **待审内容** cards also read
   current MySQL counts.
 
-The frontend tries `http://127.0.0.1:8080/api` first. If the Java API can't be
-reached, it falls back to the built-in mock data and shows **Mock** in the
-sidebar. When the Java API responds, the sidebar shows **Java API**. A response
-from the Java API with an error status doesn't fall back to Mock, so rejected
-or failed requests remain visible instead of changing browser-only data.
+The Vue client uses relative `/api` and `/ws` paths. During local development,
+Vite proxies them to Spring Cloud Gateway at `http://127.0.0.1:8081`; Compose
+uses the same gateway behind Nginx. The gateway forwards the original bearer
+token to the current Java API on port `8080`. If the gateway can't be reached,
+the client falls back to built-in mock data and shows **Mock** in the sidebar.
+Any `4xx` or `5xx` response from the gateway or a downstream service remains a
+visible live failure and never becomes browser-only data.
 
 After login, the Java API returns a signed, time-limited JWT bearer token. The
-frontend sends that token in the `Authorization` header, and protected live API
-requests resolve the current user from the verified token and matching MySQL
-session instead of trusting query parameters or request body user IDs. The
+frontend sends that token in the `Authorization` header. The gateway first
+verifies the existing HS256 signature and expiry, then forwards the unchanged
+token without adding a trusted identity header. The downstream Java API still
+resolves the current user from the verified token and matching MySQL session,
+and still performs every role check. This preserves server-side logout
+revocation instead of relying on the gateway alone. The
 quick demo entry and account switcher use `POST /api/auth/demo-login` to issue
 the token for the selected demo account. Student registration uses
 `POST /api/auth/register` after the same phone verification-code check, creates
@@ -237,10 +248,13 @@ npm run build
 npm run dev
 ```
 
-The default local demo starts Vite on `http://127.0.0.1:5180` and proxies `/api` and `/ws` to the
-local Java API. The Vue client uses relative proxy paths. It shows Java API
-mode when the API responds and uses Mock only when the request cannot reach the
-API; HTTP `4xx` and `5xx` responses remain visible failures.
+The default local demo starts Vite on `http://127.0.0.1:5180` and proxies
+`/api` and `/ws` to the local gateway on `8081`. Start the backend on `8080`
+first, then run `./script/run_gateway_idea.sh`, confirm
+`curl -fsS http://127.0.0.1:8081/api/database/health`, and start Vite. The
+Vue client uses relative proxy paths. It shows Java API mode when the gateway
+responds and uses Mock only when the gateway cannot be reached; HTTP `4xx` and
+`5xx` responses remain visible failures.
 
 Run the backend JUnit suite from the backend directory:
 
@@ -313,10 +327,10 @@ use Docker named volumes, not your local MySQL server.
 docker compose up --build
 ```
 
-Open `http://127.0.0.1:5179`, then confirm the API with
-`curl -fsS http://127.0.0.1:8080/api/database/health`. Compose serves the Vue
-build by default, proxies `/api` and `/ws` to the API service, and retains the
-static fallback at `http://127.0.0.1:5179/legacy/`. The Compose guide explains
+Open `http://127.0.0.1:5179`, then confirm the public API with
+`curl -fsS http://127.0.0.1:8081/api/database/health`. Compose serves the Vue
+build by default, proxies `/api` and `/ws` through the gateway service, and
+retains the static fallback at `http://127.0.0.1:5179/legacy/`. The Compose guide explains
 startup, Kafka eventing, health checks, persistence, and safe shutdown in
 [`docs/compose-demo.md`](docs/compose-demo.md). The repository doesn't publish
 a public online demo URL without explicit authorization.
@@ -445,7 +459,8 @@ demo settings:
 
 The Spring Boot startup initializes `schema.sql` and `data.sql` automatically.
 After the API starts, open `http://127.0.0.1:8080/api/database/health` to verify
-that Java can reach MySQL.
+that Java can reach MySQL. Then run `./script/run_gateway_idea.sh` and open
+`http://127.0.0.1:8081/api/database/health` to verify the public route.
 
 The MySQL persistence migration is complete for the current demo. Users,
 verification codes, friend requests, friendships, presence updates, chat
@@ -545,8 +560,9 @@ requires the two accounts to be accepted friends before it reads, sends, or
 withdraws a message. This keeps two browser windows on different demo accounts
 in the same conversation without exposing arbitrary peer IDs.
 
-When the Java API is available, the frontend also opens
-`ws://127.0.0.1:8080/ws/chat?token=...` after login. Chat messages still use
+When the gateway is available, the frontend opens the same-origin
+`/ws/chat?token=...` route after login; Vite or Nginx forwards it through the
+gateway to the Java API. Chat messages still use
 the HTTP `POST /api/conversations/{peerId}/messages` endpoint for persistence
 and audit logging. The WebSocket channel pushes `message.created` events to
 the sender and recipient so open conversations can refresh without the older

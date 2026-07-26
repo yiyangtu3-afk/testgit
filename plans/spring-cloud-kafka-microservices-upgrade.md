@@ -111,11 +111,11 @@ CORS, error responses, and health checks.
 
 ### Acceptance criteria
 
-- [ ] Vue login, chat, activities, notifications, and administrator flows work
+- [x] Vue login, chat, activities, notifications, and administrator flows work
   through the gateway.
-- [ ] Gateway and downstream application both enforce the existing JWT rules.
-- [ ] API errors remain visible to the frontend and never trigger Mock fallback.
-- [ ] Legacy static frontend regression checks remain intact.
+- [x] Gateway and downstream application both enforce the existing JWT rules.
+- [x] API errors remain visible to the frontend and never trigger Mock fallback.
+- [x] Legacy static frontend regression checks remain intact.
 
 ---
 

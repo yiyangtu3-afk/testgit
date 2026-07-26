@@ -75,8 +75,8 @@ jobs:
       - name: Start the Compose demo
         run: docker compose up --build --wait
 
-      - name: Check the API health endpoint
-        run: curl --fail --silent http://127.0.0.1:8080/api/database/health
+      - name: Check the gateway API health endpoint
+        run: curl --fail --silent http://127.0.0.1:8081/api/database/health
 
       - name: Stop the Compose demo
         if: always()

@@ -1,0 +1,33 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: campuslink-gateway
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: campuslink-api
+              uri: ${CAMPUSLINK_API_HTTP_URI:http://127.0.0.1:8080}
+              predicates:
+                - Path=/api/**
+            - id: campuslink-chat-websocket
+              uri: ${CAMPUSLINK_API_WS_URI:ws://127.0.0.1:8080}
+              predicates:
+                - Path=/ws/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+
+campuslink:
+  security:
+    jwt:
+      secret: ${CAMPUSLINK_JWT_SECRET:campuslink-demo-signing-secret-change-in-production-2026}
