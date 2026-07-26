@@ -10,13 +10,9 @@ import org.springframework.stereotype.Component;
 public class ActivityEventKafkaListeners {
 
   private final ActivityEventReceiptService receipts;
-  private final ActivityRegistrationNotificationProjection notificationProjection;
 
-  public ActivityEventKafkaListeners(
-      ActivityEventReceiptService receipts,
-      ActivityRegistrationNotificationProjection notificationProjection) {
+  public ActivityEventKafkaListeners(ActivityEventReceiptService receipts) {
     this.receipts = receipts;
-    this.notificationProjection = notificationProjection;
   }
 
   @KafkaListener(
@@ -26,11 +22,4 @@ public class ActivityEventKafkaListeners {
     receipts.recordIfFirst(event);
   }
 
-  @KafkaListener(
-      topics = "${campuslink.eventing.activity-topic}",
-      groupId = ActivityRegistrationNotificationProjection.CONSUMER_NAME,
-      containerFactory = "activityNotificationKafkaListenerContainerFactory")
-  void projectNotification(ActivityRegistrationMessage event) {
-    notificationProjection.project(event);
-  }
 }

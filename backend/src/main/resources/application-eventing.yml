@@ -17,6 +17,9 @@ campuslink:
   eventing:
     activity-topic: campuslink.activity.events.v1
     activity-dead-letter-topic: campuslink.activity.events.v1.DLT
+    activity-notification-delivery-topic: campuslink.activity.notification.delivery.v1
+    notification-projection:
+      enabled: true
     outbox-publish-interval-ms: 1000
     outbox-retry-delay-seconds: 5
     outbox-max-attempts: 3

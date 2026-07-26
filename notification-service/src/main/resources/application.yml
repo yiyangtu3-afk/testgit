@@ -1,0 +1,40 @@
+server:
+  port: 8082
+spring:
+  application:
+    name: campuslink-notification-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://127.0.0.1:3306/campuslink?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false}
+    username: ${SPRING_DATASOURCE_USERNAME:campuslink}
+    password: ${SPRING_DATASOURCE_PASSWORD:campuslink123}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:127.0.0.1:9094}
+    admin:
+      fail-fast: true
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: com.campuslink.notification.eventing
+        spring.json.value.default.type: com.campuslink.notification.eventing.ActivityRegistrationMessage
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+campuslink:
+  security:
+    jwt:
+      secret: ${CAMPUSLINK_JWT_SECRET:campuslink-demo-signing-secret-change-in-production-2026}
+  eventing:
+    activity-topic: campuslink.activity.events.v1
+    activity-dead-letter-topic: campuslink.activity.events.v1.DLT
+    activity-notification-delivery-topic: campuslink.activity.notification.delivery.v1
+    consumer-retry-delay-ms: 1000
+    consumer-max-attempts: 3

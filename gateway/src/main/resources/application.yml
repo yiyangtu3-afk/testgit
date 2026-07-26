@@ -9,6 +9,10 @@ spring:
       server:
         webflux:
           routes:
+            - id: campuslink-notification-api
+              uri: ${CAMPUSLINK_NOTIFICATION_SERVICE_URI:http://127.0.0.1:8082}
+              predicates:
+                - Path=/api/activity-notifications/**
             - id: campuslink-api
               uri: ${CAMPUSLINK_API_HTTP_URI:http://127.0.0.1:8080}
               predicates:

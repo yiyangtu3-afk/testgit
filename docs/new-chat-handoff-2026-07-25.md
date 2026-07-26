@@ -213,6 +213,35 @@ passing tests. A temporary `eventing` API on `18080` connected to the preserved
 MySQL history and the healthy Compose Kafka broker, then returned the normal
 database health response.
 
+## Phase five: Notification service extraction
+
+The fifth eventing slice extracts registration-result notification projection
+into `notification-service/`, a standalone Spring Boot and MyBatis application
+on port `8082`.
+
+- It consumes `campuslink.activity.events.v1` with the established
+  `campuslink-activity-notification-v1` consumer name. It persists only
+  `activity_notifications` and processing receipts, and uses the title,
+  waitlist position, and recipient present in the versioned event instead of
+  reading activity or registration tables.
+- It exposes the unchanged activity notification summary and read endpoints,
+  validates the existing HS256 JWT, and verifies the matching MySQL session
+  after the gateway. Social notifications remain on the core API in this
+  incremental slice.
+- After durable persistence, it emits a delivery event. The core API consumes
+  that event only to publish the existing authenticated
+  `activity.notification.created` WebSocket message, so Vue's notification
+  store has no protocol change.
+- Gateway sends `/api/activity-notifications/**` to `8082`; Compose disables
+  the legacy local projection and starts the new service before gateway. A
+  stopped notification service cannot roll back an activity transaction; Kafka
+  retries and receipt idempotency let it catch up after recovery.
+
+Validation: notification-service has two passing unit tests for duplicate
+delivery and the read-summary contract. Gateway has five passing unit tests.
+The core Maven suite, run with the explicit Byte Buddy agent against the
+available MySQL and Testcontainers runtime, has 168 passing tests.
+
 ## Local runtime status
 
 At handoff time, local MySQL was listening at `127.0.0.1:3306`, and the Java

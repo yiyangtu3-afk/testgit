@@ -32,7 +32,7 @@ controls are shown. Start from
 [`docs/new-chat-handoff-2026-07-08.md`](docs/new-chat-handoff-2026-07-08.md)
 for the complete handoff, constraints, and local verification commands.
 
-The first four event-driven migration slices are now available. Activity
+The first five event-driven migration slices are now available. Activity
 registration, waitlist, promotion, cancellation, and check-in transitions
 write a versioned Transactional Outbox event in the same MySQL transaction as
 their current business state. The normal local backend keeps Kafka disabled and
@@ -41,9 +41,12 @@ Kafka projects registration notifications idempotently, retries consumer
 failures with a bounded policy, and sends exhausted failures to a dead-letter
 topic. Administrators can inspect and explicitly replay retained Outbox or
 consumer dead letters through the protected eventing operations API.
-Spring Cloud Gateway now provides the public API and WebSocket boundary on
-port `8081`; the existing Spring MVC application remains the downstream API on
-port `8080` while later phases extract services.
+Spring Cloud Gateway provides the public API and WebSocket boundary on port
+`8081`. The extracted `notification-service` owns activity-registration
+notification projection, read actions, and unread counts on port `8082`; the
+existing Spring MVC application remains the activity-producing API on port
+`8080`. The gateway sends only `/api/activity-notifications/**` to the
+notification service and keeps all other API routes on the existing service.
 The Compose stack uses the maintained `apache/kafka:3.9.0` KRaft image. Its
 Kafka listeners are separate components from Kafka bean configuration, so the
 eventing profile can start without a Spring dependency cycle.
@@ -183,7 +186,8 @@ The demo supports these flows:
 The Vue client uses relative `/api` and `/ws` paths. During local development,
 Vite proxies them to Spring Cloud Gateway at `http://127.0.0.1:8081`; Compose
 uses the same gateway behind Nginx. The gateway forwards the original bearer
-token to the current Java API on port `8080`. If the gateway can't be reached,
+token to the Java API on port `8080` or, for activity-notification paths, to
+`notification-service` on port `8082`. If the gateway can't be reached,
 the client falls back to built-in mock data and shows **Mock** in the sidebar.
 Any `4xx` or `5xx` response from the gateway or a downstream service remains a
 visible live failure and never becomes browser-only data.
@@ -191,9 +195,9 @@ visible live failure and never becomes browser-only data.
 After login, the Java API returns a signed, time-limited JWT bearer token. The
 frontend sends that token in the `Authorization` header. The gateway first
 verifies the existing HS256 signature and expiry, then forwards the unchanged
-token without adding a trusted identity header. The downstream Java API still
-resolves the current user from the verified token and matching MySQL session,
-and still performs every role check. This preserves server-side logout
+token without adding a trusted identity header. Both downstream services still
+resolve the current user from the verified token and matching MySQL session,
+and the Java API still performs every role check. This preserves server-side logout
 revocation instead of relying on the gateway alone. The
 quick demo entry and account switcher use `POST /api/auth/demo-login` to issue
 the token for the selected demo account. Student registration uses
@@ -249,8 +253,10 @@ npm run dev
 ```
 
 The default local demo starts Vite on `http://127.0.0.1:5180` and proxies
-`/api` and `/ws` to the local gateway on `8081`. Start the backend on `8080`
-first, then run `./script/run_gateway_idea.sh`, confirm
+`/api` and `/ws` to the local gateway on `8081`. To use the extracted activity
+notification path, start Kafka, run the backend with `SPRING_PROFILES_ACTIVE=eventing`
+on `8080`, run `./script/run_notification_service_idea.sh` on `8082`, and then
+run `./script/run_gateway_idea.sh`. Confirm
 `curl -fsS http://127.0.0.1:8081/api/database/health`, and start Vite. The
 Vue client uses relative proxy paths. It shows Java API mode when the gateway
 responds and uses Mock only when the gateway cannot be reached; HTTP `4xx` and
@@ -319,9 +325,10 @@ error through both paths.
 
 ## Docker Compose demo
 
-With Docker Compose available, you can start the browser demo, API, Kafka, and
-an isolated MySQL 8.4 database with one command. The database and Kafka data
-use Docker named volumes, not your local MySQL server.
+With Docker Compose available, you can start the browser demo, API,
+`notification-service`, Kafka, and an isolated MySQL 8.4 database with one
+command. The database and Kafka data use Docker named volumes, not your local
+MySQL server.
 
 ```bash
 docker compose up --build

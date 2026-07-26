@@ -132,11 +132,11 @@ owns its notification data rather than reading activity tables directly.
 
 ### Acceptance criteria
 
-- [ ] Notification service runs independently from the activity-producing
+- [x] Notification service runs independently from the activity-producing
   application.
-- [ ] Activity registration succeeds while notification service is unavailable.
-- [ ] The service catches up from Kafka after recovery without duplicates.
-- [ ] Vue notification behavior remains unchanged through the gateway.
+- [x] Activity registration succeeds while notification service is unavailable.
+- [x] The service catches up from Kafka after recovery without duplicates.
+- [x] Vue notification behavior remains unchanged through the gateway.
 
 ---
 

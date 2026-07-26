@@ -12,21 +12,27 @@
 docker compose up --build
 ```
 
-Compose 会启动 Kafka、未发布到主机的 MySQL 8.4、Spring Boot API、Spring Cloud
-Gateway 和 Vue 前端。API 只在 Kafka 与数据库健康后启动；网关只在 API 健康后启动；
+Compose 会启动 Kafka、未发布到主机的 MySQL 8.4、Spring Boot API、独立
+`notification-service`、Spring Cloud Gateway 和 Vue 前端。API 只在 Kafka 与数据库
+健康后启动；通知服务在 API、Kafka 与数据库健康后启动；网关在两个后端服务健康后启动；
 前端只在网关健康后启动。浏览器打开 `http://127.0.0.1:5179`，然后使用 **快速进入**
-或演示账号登录。Nginx 为 Vue 构建代理 `/api` 和 `/ws` 到网关，网关再转发到 API，
+或演示账号登录。Nginx 为 Vue 构建代理 `/api` 和 `/ws` 到网关，网关再按路径转发，
 并处理 Vue 路由刷新。
 
-网关在主机端口 `8081` 提供公开的 API 和 WebSocket 入口。它校验现有 JWT 的签名与
-过期时间，并原样转发 bearer token；API 仍校验 MySQL 会话、注销状态和角色，因而不会
-把服务端注销失效语义交给网关单独处理。
+网关在主机端口 `8081` 提供公开的 API 和 WebSocket 入口。它将
+`/api/activity-notifications/**` 路由到通知服务的 `8082` 端口，其余 `/api/**` 和
+`/ws/**` 仍路由到 API 的 `8080` 端口。网关校验现有 JWT 的签名与过期时间，并原样转发
+bearer token；通知服务和 API 都会再次校验 MySQL 会话，API 仍执行角色校验，因而不会把
+服务端注销失效语义交给网关单独处理。
 
 Compose 会为 API 启用 `eventing` profile。活动报名、候补、取消、递补和签到
 在现有 MySQL 事务中额外写入 Outbox 事件；发布器将事件发送到 Kafka 的
 `campuslink.activity.events.v1` topic，回执消费者以 `(consumer_name, event_id)`
-去重后写入处理记录。报名、候补和递补通知由 Kafka 消费者投影，仍复用当前通知
-API、未读数和 WebSocket 内容。消费者在达到三次处理尝试后会把事件发送到
+去重后写入处理记录。API 在 Compose 中关闭旧的本地通知投影；独立通知服务以同一稳定
+消费者组消费报名、候补和递补事件，并以 `(consumer_name, event_id)` 去重后写入活动通知。
+通知服务持久化后发布投递事件，API 只作为既有认证 WebSocket 的桥接层发送
+`activity.notification.created`。因此通知服务暂时不可用不会回滚活动报名事务，恢复后会从
+Kafka 补齐通知。消费者在达到三次处理尝试后会把事件发送到
 `campuslink.activity.events.v1.DLT`，并在 MySQL 的 `event_dead_letters` 保留失败
 原因；Outbox 发布同样在达到上限后进入持久化 `dead_letter` 状态。管理员可通过
 `GET /api/admin/eventing/operations` 查看状态，再使用带 `confirm=true` 的重放接口
