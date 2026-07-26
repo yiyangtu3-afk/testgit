@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public final class ActivityDtos {
   private ActivityDtos() {}
@@ -19,4 +20,14 @@ public final class ActivityDtos {
       String organizerId, String organizerName, String status, String reviewDecision,
       String reviewReason, String reviewerId, String reviewerName, LocalDateTime reviewedAt,
       LocalDateTime createdAt) {}
+  public record RegistrationView(String id, String activityId, String status, int queuePosition,
+      LocalDateTime registeredAt, LocalDateTime waitlistedAt) {}
+  public record RosterEntryView(String registrationId, String attendeeId, String attendeeName,
+      String status, int queuePosition, LocalDateTime registeredAt, LocalDateTime waitlistedAt,
+      LocalDateTime checkedInAt) {}
+  public record RosterView(String activityId, String title, int capacity, int registeredCount,
+      int waitlistedCount, int checkedInCount, List<RosterEntryView> entries) {}
+  public record ActivityMetricsView(int registrationCount, int checkedInCount) {}
+  public record CheckInCredentialView(String activityId, String code) {}
+  public record VerifyCheckInCredentialRequest(@NotBlank @Size(max = 128) String code) {}
 }

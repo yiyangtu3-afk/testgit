@@ -80,6 +80,7 @@ class ActivityApplicationServiceTest {
     }
     @Override public void insertReview(String id, String activityId, String actorId, String decision, String reason) { reviews.add(new Review(decision, reason)); }
     @Override public ActivityRecord find(String id) { return activities.get(id); }
+    @Override public ActivityRecord findForUpdate(String id) { return activities.get(id); }
     @Override public List<ActivityRecord> published(String category, LocalDateTime from, LocalDateTime before) { return List.of(); }
     @Override public List<ActivityRecord> managed(String organizerId) { return List.of(); }
     @Override public List<ActivityRecord> pending() { return List.of(); }
@@ -91,6 +92,7 @@ class ActivityApplicationServiceTest {
           activity.organizerId(), status, decision, reason, reviewerId, LocalDateTime.now(), activity.createdAt()));
       return 1;
     }
+    @Override public int updateRegistrationStatus(String id, String status) { return 1; }
     private record Review(String decision, String reason) {}
   }
 

@@ -49,9 +49,8 @@ decision. The extracted `notification-service` owns activity-registration
 notification projection, read actions, and unread counts on port `8082`; the
 existing Spring MVC application remains the activity-producing API on port
 `8080`. The gateway sends activity-notification routes to notification-service,
-the activity root, managed, and administrator-review routes to activity-service,
-and keeps registration and check-in child routes on the existing service until
-phase seven.
+all activity root, review, registration, waitlist, and check-in routes to
+activity-service. The core API no longer receives these Gateway routes.
 The Compose stack uses the maintained `apache/kafka:3.9.0` KRaft image. Its
 Kafka listeners are separate components from Kafka bean configuration, so the
 eventing profile can start without a Spring dependency cycle.

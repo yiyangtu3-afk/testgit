@@ -318,6 +318,28 @@ The important local addresses are:
 - Downstream Java API: `http://127.0.0.1:8080`
 - Legacy fallback: `http://127.0.0.1:5179/?v=20260715-signed-jwt-logout-v1`
 
+## Phase seven: Activity registration and check-in extraction
+
+The seventh migration slice moves activity registration, waitlists, promotion,
+credential rotation, credential verification, manual check-in, and activity
+metrics into `activity-service`. Gateway now routes `/api/activities/**` and
+`/api/admin/activity-metrics` to that service.
+
+The activity service locks the activity before changing capacity-sensitive
+registration state. It owns direct registration and credential table access,
+uses separate user-directory lookups for roster names, and stores only a
+SHA-256 credential digest. Each state transition writes a versioned event in
+the same transactional Outbox row, with `activityId` used as the aggregate ID
+and Kafka key. The existing core Outbox publisher is transitional until the
+activity-owned publisher moves in a later infrastructure slice.
+
+Validation through a temporary Gateway created and approved an activity, then
+registered a student, rotated a credential, and checked the student in through
+the organizer credential endpoint. The registration and check-in Outbox rows
+were both `published`; notification-service persisted the matching
+`activity.registration.registered` notification. Activity-service unit tests
+cover waitlist creation and cancellation promotion in addition to phase six.
+
 ## Required boundaries
 
 - Use Mock only when the Java API is completely unreachable. Show real API

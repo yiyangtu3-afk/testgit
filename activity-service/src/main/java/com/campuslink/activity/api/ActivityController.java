@@ -5,6 +5,7 @@ import com.campuslink.activity.api.ActivityDtos.CreateActivityRequest;
 import com.campuslink.activity.api.ActivityDtos.ReviewActivityRequest;
 import com.campuslink.activity.service.ActivityApplicationService;
 import com.campuslink.activity.service.ActivityAuthService;
+import com.campuslink.activity.service.ActivityRegistrationApplicationService;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
@@ -24,7 +25,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class ActivityController {
   private final ActivityApplicationService activities;
   private final ActivityAuthService auth;
-  public ActivityController(ActivityApplicationService activities, ActivityAuthService auth) { this.activities = activities; this.auth = auth; }
+  private final ActivityRegistrationApplicationService registrations;
+  public ActivityController(ActivityApplicationService activities, ActivityAuthService auth, ActivityRegistrationApplicationService registrations) { this.activities = activities; this.auth = auth; this.registrations = registrations; }
   @GetMapping("/api/activities")
   public List<ActivityView> published(@RequestHeader(value = "Authorization", required = false) String authorization, @RequestParam(required = false) String category, @RequestParam(required = false) String from, @RequestParam(required = false) String to) { auth.requireUser(authorization); return activities.published(category, date(from), date(to)); }
   @PostMapping("/api/activities") @ResponseStatus(HttpStatus.CREATED)
@@ -35,5 +37,21 @@ public class ActivityController {
   public List<ActivityView> pending(@RequestHeader(value = "Authorization", required = false) String authorization) { return activities.pending(auth.requireUser(authorization)); }
   @PostMapping("/api/admin/activities/{activityId}/reviews")
   public ActivityView review(@PathVariable String activityId, @Valid @RequestBody ReviewActivityRequest request, @RequestHeader(value = "Authorization", required = false) String authorization) { return activities.review(auth.requireUser(authorization), activityId, request); }
+  @GetMapping("/api/activities/{activityId}/registrations/current")
+  public org.springframework.http.ResponseEntity<ActivityDtos.RegistrationView> current(@PathVariable String activityId,@RequestHeader(value="Authorization",required=false) String authorization){var result=registrations.current(auth.requireUser(authorization),activityId);return result==null?org.springframework.http.ResponseEntity.noContent().build():org.springframework.http.ResponseEntity.ok(result);}
+  @PostMapping("/api/activities/{activityId}/registrations") @ResponseStatus(HttpStatus.CREATED)
+  public ActivityDtos.RegistrationView register(@PathVariable String activityId,@RequestHeader(value="Authorization",required=false) String authorization){return registrations.register(auth.requireUser(authorization),activityId);}
+  @org.springframework.web.bind.annotation.DeleteMapping("/api/activities/{activityId}/registrations/current")
+  public ActivityDtos.RegistrationView cancel(@PathVariable String activityId,@RequestHeader(value="Authorization",required=false) String authorization){return registrations.cancel(auth.requireUser(authorization),activityId);}
+  @GetMapping("/api/activities/{activityId}/registrations/roster")
+  public ActivityDtos.RosterView roster(@PathVariable String activityId,@RequestHeader(value="Authorization",required=false) String authorization){return registrations.roster(auth.requireUser(authorization),activityId);}
+  @PostMapping("/api/activities/{activityId}/registrations/current/check-in-credential")
+  public ActivityDtos.CheckInCredentialView credential(@PathVariable String activityId,@RequestHeader(value="Authorization",required=false) String authorization){return registrations.credential(auth.requireUser(authorization),activityId);}
+  @PostMapping("/api/activities/{activityId}/registrations/check-in-credential")
+  public ActivityDtos.RosterEntryView verifyCredential(@PathVariable String activityId,@Valid @RequestBody ActivityDtos.VerifyCheckInCredentialRequest request,@RequestHeader(value="Authorization",required=false) String authorization){return registrations.verifyCredential(auth.requireUser(authorization),activityId,request.code());}
+  @PostMapping("/api/activities/{activityId}/registrations/{registrationId}/check-in")
+  public ActivityDtos.RosterEntryView checkIn(@PathVariable String activityId,@PathVariable String registrationId,@RequestHeader(value="Authorization",required=false) String authorization){return registrations.checkIn(auth.requireUser(authorization),activityId,registrationId);}
+  @GetMapping("/api/admin/activity-metrics")
+  public ActivityDtos.ActivityMetricsView metrics(@RequestHeader(value="Authorization",required=false) String authorization){return registrations.metrics(auth.requireUser(authorization));}
   private LocalDate date(String raw) { if (raw == null || raw.isBlank()) return null; try { return LocalDate.parse(raw.trim()); } catch (DateTimeParseException exception) { throw new IllegalArgumentException("活动日期格式必须为 YYYY-MM-DD"); } }
 }

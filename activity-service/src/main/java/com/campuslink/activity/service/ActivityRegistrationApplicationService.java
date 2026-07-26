@@ -1,0 +1,44 @@
+package com.campuslink.activity.service;
+
+import com.campuslink.activity.api.ActivityDtos.*;
+import com.campuslink.activity.domain.*;
+import com.campuslink.activity.eventing.ActivityReviewMessage;
+import com.campuslink.activity.mapper.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
+import java.util.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
+@Service
+public class ActivityRegistrationApplicationService {
+  private final ActivityMapper activities; private final RegistrationMapper registrations;
+  private final CheckInCredentialMapper credentials; private final UserDirectoryMapper users;
+  private final OutboxEventMapper outbox; private final ObjectMapper json;
+  public ActivityRegistrationApplicationService(ActivityMapper activities, RegistrationMapper registrations, CheckInCredentialMapper credentials, UserDirectoryMapper users, OutboxEventMapper outbox, ObjectMapper json) { this.activities=activities; this.registrations=registrations; this.credentials=credentials; this.users=users; this.outbox=outbox; this.json=json; }
+  @Transactional public RegistrationView register(UserDirectoryEntry user,String activityId) {
+    student(user); ActivityRecord activity=activity(activityId,true); open(activity); if(activity.organizerId().equals(user.id())) forbidden("组织者不能报名自己的活动");
+    RegistrationRecord current=registrations.findForUpdate(activityId,user.id()); if(current!=null && ("registered".equals(current.status())||"waitlisted".equals(current.status()))) conflict("你已报名该活动");
+    String status=registrations.occupied(activityId)<activity.capacity()?"registered":"waitlisted"; RegistrationRecord saved;
+    if(current==null){String id=id();registrations.insert(id,activityId,user.id(),status);saved=registrations.findForUpdate(activityId,user.id());} else {registrations.status(current.id(),status);saved=registrations.findForUpdate(activityId,user.id());}
+    if("registered".equals(status)&&registrations.occupied(activityId)==activity.capacity()) activities.updateRegistrationStatus(activityId,"full");
+    int position="waitlisted".equals(status)?registrations.queuePosition(saved.id()):0; event(saved,activity,user.id(),status,current==null?null:current.status(),position); return view(saved,position);
+  }
+  public RegistrationView current(UserDirectoryEntry user,String activityId){student(user);RegistrationRecord r=registrations.find(activityId,user.id());return r==null?null:view(r,"waitlisted".equals(r.status())?registrations.queuePosition(r.id()):0);}
+  @Transactional public RegistrationView cancel(UserDirectoryEntry user,String activityId){student(user);ActivityRecord a=activity(activityId,true);RegistrationRecord r=registrations.findForUpdate(activityId,user.id());if(r==null||"cancelled".equals(r.status())) conflict("没有可取消的报名记录");if("checked_in".equals(r.status())) conflict("已签到的报名不能取消");String prior=r.status();registrations.status(r.id(),"cancelled");event(r,a,user.id(),"cancelled",prior,null);if("registered".equals(prior)){RegistrationRecord next=registrations.firstWaitlisted(activityId);if(next==null)activities.updateRegistrationStatus(activityId,"published");else{registrations.status(next.id(),"registered");event(next,a,user.id(),"promoted","waitlisted",null);}}return new RegistrationView(r.id(),activityId,"cancelled",0,r.registeredAt(),r.waitlistedAt());}
+  public RosterView roster(UserDirectoryEntry user,String activityId){organizer(user);ActivityRecord a=owned(user,activityId,false);List<RosterEntryView> entries=new ArrayList<>();int registered=0,waitlisted=0,checked=0;for(RegistrationRecord r:registrations.roster(activityId)){int q=0;if("waitlisted".equals(r.status())){q=++waitlisted;}else if("registered".equals(r.status()))registered++;else if("checked_in".equals(r.status()))checked++;UserDirectoryEntry attendee=users.find(r.attendeeId());entries.add(new RosterEntryView(r.id(),r.attendeeId(),attendee==null?null:attendee.name(),r.status(),q,r.registeredAt(),r.waitlistedAt(),r.checkedInAt()));}return new RosterView(a.id(),a.title(),a.capacity(),registered,waitlisted,checked,entries);}
+  public ActivityMetricsView metrics(UserDirectoryEntry user){admin(user);return new ActivityMetricsView(registrations.allOccupied(),registrations.allCheckedIn());}
+  @Transactional public CheckInCredentialView credential(UserDirectoryEntry user,String activityId){student(user);RegistrationRecord r=registrations.findForUpdate(activityId,user.id());if(r==null||!"registered".equals(r.status()))conflict("只有已报名且未签到的参与者可以领取签到凭证");String code=code();CheckInCredentialRecord c=credentials.byRegistration(r.id());if(c==null)credentials.insert(id(),r.id(),hash(code));else credentials.replace(c.id(),hash(code));return new CheckInCredentialView(activityId,code);}
+  @Transactional public RosterEntryView verifyCredential(UserDirectoryEntry user,String activityId,String code){organizer(user);ActivityRecord a=owned(user,activityId,true);checkInOpen(a);CheckInCredentialRecord c=credentials.byHashForUpdate(hash(code));if(c==null)conflict("签到凭证无效");RegistrationRecord r=registrations.findByIdForUpdate(activityId,c.registrationId());if(r==null)conflict("签到凭证不属于当前活动");return checkIn(user,a,r);}
+  @Transactional public RosterEntryView checkIn(UserDirectoryEntry user,String activityId,String registrationId){organizer(user);ActivityRecord a=owned(user,activityId,true);checkInOpen(a);return checkIn(user,a,registrations.findByIdForUpdate(activityId,registrationId));}
+  private RosterEntryView checkIn(UserDirectoryEntry actor,ActivityRecord a,RegistrationRecord r){if(r==null)throw new IllegalArgumentException("报名记录不存在");if("checked_in".equals(r.status()))conflict("该参与者已签到");if(!"registered".equals(r.status()))conflict("只有已报名参与者可以签到");if(registrations.status(r.id(),"checked_in")!=1)conflict("签到状态更新失败");event(r,a,actor.id(),"checked_in","registered",null);UserDirectoryEntry attendee=users.find(r.attendeeId());return new RosterEntryView(r.id(),r.attendeeId(),attendee==null?null:attendee.name(),"checked_in",0,r.registeredAt(),r.waitlistedAt(),LocalDateTime.now());}
+  private void event(RegistrationRecord r,ActivityRecord a,String actor,String type,String from,Integer position){String eventId=id();registrations.event(eventId,r.id(),a.id(),r.attendeeId(),actor,type,from,type.equals("promoted")?"registered":type);ActivityReviewMessage message=new ActivityReviewMessage(eventId,"activity.registration."+type+".v1",r.id(),a.id(),r.attendeeId(),actor,from,type.equals("promoted")?"registered":type,LocalDateTime.now(),a.title(),position);try{outbox.insert(eventId,"activity-registration",a.id(),message.eventType(),json.writeValueAsString(message));}catch(JsonProcessingException e){throw new IllegalStateException("无法序列化活动报名领域事件",e);}}
+  private RegistrationView view(RegistrationRecord r,int q){return new RegistrationView(r.id(),r.activityId(),r.status(),q,r.registeredAt(),r.waitlistedAt());}
+  private ActivityRecord activity(String id,boolean lock){ActivityRecord a=lock?activities.findForUpdate(id):activities.find(id);if(a==null)throw new IllegalArgumentException("活动不存在");return a;} private ActivityRecord owned(UserDirectoryEntry u,String id,boolean lock){ActivityRecord a=activity(id,lock);if(!a.organizerId().equals(u.id()))forbidden("只能管理自己创建的活动");return a;} private void open(ActivityRecord a){if(!"published".equals(a.status())&&!"full".equals(a.status()))conflict("当前活动暂不接受报名");} private void checkInOpen(ActivityRecord a){if(!"published".equals(a.status())&&!"full".equals(a.status()))conflict("当前活动暂不支持签到");} private void student(UserDirectoryEntry u){if(!u.role().contains("学生"))forbidden("只有学生可以报名活动");} private void organizer(UserDirectoryEntry u){if(!u.role().contains("教师")&&!u.role().contains("社团负责人"))forbidden("只有教师或社团负责人可以管理活动");} private void admin(UserDirectoryEntry u){if(!u.role().contains("管理员"))forbidden("需要管理员账号查看活动指标");} private void forbidden(String m){throw new ResponseStatusException(HttpStatus.FORBIDDEN,m);} private void conflict(String m){throw new ResponseStatusException(HttpStatus.CONFLICT,m);} private String id(){return UUID.randomUUID().toString().replace("-","");} private String code(){byte[] b=new SecureRandom().generateSeed(24);return Base64.getUrlEncoder().withoutPadding().encodeToString(b);} private String hash(String value){try{return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(value.strip().getBytes(StandardCharsets.UTF_8)));}catch(Exception e){throw new IllegalStateException("无法生成签到凭证摘要",e);}}
+}

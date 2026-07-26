@@ -174,11 +174,11 @@ to preserve event order within an activity.
 
 ### Acceptance criteria
 
-- [ ] Capacity control, waitlist order, and check-in rules remain correct.
-- [ ] Registration events remain durable, versioned, ordered per activity, and
+- [x] Capacity control, waitlist order, and check-in rules remain correct.
+- [x] Registration events remain durable, versioned, ordered per activity, and
   idempotently consumed.
-- [ ] No cross-service database transaction or join is required.
-- [ ] Existing browser and API activity acceptance checks pass through the
+- [x] No cross-service database transaction or join is required.
+- [x] Existing browser and API activity acceptance checks pass through the
   gateway.
 
 ---
