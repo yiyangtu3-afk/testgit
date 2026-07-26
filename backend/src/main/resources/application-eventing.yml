@@ -1,0 +1,20 @@
+spring:
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:127.0.0.1:9094}
+    admin:
+      fail-fast: true
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: com.campuslink.eventing
+        spring.json.value.default.type: com.campuslink.eventing.ActivityRegistrationMessage
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+campuslink:
+  eventing:
+    activity-topic: campuslink.activity.events.v1
+    outbox-publish-interval-ms: 1000
+    outbox-retry-delay-seconds: 5

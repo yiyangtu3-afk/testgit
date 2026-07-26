@@ -54,7 +54,7 @@ class ActivityRegistrationControllerTest {
     var service = new ActivityRegistrationService(activityRepository,
         new InMemoryActivityRegistrationRepository(),
         new InMemoryActivityCheckInCredentialRepository(),
-        new ActivityNotificationService(new InMemoryActivityNotificationRepository()));
+        new ActivityNotificationService(new InMemoryActivityNotificationRepository()), event -> { });
     var authTokens = new AuthTokenService(sessions, userRepository);
     studentAuthorization = "Bearer " + authTokens.issueToken(student.id());
     teacherAuthorization = "Bearer " + authTokens.issueToken(teacher.id());

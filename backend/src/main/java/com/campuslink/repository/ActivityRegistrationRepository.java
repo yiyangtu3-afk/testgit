@@ -29,7 +29,7 @@ public interface ActivityRegistrationRepository {
 
   int updateStatus(String registrationId, String status);
 
-  void addEvent(String registrationId, String activityId, String attendeeId, String actorId,
+  ActivityRegistrationEventEntity addEvent(String registrationId, String activityId, String attendeeId, String actorId,
       String eventType, String fromStatus, String toStatus);
 
   List<ActivityRegistrationEventEntity> findEvents(String activityId);

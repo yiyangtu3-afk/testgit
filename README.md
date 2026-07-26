@@ -32,6 +32,14 @@ controls are shown. Start from
 [`docs/new-chat-handoff-2026-07-08.md`](docs/new-chat-handoff-2026-07-08.md)
 for the complete handoff, constraints, and local verification commands.
 
+The first event-driven migration slice is now available. Activity registration,
+waitlist, promotion, cancellation, and check-in transitions write a versioned
+Transactional Outbox event in the same MySQL transaction as their current
+business state. The normal local backend keeps Kafka disabled and leaves these
+events pending. The Compose demo enables the `eventing` profile, publishes them
+to Kafka, and records an idempotent receipt without changing the current
+in-process notification behavior.
+
 The Vue 3 migration is complete in the separate `frontend-vue/` application.
 The completed slices cover authentication, the application shell, contacts and
 chat, the campus feed, activities, and the unified notification desk. The
@@ -295,9 +303,9 @@ error through both paths.
 
 ## Docker Compose demo
 
-With Docker Compose available, you can start the browser demo, API, and an
-isolated MySQL 8.4 database with one command. This database is a Docker named
-volume, not your local MySQL server.
+With Docker Compose available, you can start the browser demo, API, Kafka, and
+an isolated MySQL 8.4 database with one command. The database and Kafka data
+use Docker named volumes, not your local MySQL server.
 
 ```bash
 docker compose up --build
@@ -307,7 +315,7 @@ Open `http://127.0.0.1:5179`, then confirm the API with
 `curl -fsS http://127.0.0.1:8080/api/database/health`. Compose serves the Vue
 build by default, proxies `/api` and `/ws` to the API service, and retains the
 static fallback at `http://127.0.0.1:5179/legacy/`. The Compose guide explains
-startup, health checks, persistence, and safe shutdown in
+startup, Kafka eventing, health checks, persistence, and safe shutdown in
 [`docs/compose-demo.md`](docs/compose-demo.md). The repository doesn't publish
 a public online demo URL without explicit authorization.
 

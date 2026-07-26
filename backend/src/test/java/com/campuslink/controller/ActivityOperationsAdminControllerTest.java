@@ -34,7 +34,7 @@ class ActivityOperationsAdminControllerTest {
     var service = new ActivityRegistrationService(new InMemoryActivityRepository(),
         new InMemoryActivityRegistrationRepository(),
         new InMemoryActivityCheckInCredentialRepository(),
-        new ActivityNotificationService(new InMemoryActivityNotificationRepository()));
+        new ActivityNotificationService(new InMemoryActivityNotificationRepository()), event -> { });
     var authTokens = new AuthTokenService(sessions, users);
     var mockMvc = MockMvcBuilders.standaloneSetup(new ActivityOperationsAdminController(
             service, authTokens))

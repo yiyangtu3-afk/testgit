@@ -312,6 +312,29 @@ create table if not exists activity_registration_events (
   key idx_activity_registration_events_registration (registration_id, created_at)
 );
 
+create table if not exists outbox_events (
+  id varchar(64) primary key,
+  aggregate_type varchar(80) not null,
+  aggregate_id varchar(64) not null,
+  event_type varchar(120) not null,
+  payload json not null,
+  status varchar(20) not null,
+  attempts int not null default 0,
+  next_attempt_at datetime(6) not null,
+  published_at datetime(6) null,
+  last_error varchar(1000) null,
+  created_at timestamp(6) not null default current_timestamp(6),
+  key idx_outbox_events_ready (status, next_attempt_at, created_at),
+  key idx_outbox_events_aggregate (aggregate_type, aggregate_id, created_at)
+);
+
+create table if not exists event_processing_receipts (
+  consumer_name varchar(120) not null,
+  event_id varchar(64) not null,
+  processed_at timestamp(6) not null default current_timestamp(6),
+  primary key (consumer_name, event_id)
+);
+
 create table if not exists activity_check_in_credentials (
   id varchar(32) primary key,
   registration_id varchar(32) not null,

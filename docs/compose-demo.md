@@ -12,10 +12,17 @@
 docker compose up --build
 ```
 
-Compose 会启动未发布到主机的 MySQL 8.4、Spring Boot API 和 Vue 前端。API 只在
-数据库健康后启动；前端只在 API 健康后启动。浏览器打开
+Compose 会启动 Kafka、未发布到主机的 MySQL 8.4、Spring Boot API 和 Vue 前端。
+API 只在 Kafka 与数据库健康后启动；前端只在 API 健康后启动。浏览器打开
 `http://127.0.0.1:5179`，然后使用 **快速进入** 或演示账号登录。Nginx 为 Vue
 构建代理 `/api` 和 `/ws` 到 API 服务，并处理 Vue 路由刷新。
+
+Compose 会为 API 启用 `eventing` profile。活动报名、候补、取消、递补和签到
+在现有 MySQL 事务中额外写入 Outbox 事件；发布器将事件发送到 Kafka 的
+`campuslink.activity.events.v1` topic，回执消费者以 `(consumer_name, event_id)`
+去重后写入处理记录。此阶段保留现有进程内通知逻辑，因此 Kafka 回执不会改变
+用户可见的通知内容。主机可通过 `127.0.0.1:9094` 访问 Kafka；容器间使用
+`kafka:9092`。
 
 根目录的静态前端文件仍完整保留，在 Compose 中可通过
 `http://127.0.0.1:5179/legacy/` 打开，供回退演示和旧版回归检查使用。
@@ -38,15 +45,15 @@ Compose 还公开状态摘要 `http://127.0.0.1:8080/actuator/health`，但不�
 
 ## 停止演示
 
-以下命令停止容器，但保留 `campuslink-mysql` 命名卷中的容器演示数据，下一次启动会
-继续使用它。
+以下命令停止容器，但保留 `campuslink-mysql` 和 `campuslink-kafka` 命名卷中的
+容器演示数据，下一次启动会继续使用它。
 
 ```bash
 docker compose down
 ```
 
 > **Warning:** 不要在未明确确认数据处理范围时删除卷。本 Compose 卷与本机 MySQL
-> 历史数据相互独立，但两者都可能包含需要保留的演示记录。
+> 历史数据相互独立，但两者都可能包含需要保留的演示记录和 Kafka 事件。
 
 ## 浏览器演示边界
 

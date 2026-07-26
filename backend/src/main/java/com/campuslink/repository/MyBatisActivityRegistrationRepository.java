@@ -75,10 +75,13 @@ public class MyBatisActivityRegistrationRepository implements ActivityRegistrati
   }
 
   @Override
-  public void addEvent(String registrationId, String activityId, String attendeeId, String actorId,
+  public ActivityRegistrationEventEntity addEvent(String registrationId, String activityId, String attendeeId, String actorId,
       String eventType, String fromStatus, String toStatus) {
-    mapper.insertEvent(newId(), registrationId, activityId, attendeeId, actorId, eventType,
+    String id = newId();
+    mapper.insertEvent(id, registrationId, activityId, attendeeId, actorId, eventType,
         fromStatus, toStatus);
+    return new ActivityRegistrationEventEntity(id, registrationId, activityId, attendeeId, actorId,
+        eventType, fromStatus, toStatus, java.time.LocalDateTime.now());
   }
 
   @Override

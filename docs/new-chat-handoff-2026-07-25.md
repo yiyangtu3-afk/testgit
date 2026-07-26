@@ -74,8 +74,41 @@ The July 23, 2026, activity handoff records these completed checks:
   duplicate check-in rejection, manual check-in, waitlist promotion, and
   unpublishable-activity rejection.
 
-No source code changed during this July 25 handoff. The checks above are a
-recorded feature baseline, not a claim that they were rerun today.
+The checks above are a recorded feature baseline, not a claim that they were
+rerun during a later eventing phase.
+
+## Phase one: Kafka and Transactional Outbox foundation
+
+The first Spring Cloud and Kafka upgrade slice is complete and awaiting the
+next approved slice. It keeps the current modular monolith and notification
+behavior intact while preparing a reliable event boundary.
+
+- Spring Cloud `2025.0.3` is managed through the Spring Cloud BOM alongside
+  Spring Boot `3.5.0`.
+- Activity registration, waitlist, cancellation, promotion, and check-in now
+  write versioned `activity.registration.*.v1` messages to `outbox_events` in
+  the same local transaction as their existing state and event history.
+- The `eventing` profile publishes ready Outbox rows to Kafka and writes an
+  idempotent `(consumer_name, event_id)` receipt. A failed publish retains the
+  row as `retry`; dead-letter handling is intentionally deferred to phase three.
+- Docker Compose now starts a KRaft Kafka broker and enables `eventing` for its
+  API container. The regular local backend script keeps Kafka disabled, so it
+  stores Outbox rows as `pending` without requiring a broker.
+- The product plan is in
+  [`plans/spring-cloud-kafka-microservices-upgrade.md`](../plans/spring-cloud-kafka-microservices-upgrade.md).
+
+The targeted backend suite ran 19 tests with the explicit Byte Buddy agent and
+passed. The frontend smoke check also passed. A full Maven run was attempted
+with the explicit agent, but this restricted runner blocked Java loopback access
+to MySQL and did not provide Docker for Testcontainers; the resulting failures
+were environment initialization failures, not new test assertion failures.
+
+The host-capable acceptance run started the real Java API against the preserved
+local MySQL history and verified the Vue Vite proxy health endpoint. It then
+reactivated student `u-1001`'s previously cancelled registration for activity
+`e831a69bdf264e1499f48786b84ddb5a`. MySQL contained the matching
+`activity.registration.registered.v1` Outbox row with `pending` status. That
+normal acceptance history remains in MySQL and must not be cleaned.
 
 ## Local runtime status
 
@@ -128,12 +161,9 @@ The important local addresses are:
 
 ## Recommended next action
 
-No new product feature is authorized. First ask the user to choose the next
-product priority. Before making code changes, read all three `AGENTS.md` files,
-then read this file, `resume-project-roadmap.md`,
-`vue-migration-handoff.md`, `phase-two-activity-handoff.md`,
-`admin-review-workbench-handoff.md`, and
-`admin-moderation-content-module-fix.md`.
+The user approved phase two: turn registration-result notifications into an
+idempotent Kafka consumer projection while preserving the current notification
+API, Vue behavior, JWT boundary, and legacy frontend regression baseline.
 
 ## Related records
 

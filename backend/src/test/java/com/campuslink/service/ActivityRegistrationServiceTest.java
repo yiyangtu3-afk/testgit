@@ -5,12 +5,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.campuslink.dto.ActivityDtos.CreateActivityRequest;
 import com.campuslink.dto.ActivityDtos.ReviewActivityRequest;
+import com.campuslink.eventing.ActivityRegistrationEventOutbox;
 import com.campuslink.entity.DemoEntities.UserEntity;
 import com.campuslink.support.InMemoryActivityRegistrationRepository;
 import com.campuslink.support.InMemoryActivityNotificationRepository;
 import com.campuslink.support.InMemoryActivityCheckInCredentialRepository;
 import com.campuslink.support.InMemoryActivityRepository;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -22,9 +24,12 @@ class ActivityRegistrationServiceTest {
       new InMemoryActivityNotificationRepository();
   private final ActivityNotificationService notifications =
       new ActivityNotificationService(notificationRepository);
+  private final ArrayList<com.campuslink.entity.ActivityRegistrationEventEntity> outboxEvents =
+      new ArrayList<>();
+  private final ActivityRegistrationEventOutbox outbox = outboxEvents::add;
   private final ActivityRegistrationService service =
       new ActivityRegistrationService(activities, registrations,
-          new InMemoryActivityCheckInCredentialRepository(), notifications);
+          new InMemoryActivityCheckInCredentialRepository(), notifications, outbox);
   private String activityId;
 
   @BeforeEach void publishCapacityOneActivity() {
@@ -58,6 +63,8 @@ class ActivityRegistrationServiceTest {
           assertThat(notification.title()).isEqualTo("已加入活动候补");
           assertThat(notification.body()).contains("第 1 位");
         });
+    assertThat(outboxEvents).extracting("eventType")
+        .containsExactly("registered", "waitlisted");
   }
 
   @Test void cancellationPromotesOldestWaitlistedStudent() {

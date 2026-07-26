@@ -76,11 +76,13 @@ public final class InMemoryActivityRegistrationRepository implements ActivityReg
     }
     return 0;
   }
-  @Override public void addEvent(String registrationId, String activityId, String attendeeId,
+  @Override public ActivityRegistrationEventEntity addEvent(String registrationId, String activityId, String attendeeId,
       String actorId, String eventType, String fromStatus, String toStatus) {
-    events.add(new ActivityRegistrationEventEntity("event-" + (events.size() + 1), registrationId,
+    var event = new ActivityRegistrationEventEntity("event-" + (events.size() + 1), registrationId,
         activityId, attendeeId, actorId, eventType, fromStatus, toStatus,
-        LocalDateTime.of(2026, 7, 11, 11, events.size())));
+        LocalDateTime.of(2026, 7, 11, 11, events.size()));
+    events.add(event);
+    return event;
   }
   @Override public List<ActivityRegistrationEventEntity> findEvents(String activityId) {
     return events.stream().filter(item -> item.activityId().equals(activityId)).toList();
