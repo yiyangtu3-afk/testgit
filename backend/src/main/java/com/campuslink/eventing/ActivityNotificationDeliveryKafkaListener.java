@@ -19,7 +19,11 @@ public class ActivityNotificationDeliveryKafkaListener {
 
   @KafkaListener(
       topics = "${campuslink.eventing.activity-notification-delivery-topic:campuslink.activity.notification.delivery.v1}",
-      groupId = "campuslink-activity-notification-websocket-v1")
+      groupId = "campuslink-activity-notification-websocket-v1",
+      properties = {
+          "spring.json.value.default.type=com.campuslink.eventing.ActivityNotificationDeliveryMessage",
+          "spring.json.use.type.headers=false"
+      })
   void deliver(ActivityNotificationDeliveryMessage message) {
     realtime.publishActivityNotification(message.recipientId(), new NotificationView(
         message.notificationId(), message.activityId(), message.type(), message.title(), message.body(),

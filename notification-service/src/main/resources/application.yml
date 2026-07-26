@@ -17,9 +17,12 @@ spring:
       properties:
         spring.json.trusted.packages: com.campuslink.notification.eventing
         spring.json.value.default.type: com.campuslink.notification.eventing.ActivityRegistrationMessage
+        spring.json.use.type.headers: false
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
 mybatis:
   configuration:
     map-underscore-to-camel-case: true

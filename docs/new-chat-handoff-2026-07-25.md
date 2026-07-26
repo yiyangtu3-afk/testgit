@@ -242,6 +242,19 @@ delivery and the read-summary contract. Gateway has five passing unit tests.
 The core Maven suite, run with the explicit Byte Buddy agent against the
 available MySQL and Testcontainers runtime, has 168 passing tests.
 
+### Kafka contract compatibility correction
+
+Kafka records now use JSON without Java type headers. Each consumer explicitly
+selects its local contract DTO, so a package name change in one deployable
+service cannot break another service's consumer. The WebSocket delivery
+listener likewise declares its delivery DTO explicitly.
+
+Real Compose acceptance created, approved, and registered a student for an
+isolated activity. The core API returned `registered`, and
+`notification-service` consumed the event and returned the persisted
+`activity.registration.registered` notification with the expected activity
+title and unread count.
+
 ## Local runtime status
 
 At handoff time, local MySQL was listening at `127.0.0.1:3306`, and the Java
