@@ -9,9 +9,16 @@ public interface OutboxEventRepository {
 
   List<OutboxEventEntity> findReady(int limit);
 
+  List<OutboxEventEntity> findDeadLetters(int limit);
+
+  int countByStatus(String status);
+
   void markPublished(String eventId);
 
-  void markRetry(String eventId, String message, int retryDelaySeconds);
+  void markRetryOrDeadLetter(
+      String eventId, String message, int retryDelaySeconds, int maxAttempts);
+
+  boolean requeueDeadLetter(String eventId);
 
   OutboxEventEntity findById(String eventId);
 }

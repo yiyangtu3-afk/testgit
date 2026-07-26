@@ -43,8 +43,12 @@ class ActivityRegistrationOutboxServiceTest {
       created.add(new CreatedEvent(aggregateType, aggregateId, eventType, payload));
     }
     @Override public List<OutboxEventEntity> findReady(int limit) { return List.of(); }
+    @Override public List<OutboxEventEntity> findDeadLetters(int limit) { return List.of(); }
+    @Override public int countByStatus(String status) { return 0; }
     @Override public void markPublished(String eventId) { }
-    @Override public void markRetry(String eventId, String message, int retryDelaySeconds) { }
+    @Override public void markRetryOrDeadLetter(
+        String eventId, String message, int retryDelaySeconds, int maxAttempts) { }
+    @Override public boolean requeueDeadLetter(String eventId) { return false; }
     @Override public OutboxEventEntity findById(String eventId) { return null; }
   }
 

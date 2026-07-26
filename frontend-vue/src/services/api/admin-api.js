@@ -13,6 +13,8 @@ export function createAdminApi({ http, mockAdmin }) {
     deleteModerationItems: (itemIds) => call("/api/admin/moderation", { method: "DELETE", body: JSON.stringify({ itemIds }) }, () => mockAdmin.deleteModerationItems(itemIds)),
     auditEvents: () => call("/api/admin/audit-events", {}, () => mockAdmin.auditEvents()),
     deleteAuditEvents: (eventIds) => call("/api/admin/audit-events", { method: "DELETE", body: JSON.stringify({ eventIds }) }, () => mockAdmin.deleteAuditEvents(eventIds)),
+    eventingOperations: () => call("/api/admin/eventing/operations", {}, () => mockAdmin.eventingOperations()),
+    replayDeadLetter: (source, id) => call(`/api/admin/eventing/dead-letters/${encodeURIComponent(source)}/${encodeURIComponent(id)}/replay?confirm=true`, { method: "POST" }, () => mockAdmin.replayDeadLetter(source, id)),
     adminReport: (range) => call(`/api/admin/report?range=${encodeURIComponent(range)}`, {}, () => mockAdmin.adminReport(range))
   };
 }

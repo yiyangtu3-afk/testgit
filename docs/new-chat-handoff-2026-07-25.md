@@ -91,8 +91,8 @@ behavior intact while preparing a reliable event boundary.
   write versioned `activity.registration.*.v1` messages to `outbox_events` in
   the same local transaction as their existing state and event history.
 - The `eventing` profile publishes ready Outbox rows to Kafka and writes an
-  idempotent `(consumer_name, event_id)` receipt. A failed publish retains the
-  row as `retry`; dead-letter handling is intentionally deferred to phase three.
+  idempotent `(consumer_name, event_id)` receipt. Failed publication retries
+  with a bounded policy, then remains as a durable `dead_letter` Outbox row.
 - Docker Compose now starts a KRaft Kafka broker and enables `eventing` for its
   API container. The regular local backend script keeps Kafka disabled, so it
   stores Outbox rows as `pending` without requiring a broker.
@@ -140,14 +140,43 @@ waitlist and promotion copy, and compatibility with phase-one messages. A full
 Maven attempt again could not access MySQL from the restricted runner and could
 not start Testcontainers without Docker; its failures were environmental
 initialization failures. A host-capable backend restart connected to preserved
-MySQL and returned the normal `UP` health response. The Vue default page also
-opened; the isolated browser reports "数据来源：尚未连接" because it cannot reach
-the host loopback API, while the host health request succeeds.
+MySQL and returned the normal `UP` health response. The Vue login page's
+"数据来源：尚未连接" text is its normal pre-login state, not a connectivity
+diagnostic; a later browser login verified the Vue Vite proxy uses the Java API.
+
+## Phase three: bounded retries, dead letters, and replay
+
+The third eventing slice is complete. It makes notification failures observable
+and recoverable without rolling back an already committed activity registration.
+
+- Outbox publication retries at most three times. After the final failure, the
+  row remains in `outbox_events` with `dead_letter` status, failure text, and
+  attempt count. An administrator can requeue it through the protected API.
+- The notification consumer uses a bounded Kafka retry policy. Its final failed
+  delivery is published to `campuslink.activity.events.v1.DLT`; the DLT
+  listener persists or refreshes one `event_dead_letters` record per logical
+  `(consumer_name, event_id)` with the original event and failure metadata.
+- `GET /api/admin/eventing/operations` exposes pending, retrying, Outbox
+  dead-letter, and consumer dead-letter counts. The replay endpoint requires
+  an administrator JWT and an explicit `confirm=true` value. Each replay is
+  audited through the eventing operations route.
+- The Vue administrator console shows the same counters, failure reason, and a
+  confirmation-gated replay action. It keeps real API errors rather than
+  falling back to Mock; Mock provides only offline demonstration data.
+
+The explicit-Byte-Buddy targeted backend suite ran 23 tests and passed. Vue
+ran 48 tests, the production build, and the legacy smoke checks successfully.
+The full Maven attempt again failed only where the restricted runner denies
+Java loopback access to MySQL and has no Docker for Testcontainers. A
+host-capable backend restart returned `UP`, created `event_dead_letters` in
+the preserved MySQL database, and returned `401` for an unauthenticated event
+operations request. Kafka/Docker are unavailable in this environment, so the
+live broker-to-DLT route still needs Compose or another Kafka-capable host.
 
 ## Local runtime status
 
 At handoff time, local MySQL was listening at `127.0.0.1:3306`, and the Java
-API had been restarted on `8080` against the current phase-two code. Do not
+API had been restarted on `8080` against the current phase-three code. Do not
 assume either it or Vue remains alive in a new session.
 
 On July 24, starting the backend from a host-capable environment successfully
@@ -195,8 +224,8 @@ The important local addresses are:
 
 ## Recommended next action
 
-Proceed only after user approval with phase three: bounded retry, dead-letter,
-and replay operations for Kafka notification events.
+Proceed only after user approval with phase four: route the existing API and
+WebSocket boundary through Spring Cloud Gateway.
 
 ## Related records
 

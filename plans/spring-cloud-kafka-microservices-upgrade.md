@@ -90,10 +90,10 @@ consumer health metrics.
 
 ### Acceptance criteria
 
-- [ ] A consumer failure does not roll back a completed activity registration.
-- [ ] Failed messages reach a dead-letter path after configured retries.
-- [ ] Administrators can inspect and replay an eligible failed event.
-- [ ] Metrics distinguish pending Outbox events, retries, and dead-lettered
+- [x] A consumer failure does not roll back a completed activity registration.
+- [x] Failed messages reach a dead-letter path after configured retries.
+- [x] Administrators can inspect and replay an eligible failed event.
+- [x] Metrics distinguish pending Outbox events, retries, and dead-lettered
   events.
 
 ---

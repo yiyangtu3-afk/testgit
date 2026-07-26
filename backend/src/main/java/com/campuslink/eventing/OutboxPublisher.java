@@ -19,6 +19,7 @@ public class OutboxPublisher {
   private final OutboxEventTransport transport;
   private final ObjectMapper objectMapper;
   private final int retryDelaySeconds;
+  private final int maxAttempts;
 
   public OutboxPublisher(
       OutboxEventRepository events,
@@ -29,6 +30,7 @@ public class OutboxPublisher {
     this.transport = transport;
     this.objectMapper = objectMapper;
     this.retryDelaySeconds = properties.outboxRetryDelaySeconds();
+    this.maxAttempts = properties.outboxMaxAttempts();
   }
 
   @Scheduled(fixedDelayString = "${campuslink.eventing.outbox-publish-interval-ms:1000}")
@@ -42,7 +44,7 @@ public class OutboxPublisher {
         transport.publish(readMessage(event));
         events.markPublished(event.id());
       } catch (Exception error) {
-        events.markRetry(event.id(), message(error), retryDelaySeconds);
+        events.markRetryOrDeadLetter(event.id(), message(error), retryDelaySeconds, maxAttempts);
       }
     }
   }

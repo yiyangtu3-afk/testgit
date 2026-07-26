@@ -16,7 +16,7 @@ class OutboxPublisherTest {
     var events = new RecordingRepository();
     var received = new ArrayList<ActivityRegistrationMessage>();
     var publisher = new OutboxPublisher(events, received::add,
-        new ObjectMapper().findAndRegisterModules(), new EventingProperties("activity.events", 5));
+        new ObjectMapper().findAndRegisterModules(), properties());
 
     publisher.publish(List.of(event("outbox-1")));
 
@@ -30,12 +30,16 @@ class OutboxPublisherTest {
     var events = new RecordingRepository();
     var publisher = new OutboxPublisher(events, message -> {
       throw new IllegalStateException("broker unavailable");
-    }, new ObjectMapper().findAndRegisterModules(), new EventingProperties("activity.events", 5));
+    }, new ObjectMapper().findAndRegisterModules(), properties());
 
     publisher.publish(List.of(event("outbox-2")));
 
     assertThat(events.published).isEmpty();
-    assertThat(events.retried).containsExactly("outbox-2:broker unavailable:5");
+    assertThat(events.retried).containsExactly("outbox-2:broker unavailable:5:3");
+  }
+
+  private EventingProperties properties() {
+    return new EventingProperties("activity.events", "activity.events.DLT", 5, 3, 1000, 3);
   }
 
   private OutboxEventEntity event(String id) throws Exception {
@@ -55,10 +59,14 @@ class OutboxPublisherTest {
 
     @Override public void create(String aggregateType, String aggregateId, String eventType, String payload) { }
     @Override public List<OutboxEventEntity> findReady(int limit) { return List.of(); }
+    @Override public List<OutboxEventEntity> findDeadLetters(int limit) { return List.of(); }
+    @Override public int countByStatus(String status) { return 0; }
     @Override public void markPublished(String eventId) { published.add(eventId); }
-    @Override public void markRetry(String eventId, String message, int retryDelaySeconds) {
-      retried.add(eventId + ":" + message + ":" + retryDelaySeconds);
+    @Override public void markRetryOrDeadLetter(
+        String eventId, String message, int retryDelaySeconds, int maxAttempts) {
+      retried.add(eventId + ":" + message + ":" + retryDelaySeconds + ":" + maxAttempts);
     }
+    @Override public boolean requeueDeadLetter(String eventId) { return false; }
     @Override public OutboxEventEntity findById(String eventId) { return null; }
   }
 }

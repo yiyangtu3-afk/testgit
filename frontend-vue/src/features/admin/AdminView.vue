@@ -79,6 +79,12 @@ function deleteAudits() {
   }
 }
 
+function replayDeadLetter(item) {
+  if (window.confirm(`确认重放这条${item.source === "outbox" ? " Outbox" : "消费者"}死信事件吗？`)) {
+    admin.replayDeadLetter(item.source, item.id);
+  }
+}
+
 onMounted(() => admin.load());
 </script>
 
@@ -132,6 +138,16 @@ onMounted(() => admin.load());
         </article>
       </section>
 
+      <section class="admin-panel eventing-panel">
+        <header><div><p class="eyebrow">EVENT OPERATIONS</p><h3>Kafka 死信与重放</h3></div><strong>{{ admin.eventing.deadLetters.length }} 待处理</strong></header>
+        <p class="eventing-note">报名事务不会因通知失败回滚。Outbox 和消费者死信会保留失败原因，重放后由幂等回执防止重复通知。</p>
+        <div class="eventing-metrics"><span>待发布 {{ admin.eventing.metrics.pendingOutboxEvents || 0 }}</span><span>重试中 {{ admin.eventing.metrics.retryingOutboxEvents || 0 }}</span><span>Outbox 死信 {{ admin.eventing.metrics.deadLetterOutboxEvents || 0 }}</span><span>消费者死信 {{ admin.eventing.metrics.deadLetterConsumerEvents || 0 }}</span></div>
+        <p v-if="!admin.eventing.deadLetters.length" class="admin-empty">当前没有需要重放的事件。</p>
+        <article v-for="item in admin.eventing.deadLetters" :key="`${item.source}-${item.id}`" class="event-dead-letter">
+          <div><span>{{ item.source === "outbox" ? "Outbox" : "消费者" }} · {{ item.eventType }}</span><p>{{ item.failureMessage }}</p><small>尝试 {{ item.attempts }} 次 · {{ item.occurredAt }}</small></div><button class="danger-outline" @click="replayDeadLetter(item)">确认重放</button>
+        </article>
+      </section>
+
       <section class="admin-panel">
         <header>
           <div><p class="eyebrow">AUDIT LOG</p><h3>审计记录</h3></div>
@@ -159,6 +175,12 @@ onMounted(() => admin.load());
 .moderation-assistance ul { margin:.45rem 0; padding-left:1.2rem; color:#5d6545; font-size:.76rem; }
 .moderation-assistance small { display:block; margin-top:.5rem; }
 .admin-review-card footer .assistance-button { border:1px solid #8b6d28; background:#fff8df; color:#6d571b; }
+.eventing-note { margin:.75rem 0; color:#58645d; font-size:.82rem; line-height:1.5; }
+.eventing-metrics { display:flex; flex-wrap:wrap; gap:.45rem; margin:.6rem 0; }
+.eventing-metrics span { padding:.35rem .5rem; background:#edf2e9; color:#3f6250; font-size:.75rem; }
+.event-dead-letter { display:flex; justify-content:space-between; gap:1rem; align-items:center; padding:.7rem 0; border-top:1px solid #e1e6df; }
+.event-dead-letter p { margin:.3rem 0; color:#914b35; }
+.event-dead-letter small { color:#6e786f; }
 .audit-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:.45rem; }
 .audit-actions button { border:0; padding:.48rem .8rem; }
 .audit-actions .quiet-action { border:1px solid #a9b9ad; background:transparent; color:#476556; }

@@ -34,6 +34,21 @@ public interface OutboxEventMapper {
       """)
   List<OutboxEventEntity> findReady(@Param("limit") int limit);
 
+  @Select("""
+      select id, aggregate_type as aggregateType, aggregate_id as aggregateId,
+             event_type as eventType, payload, status, attempts,
+             next_attempt_at as nextAttemptAt, published_at as publishedAt,
+             last_error as lastError, created_at as createdAt
+      from outbox_events
+      where status = 'dead_letter'
+      order by created_at, id
+      limit #{limit}
+      """)
+  List<OutboxEventEntity> findDeadLetters(@Param("limit") int limit);
+
+  @Select("select count(*) from outbox_events where status = #{status}")
+  int countByStatus(@Param("status") String status);
+
   @Update("""
       update outbox_events
       set status = 'published', published_at = now(6), last_error = null
@@ -43,13 +58,22 @@ public interface OutboxEventMapper {
 
   @Update("""
       update outbox_events
-      set status = 'retry', attempts = attempts + 1,
-          next_attempt_at = date_add(now(6), interval #{retryDelaySeconds} second),
+      set status = if(attempts + 1 >= #{maxAttempts}, 'dead_letter', 'retry'),
+          attempts = attempts + 1,
+          next_attempt_at = if(attempts + 1 >= #{maxAttempts}, now(6),
+              date_add(now(6), interval #{retryDelaySeconds} second)),
           last_error = left(#{message}, 1000)
       where id = #{eventId} and status in ('pending', 'retry')
       """)
-  int markRetry(@Param("eventId") String eventId, @Param("message") String message,
-      @Param("retryDelaySeconds") int retryDelaySeconds);
+  int markRetryOrDeadLetter(@Param("eventId") String eventId, @Param("message") String message,
+      @Param("retryDelaySeconds") int retryDelaySeconds, @Param("maxAttempts") int maxAttempts);
+
+  @Update("""
+      update outbox_events
+      set status = 'retry', attempts = 0, next_attempt_at = now(6), last_error = null
+      where id = #{eventId} and status = 'dead_letter'
+      """)
+  int requeueDeadLetter(@Param("eventId") String eventId);
 
   @Select("""
       select id, aggregate_type as aggregateType, aggregate_id as aggregateId,

@@ -196,14 +196,17 @@ Vue 活动卡显示紧凑的 **签到凭证** 通行证，组织者的 **我的�
 
 本阶段按 `plans/spring-cloud-kafka-microservices-upgrade.md` 渐进引入 Spring
 Cloud、Kafka 与服务边界，先保持模块化单体的 API 与数据行为，再独立部署领域服务。
-当前已完成前两个切片：Spring Cloud 2025.0.3 BOM、Kafka KRaft Compose 配置和事务
-Outbox；以及活动报名、候补、递补通知的 Kafka 幂等投影。普通本地启动不启用
+当前已完成前三个切片：Spring Cloud 2025.0.3 BOM、Kafka KRaft Compose 配置和事务
+Outbox；活动报名、候补、递补通知的 Kafka 幂等投影；以及有界重试、死信与管理员
+重放。普通本地启动不启用
 `eventing`，因此仍保留同步通知和 `pending` Outbox 记录；启用 `eventing` 后，活动事务
 只保存状态与事件，由 `campuslink-activity-notification-v1` 消费组在独立事务内写入通知，
-并以 `(consumer_name, event_id)` 防止重复投递产生重复通知。Vue API、未读数、WebSocket、
-JWT 边界与旧版静态回归均不变。
+并以 `(consumer_name, event_id)` 防止重复投递产生重复通知。Outbox 和消费者都采用
+三次上限重试；失败后分别保留 `dead_letter` 状态或写入 `event_dead_letters`，管理员在
+Vue 控制台确认后才能重放，且每次操作写入审计。Vue API、未读数、WebSocket、JWT 边界
+与旧版静态回归均不变。
 
-下一切片是失败重试、死信与管理员重放，之后才进入网关、通知服务和活动服务的逐步拆分。
+下一切片是 Spring Cloud Gateway，之后才进入通知服务和活动服务的逐步拆分。
 
 ## 下一步
 

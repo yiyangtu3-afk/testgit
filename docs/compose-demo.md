@@ -20,9 +20,12 @@ API 只在 Kafka 与数据库健康后启动；前端只在 API 健康后启动�
 Compose 会为 API 启用 `eventing` profile。活动报名、候补、取消、递补和签到
 在现有 MySQL 事务中额外写入 Outbox 事件；发布器将事件发送到 Kafka 的
 `campuslink.activity.events.v1` topic，回执消费者以 `(consumer_name, event_id)`
-去重后写入处理记录。此阶段保留现有进程内通知逻辑，因此 Kafka 回执不会改变
-用户可见的通知内容。主机可通过 `127.0.0.1:9094` 访问 Kafka；容器间使用
-`kafka:9092`。
+去重后写入处理记录。报名、候补和递补通知由 Kafka 消费者投影，仍复用当前通知
+API、未读数和 WebSocket 内容。消费者在达到三次处理尝试后会把事件发送到
+`campuslink.activity.events.v1.DLT`，并在 MySQL 的 `event_dead_letters` 保留失败
+原因；Outbox 发布同样在达到上限后进入持久化 `dead_letter` 状态。管理员可通过
+`GET /api/admin/eventing/operations` 查看状态，再使用带 `confirm=true` 的重放接口
+恢复合格事件。主机可通过 `127.0.0.1:9094` 访问 Kafka；容器间使用 `kafka:9092`。
 
 根目录的静态前端文件仍完整保留，在 Compose 中可通过
 `http://127.0.0.1:5179/legacy/` 打开，供回退演示和旧版回归检查使用。

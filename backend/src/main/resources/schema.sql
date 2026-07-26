@@ -335,6 +335,23 @@ create table if not exists event_processing_receipts (
   primary key (consumer_name, event_id)
 );
 
+create table if not exists event_dead_letters (
+  id varchar(64) primary key,
+  consumer_name varchar(120) not null,
+  event_id varchar(64) not null,
+  event_type varchar(120) not null,
+  event_key varchar(128) not null,
+  original_topic varchar(200) not null,
+  payload json not null,
+  failure_message varchar(1000) not null,
+  status varchar(20) not null,
+  delivery_count int not null default 1,
+  dead_lettered_at timestamp(6) not null default current_timestamp(6),
+  replayed_at datetime(6) null,
+  unique key uk_event_dead_letters_consumer_event (consumer_name, event_id),
+  key idx_event_dead_letters_status (status, dead_lettered_at)
+);
+
 create table if not exists activity_check_in_credentials (
   id varchar(32) primary key,
   registration_id varchar(32) not null,

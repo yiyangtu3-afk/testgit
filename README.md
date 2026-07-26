@@ -32,13 +32,15 @@ controls are shown. Start from
 [`docs/new-chat-handoff-2026-07-08.md`](docs/new-chat-handoff-2026-07-08.md)
 for the complete handoff, constraints, and local verification commands.
 
-The first event-driven migration slice is now available. Activity registration,
-waitlist, promotion, cancellation, and check-in transitions write a versioned
-Transactional Outbox event in the same MySQL transaction as their current
-business state. The normal local backend keeps Kafka disabled and leaves these
-events pending. The Compose demo enables the `eventing` profile, publishes them
-to Kafka, and records an idempotent receipt without changing the current
-in-process notification behavior.
+The first three event-driven migration slices are now available. Activity
+registration, waitlist, promotion, cancellation, and check-in transitions
+write a versioned Transactional Outbox event in the same MySQL transaction as
+their current business state. The normal local backend keeps Kafka disabled and
+leaves these events pending. The Compose demo enables the `eventing` profile:
+Kafka projects registration notifications idempotently, retries consumer
+failures with a bounded policy, and sends exhausted failures to a dead-letter
+topic. Administrators can inspect and explicitly replay retained Outbox or
+consumer dead letters through the protected eventing operations API.
 
 The Vue 3 migration is complete in the separate `frontend-vue/` application.
 The completed slices cover authentication, the application shell, contacts and

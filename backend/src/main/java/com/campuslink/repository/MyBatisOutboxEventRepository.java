@@ -27,13 +27,29 @@ public class MyBatisOutboxEventRepository implements OutboxEventRepository {
   }
 
   @Override
+  public List<OutboxEventEntity> findDeadLetters(int limit) {
+    return mapper.findDeadLetters(limit);
+  }
+
+  @Override
+  public int countByStatus(String status) {
+    return mapper.countByStatus(status);
+  }
+
+  @Override
   public void markPublished(String eventId) {
     mapper.markPublished(eventId);
   }
 
   @Override
-  public void markRetry(String eventId, String message, int retryDelaySeconds) {
-    mapper.markRetry(eventId, message, retryDelaySeconds);
+  public void markRetryOrDeadLetter(
+      String eventId, String message, int retryDelaySeconds, int maxAttempts) {
+    mapper.markRetryOrDeadLetter(eventId, message, retryDelaySeconds, maxAttempts);
+  }
+
+  @Override
+  public boolean requeueDeadLetter(String eventId) {
+    return mapper.requeueDeadLetter(eventId) == 1;
   }
 
   @Override

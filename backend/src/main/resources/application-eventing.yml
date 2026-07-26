@@ -16,5 +16,9 @@ spring:
 campuslink:
   eventing:
     activity-topic: campuslink.activity.events.v1
+    activity-dead-letter-topic: campuslink.activity.events.v1.DLT
     outbox-publish-interval-ms: 1000
     outbox-retry-delay-seconds: 5
+    outbox-max-attempts: 3
+    consumer-retry-delay-ms: 1000
+    consumer-max-attempts: 3
