@@ -212,6 +212,16 @@ agent）157 项通过；Vue 测试 46 项（16 个测试文件）、生产构建
 两份管理员审核文档。开始实际功能前先执行 `git status --short --branch`。签到凭证阶段完成
 后，当前没有已授权的下一项功能；应先向用户确认新的产品优先级，再开展下一阶段。
 
+## July 25, 2026 handoff update
+
+The current repository and local-runtime snapshot is recorded in
+[`new-chat-handoff-2026-07-25.md`](new-chat-handoff-2026-07-25.md). At that
+handoff, the `main` worktree was clean at `df19538`; MySQL was running, but the
+Vue and Java services were not left running. The preceding Java startup had
+successfully connected to MySQL and returned an `UP` database health response.
+If a sandbox blocks Java loopback access to MySQL, use a host-capable runtime
+instead of changing, resetting, or reseeding the local database.
+
 2026 年 7 月 21 日补充了可重复的 live 等价验收。启动 Vue、旧版静态服务和 Java API 后，
 运行 `node script/run_live_equivalence_check.mjs` 可对比 Vue 代理与旧版直连 API。该检查
 覆盖学生、组织者和管理员的核心只读路径，以及无效通知目标和无效聊天撤回的安全拒绝；
