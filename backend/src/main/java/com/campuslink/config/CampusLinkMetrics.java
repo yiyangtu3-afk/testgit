@@ -3,6 +3,7 @@ package com.campuslink.config;
 import com.campuslink.repository.AdminMetricsRepository;
 import com.campuslink.repository.FeedRepository;
 import com.campuslink.repository.ModerationRepository;
+import com.campuslink.repository.OutboxEventRepository;
 import com.campuslink.service.DemoClock;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -16,6 +17,7 @@ public class CampusLinkMetrics {
       AdminMetricsRepository adminMetricsRepository,
       FeedRepository feedRepository,
       ModerationRepository moderationRepository,
+      OutboxEventRepository outboxEvents,
       DemoClock clock) {
     Gauge.builder(
             "campuslink.users.total",
@@ -37,6 +39,17 @@ public class CampusLinkMetrics {
             moderationRepository,
             ModerationRepository::countPending)
         .description("Current pending moderation count")
+        .register(meterRegistry);
+    registerOutboxGauge(meterRegistry, outboxEvents, "pending");
+    registerOutboxGauge(meterRegistry, outboxEvents, "retry");
+    registerOutboxGauge(meterRegistry, outboxEvents, "dead_letter");
+  }
+
+  private void registerOutboxGauge(
+      MeterRegistry meterRegistry, OutboxEventRepository events, String status) {
+    Gauge.builder("campuslink.outbox.events", events, repository -> repository.countByStatus(status))
+        .tag("status", status)
+        .description("CampusLink Outbox events grouped by delivery status")
         .register(meterRegistry);
   }
 }

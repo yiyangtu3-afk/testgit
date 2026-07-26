@@ -12,18 +12,19 @@
 docker compose up --build
 ```
 
-Compose 会启动 Kafka、未发布到主机的 MySQL 8.4、Spring Boot API、独立
-`notification-service`、Spring Cloud Gateway 和 Vue 前端。API 只在 Kafka 与数据库
-健康后启动；通知服务在 API、Kafka 与数据库健康后启动；网关在两个后端服务健康后启动；
-前端只在网关健康后启动。浏览器打开 `http://127.0.0.1:5179`，然后使用 **快速进入**
-或演示账号登录。Nginx 为 Vue 构建代理 `/api` 和 `/ws` 到网关，网关再按路径转发，
-并处理 Vue 路由刷新。
+Compose 会启动 Kafka、未发布到主机的 MySQL 8.4、Nacos 3、Spring Boot API、独立
+`activity-service` 与 `notification-service`、Spring Cloud Gateway、Vue 前端，以及
+Jaeger、Prometheus、Grafana。Nacos 首次使用嵌入式存储初始化可能需要约三分钟；其
+readiness 就绪后，`nacos-config` 一次性发布版本化的 `CAMPUSLINK_DEV` 配置，再启动业务
+服务。浏览器打开 `http://127.0.0.1:5179`，然后使用 **快速进入** 或演示账号登录。Nginx
+为 Vue 构建代理 `/api` 和 `/ws` 到网关，网关再按路径转发，并处理 Vue 路由刷新。
 
-网关在主机端口 `8081` 提供公开的 API 和 WebSocket 入口。它将
-`/api/activity-notifications/**` 路由到通知服务的 `8082` 端口，其余 `/api/**` 和
-`/ws/**` 仍路由到 API 的 `8080` 端口。网关校验现有 JWT 的签名与过期时间，并原样转发
-bearer token；通知服务和 API 都会再次校验 MySQL 会话，API 仍执行角色校验，因而不会把
-服务端注销失效语义交给网关单独处理。
+网关在主机端口 `8081` 提供公开的 API 和 WebSocket 入口。所有服务向 Nacos 注册，Gateway
+从版本化集中配置读取 `lb://` 路由：活动与审核、报名、候补和签到路径转发给
+`activity-service`，活动通知路径转发给 `notification-service`，其他 API 与 WebSocket
+转发给核心 API。Gateway 校验现有 JWT 的签名与过期时间，并原样转发 bearer token；下游服务
+仍会再次校验 MySQL 会话和角色。活动与通知路径还配置了有界熔断；下游不可用时返回明确的
+`503` JSON 错误，而不会把失败隐藏为 Mock 成功。
 
 Compose 会为 API 启用 `eventing` profile。活动报名、候补、取消、递补和签到
 在现有 MySQL 事务中额外写入 Outbox 事件；发布器将事件发送到 Kafka 的
@@ -40,9 +41,9 @@ Kafka 补齐通知。消费者在达到三次处理尝试后会把事件发送�
 Compose 使用 `apache/kafka:3.9.0` 的单节点 KRaft 模式。Kafka 监听组件与 Kafka Bean
 配置分离，因此 `eventing` profile 不依赖 Spring 的循环注入。
 
-如果本机开发 API 已占用 `8080`，可以在启动 Compose 时使用
-`CAMPUSLINK_API_HOST_PORT=18080 docker compose up --build`。这只改变容器 API 的
-宿主映射；网关与前端仍通过 Compose 内部的 `api:8080` 通信，公开网关继续使用 `8081`。
+如果本机开发 API 或 Gateway 已占用 `8080`、`8081`，可以在启动 Compose 时使用
+`CAMPUSLINK_API_HOST_PORT=18080 CAMPUSLINK_GATEWAY_HOST_PORT=18084 docker compose up --build`。
+这只改变容器 API 与 Gateway 的宿主映射；服务之间仍通过 Compose 网络和 Nacos 通信。
 
 根目录的静态前端文件仍完整保留，在 Compose 中可通过
 `http://127.0.0.1:5179/legacy/` 打开，供回退演示和旧版回归检查使用。
@@ -62,6 +63,11 @@ Compose 还公开网关状态摘要 `http://127.0.0.1:8081/actuator/health`，�
 数据库细节。API 的 `/actuator/info` 和 `/actuator/metrics/**` 仍需要管理员 JWT；使用
 管理员登录得到的 bearer token 查询这些诊断端点。核心业务指标包括用户、当日消息、动态
 和待审核内容总数，`campuslink.http.requests` 按路由模板记录 API 耗时。
+
+Nacos 状态页在 `http://127.0.0.1:8088`，Prometheus 在 `http://127.0.0.1:9090`，
+Grafana 在 `http://127.0.0.1:3000`（本地演示账号 `admin` / `campuslink-dev-only`），
+Jaeger 在 `http://127.0.0.1:16686`。Prometheus 抓取 API 的隔离管理端口 `8085`，该端口
+没有映射到宿主机；其余服务与 Nacos 的 Prometheus 端点只由 Compose 网络访问。
 
 ## 停止演示
 

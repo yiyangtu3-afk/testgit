@@ -1,0 +1,36 @@
+campuslink:
+  operational:
+    config-version: "2026.07.26.1"
+
+spring:
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: campuslink-notification-api
+              uri: lb://campuslink-notification-service
+              predicates:
+                - Path=/api/activity-notifications/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: notification-api
+                    fallbackUri: forward:/_gateway/fallback/notification
+            - id: campuslink-activity-api
+              uri: lb://campuslink-activity-service
+              predicates:
+                - Path=/api/activities/**,/api/admin/activities/**,/api/admin/activity-metrics
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: activity-api
+                    fallbackUri: forward:/_gateway/fallback/activity
+            - id: campuslink-api
+              uri: lb://campuslink-api
+              predicates:
+                - Path=/api/**
+            - id: campuslink-chat-websocket
+              uri: lb:ws://campuslink-api
+              predicates:
+                - Path=/ws/**

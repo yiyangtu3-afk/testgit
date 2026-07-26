@@ -32,7 +32,7 @@ controls are shown. Start from
 [`docs/new-chat-handoff-2026-07-08.md`](docs/new-chat-handoff-2026-07-08.md)
 for the complete handoff, constraints, and local verification commands.
 
-The first six event-driven migration slices are now available. Activity
+All eight event-driven migration slices are now available. Activity
 registration, waitlist, promotion, cancellation, and check-in transitions
 write a versioned Transactional Outbox event in the same MySQL transaction as
 their current business state. The normal local backend keeps Kafka disabled and
@@ -54,6 +54,14 @@ activity-service. The core API no longer receives these Gateway routes.
 The Compose stack uses the maintained `apache/kafka:3.9.0` KRaft image. Its
 Kafka listeners are separate components from Kafka bean configuration, so the
 eventing profile can start without a Spring dependency cycle.
+
+Nacos 3 provides service discovery and the versioned `CAMPUSLINK_DEV` config
+group for the core API, activity service, notification service, and Gateway.
+Gateway now uses `lb://` routes rather than fixed downstream hosts and applies
+bounded Resilience4j circuit breakers to activity and notification routes.
+Compose also starts Jaeger, Prometheus, and Grafana. It exports Micrometer HTTP,
+Kafka, Outbox, retry, and dead-letter signals without exposing the core API's
+management port on the host.
 
 The Vue 3 migration is complete in the separate `frontend-vue/` application.
 The completed slices cover authentication, the application shell, contacts and
@@ -276,7 +284,7 @@ mvn test
 On this machine, Microsoft JDK 21 can't reliably let Mockito self-attach its
 Byte Buddy agent. The verified full run passes an explicit `-javaagent` through
 Maven's `argLine`; without it, Mockito-based tests can fail during test setup
-rather than on application behavior. The latest verified run completed all 151
+rather than on application behavior. The latest verified run completed all 168
 tests with the explicit agent and only printed the JVM class-sharing warning:
 
 ```bash
@@ -300,7 +308,7 @@ The suite also includes MockMvc controller tests for the auth, users, friends,
 chat, feed, activity notifications, social notifications, and admin API
 boundaries, plus direct WebSocket handler tests for chat and recipient-only
 activity and social notification events, plus the Spring Security API chain.
-The full suite currently contains 156 tests. `TestcontainersMySqlIntegrationTest`
+The full suite currently contains 168 tests. `TestcontainersMySqlIntegrationTest`
 starts an isolated `mysql:8.4` container and initializes it from the existing
 `schema.sql` and `data.sql` files. It verifies MyBatis visibility filtering,
 the transactional friend-acceptance and notification writes, and the JWT
@@ -329,10 +337,10 @@ error through both paths.
 
 ## Docker Compose demo
 
-With Docker Compose available, you can start the browser demo, API,
-`notification-service`, Kafka, and an isolated MySQL 8.4 database with one
-command. The database and Kafka data use Docker named volumes, not your local
-MySQL server.
+With Docker Compose available, you can start the browser demo, Nacos, API,
+activity and notification services, Gateway, Kafka, Jaeger, Prometheus,
+Grafana, and an isolated MySQL 8.4 database with one command. The database and
+Kafka data use Docker named volumes, not your local MySQL server.
 
 ```bash
 docker compose up --build
@@ -342,7 +350,8 @@ Open `http://127.0.0.1:5179`, then confirm the public API with
 `curl -fsS http://127.0.0.1:8081/api/database/health`. Compose serves the Vue
 build by default, proxies `/api` and `/ws` through the gateway service, and
 retains the static fallback at `http://127.0.0.1:5179/legacy/`. The Compose guide explains
-startup, Kafka eventing, health checks, persistence, and safe shutdown in
+startup, Nacos configuration, Kafka eventing, health checks, observability,
+persistence, and safe shutdown in
 [`docs/compose-demo.md`](docs/compose-demo.md). The repository doesn't publish
 a public online demo URL without explicit authorization.
 

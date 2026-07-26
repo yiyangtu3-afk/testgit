@@ -1,0 +1,10 @@
+campuslink:
+  operational:
+    config-version: "2026.07.26.1"
+
+spring:
+  kafka:
+    listener:
+      observation-enabled: true
+    template:
+      observation-enabled: true

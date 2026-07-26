@@ -46,7 +46,12 @@ jobs:
           cache: maven
 
       - name: Run frontend checks
-        run: bash ./script/run_frontend_check.sh
+        run: |
+          bash ./script/run_frontend_check.sh
+          cd frontend-vue
+          npm ci
+          npm test -- --run
+          npm run build
 
       - name: Initialize the CI database
         run: |
@@ -65,6 +70,12 @@ jobs:
           -DargLine=-javaagent:${HOME}/.m2/repository/net/bytebuddy/byte-buddy-agent/1.17.5/byte-buddy-agent-1.17.5.jar
           test
 
+      - name: Run extracted service tests
+        run: |
+          mvn -f activity-service/pom.xml test
+          mvn -f notification-service/pom.xml test
+          mvn -f gateway/pom.xml test
+
   compose-demo:
     runs-on: ubuntu-latest
 
@@ -77,6 +88,22 @@ jobs:
 
       - name: Check the gateway API health endpoint
         run: curl --fail --silent http://127.0.0.1:8081/api/database/health
+
+      - name: Check Nacos registration and centralized configuration
+        run: |
+          for service_name in campuslink-api campuslink-gateway campuslink-activity-service campuslink-notification-service; do
+            curl --fail --silent \
+              "http://127.0.0.1:8848/nacos/v3/client/ns/instance/list?serviceName=${service_name}&groupName=CAMPUSLINK_DEV" \
+              | jq -e '.code == 0 and ([.data[] | select(.healthy == true)] | length) >= 1'
+          done
+          curl --fail --silent \
+            'http://127.0.0.1:8848/nacos/v3/client/cs/config?dataId=campuslink-gateway.yaml&groupName=CAMPUSLINK_DEV' \
+            | grep --fixed-strings 'config-version: "2026.07.26.1"'
+
+      - name: Check Prometheus operational targets
+        run: |
+          curl --fail --silent http://127.0.0.1:9090/api/v1/targets \
+            | jq -e '[.data.activeTargets[] | select(.health == "up")] | length >= 5'
 
       - name: Stop the Compose demo
         if: always()

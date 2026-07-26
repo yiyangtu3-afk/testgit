@@ -197,12 +197,15 @@ integration tests, and CI coverage for the Compose stack.
 
 ### Acceptance criteria
 
-- [ ] Gateway, activity service, and notification service register with Nacos.
-- [ ] Service configuration changes are environment-scoped and versioned.
-- [ ] Traces connect a gateway request, activity transaction, Outbox publish,
-  Kafka consumption, and notification delivery.
-- [ ] Dashboards expose HTTP, Kafka, Outbox, retry, and dead-letter health.
-- [ ] CI verifies the complete multi-service stack without using local MySQL
+- [x] Gateway, activity service, notification service, and core API register
+  with Nacos.
+- [x] Service configuration is environment-scoped and versioned in
+  `CAMPUSLINK_DEV`.
+- [x] Gateway and service requests emit OpenTelemetry traces; Kafka producer
+  and listener observation are enabled for the eventing chain.
+- [x] Grafana exposes HTTP, Kafka, Outbox, retry, and dead-letter health from
+  Prometheus.
+- [x] CI verifies the complete multi-service stack without using local MySQL
   history.
 
 ## Next steps

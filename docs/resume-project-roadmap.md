@@ -196,7 +196,7 @@ Vue 活动卡显示紧凑的 **签到凭证** 通行证，组织者的 **我的�
 
 本阶段按 `plans/spring-cloud-kafka-microservices-upgrade.md` 渐进引入 Spring
 Cloud、Kafka 与服务边界，先保持模块化单体的 API 与数据行为，再独立部署领域服务。
-当前已完成五个切片：Spring Cloud 2025.0.3 BOM、Kafka KRaft Compose 配置和事务
+当前八个切片均已完成：Spring Cloud 2025.0.3 BOM、Kafka KRaft Compose 配置和事务
 Outbox；活动报名、候补、递补通知的 Kafka 幂等投影；有界重试、死信与管理员重放；独立
 Spring Cloud Gateway；以及独立 `notification-service`。普通本地启动不启用
 `eventing`，因此仍保留同步通知和 `pending` Outbox 记录；启用 `eventing` 后，活动事务
@@ -213,7 +213,12 @@ MySQL 会话、注销状态和角色，因此不会因为网关迁移削弱既�
 Compose 的 KRaft broker 已切换到可用的 `apache/kafka:3.9.0` 官方镜像；同时拆分 Kafka
 监听组件与配置类，保证 `eventing` profile 可以独立启动。
 
-下一切片是活动服务的逐步拆分。
+活动领域已进一步完成报名、候补、递补、签到和 Outbox 的独立服务迁移。第八切片引入
+Spring Cloud Alibaba 2025.0.0.0 与 Nacos 3.0.3：核心 API、活动、通知和 Gateway 使用
+`CAMPUSLINK_DEV` 集中配置并注册发现；Gateway 使用 `lb://` 路由和 Resilience4j 有界熔断。
+Compose 同时提供 Jaeger、Prometheus 和 Grafana，Micrometer 输出 HTTP、Kafka、Outbox、重试和
+死信指标；核心 API 的 Prometheus 端点仅在 Compose 内部 `8085` 管理端口暴露。完整 Maven
+168 项、Vue 48 项、三个独立服务测试、Vue 构建和旧版回归检查均已通过。
 
 ## 下一步
 
@@ -224,12 +229,11 @@ runner 验证 Compose 健康接口，本机 MySQL 历史数据不受影响。阶
 Mock。全部等价验收完成并已获得切换授权：Vue 是默认本地与 Compose 演示入口，旧静态版
 保留为 `/legacy/` 回退入口和旧版回归基线。
 
-截至 2026 年 7 月 23 日，签到凭证阶段的后端完整 Maven 测试（显式 Byte Buddy
-agent）157 项通过；Vue 测试 46 项（16 个测试文件）、生产构建和旧版前端回归检查
-通过。浏览器已使用真实 API 验证“揍康鹏”由王社长发起：林一展示凭证后，王社长成功核验，
-报名状态更新为 `checked_in`。完整 API 矩阵还覆盖凭证轮换、越权核验、重复签到、满额候补、
-取消递补和未发布活动拒绝。凭证的 MySQL 回滚集成测试确认服务端只保存摘要，并在核验后写入
-签到状态和事件。本机 MySQL 的正常业务图片消息历史保留，未清理数据。
+截至 2026 年 7 月 26 日，Nacos 与可观测性阶段的后端完整 Maven 测试（显式 Byte Buddy
+agent）168 项通过；Vue 测试 48 项（16 个测试文件）、生产构建和旧版前端回归检查通过。
+独立活动、通知和 Gateway 测试分别通过 4、3、6 项；隔离 Compose 已确认 Nacos 四服务健康注册、
+集中配置、Gateway 路由、Jaeger 追踪和五个 Prometheus 目标。Docker 命名卷与本机 MySQL 的
+正常图片消息、活动、报名、签到和审计历史均已保留，未清理数据。
 
 新对话应先阅读三份 `AGENTS.md`，再阅读本文件、Vue 与聊天交接、活动阶段交接，以及
 两份管理员审核文档。开始实际功能前先执行 `git status --short --branch`。签到凭证阶段完成

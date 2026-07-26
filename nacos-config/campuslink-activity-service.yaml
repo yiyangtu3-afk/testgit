@@ -1,0 +1,8 @@
+campuslink:
+  operational:
+    config-version: "2026.07.26.1"
+
+management:
+  endpoint:
+    health:
+      show-components: never

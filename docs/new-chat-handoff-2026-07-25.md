@@ -1,6 +1,6 @@
 # CampusLink new-chat handoff — July 25, 2026
 
-This handoff captures the repository and local-runtime state after the sixth
+This handoff captures the repository and local-runtime state after the eighth
 Kafka and microservice upgrade slice. Read it before starting a new feature so you can
 preserve the Vue migration baseline, the local MySQL history, and the legacy
 frontend regression boundary.
@@ -340,6 +340,32 @@ were both `published`; notification-service persisted the matching
 `activity.registration.registered` notification. Activity-service unit tests
 cover waitlist creation and cancellation promotion in addition to phase six.
 
+## Phase eight: Nacos, resilience, and operational proof
+
+Nacos 3.0.3 now provides discovery and versioned central configuration for the
+core API, activity service, notification service, and Gateway. The Compose
+`nacos-config` job publishes the four `CAMPUSLINK_DEV` YAML files before the
+applications start; every service imports its matching file and registers with
+Nacos. Gateway uses service names (`lb://`) rather than fixed downstream
+hosts, preserves JWT verification on both hops, and has Resilience4j circuit
+breakers with explicit `503` fallback messages for activity and notification
+routes.
+
+Compose now also starts Jaeger, Prometheus, and Grafana. Micrometer publishes
+HTTP, Kafka, Outbox, retry, and dead-letter metrics; the core API management
+endpoint is isolated on its internal `8085` port for Prometheus. The normal
+API port does not expose those metrics. OpenTelemetry tracing is enabled in
+all four applications and Kafka producer/listener observation is enabled for
+the eventing services.
+
+Host-capable verification used isolated API/Gateway mappings `18080`/`18084`
+to avoid an existing host API. Nacos readiness, the four healthy registrations,
+the `campuslink-gateway.yaml` version and `lb://` route, Gateway-proxied
+database health, Jaeger service traces, and all five Prometheus targets were
+confirmed. The full explicit-Byte-Buddy core suite passed 168 tests; activity,
+notification, and Gateway suites passed 4, 3, and 6 tests; Vue passed 48 tests
+and built successfully; the legacy smoke check passed.
+
 ## Required boundaries
 
 - Use Mock only when the Java API is completely unreachable. Show real API
@@ -356,8 +382,8 @@ cover waitlist creation and cancellation promotion in addition to phase six.
 
 ## Recommended next action
 
-Proceed only after user approval with phase five: extract the notification
-service while preserving the gateway API and Kafka event contracts.
+All eight authorized migration phases are complete. Do not start another
+feature without the user's product-priority approval.
 
 ## Related records
 

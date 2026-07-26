@@ -3,6 +3,19 @@ server:
 spring:
   application:
     name: campuslink-activity-service
+  config:
+    import: optional:nacos:${spring.application.name}.yaml?group=${NACOS_GROUP:CAMPUSLINK_DEV}&refreshEnabled=true
+  cloud:
+    nacos:
+      server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
+      discovery:
+        enabled: ${NACOS_ENABLED:false}
+        group: ${NACOS_GROUP:CAMPUSLINK_DEV}
+        health-indicator:
+          enabled: true
+      config:
+        enabled: ${NACOS_ENABLED:false}
+        group: ${NACOS_GROUP:CAMPUSLINK_DEV}
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:mysql://127.0.0.1:3306/campuslink?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false}
     username: ${SPRING_DATASOURCE_USERNAME:campuslink}
@@ -14,7 +27,16 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  tracing:
+    sampling:
+      probability: ${MANAGEMENT_TRACING_SAMPLING_PROBABILITY:1.0}
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://127.0.0.1:4318/v1/traces}
 campuslink:
   security:
     jwt:

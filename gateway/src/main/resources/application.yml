@@ -4,25 +4,47 @@ server:
 spring:
   application:
     name: campuslink-gateway
+  config:
+    import: optional:nacos:${spring.application.name}.yaml?group=${NACOS_GROUP:CAMPUSLINK_DEV}&refreshEnabled=true
   cloud:
+    nacos:
+      server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
+      discovery:
+        enabled: ${NACOS_ENABLED:false}
+        group: ${NACOS_GROUP:CAMPUSLINK_DEV}
+        health-indicator:
+          enabled: true
+      config:
+        enabled: ${NACOS_ENABLED:false}
+        group: ${NACOS_GROUP:CAMPUSLINK_DEV}
     gateway:
       server:
         webflux:
           routes:
             - id: campuslink-notification-api
-              uri: ${CAMPUSLINK_NOTIFICATION_SERVICE_URI:http://127.0.0.1:8082}
+              uri: ${CAMPUSLINK_NOTIFICATION_SERVICE_URI:lb://campuslink-notification-service}
               predicates:
                 - Path=/api/activity-notifications/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: notification-api
+                    fallbackUri: forward:/_gateway/fallback/notification
             - id: campuslink-activity-api
-              uri: ${CAMPUSLINK_ACTIVITY_SERVICE_URI:http://127.0.0.1:8083}
+              uri: ${CAMPUSLINK_ACTIVITY_SERVICE_URI:lb://campuslink-activity-service}
               predicates:
                 - Path=/api/activities/**,/api/admin/activities/**,/api/admin/activity-metrics
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: activity-api
+                    fallbackUri: forward:/_gateway/fallback/activity
             - id: campuslink-api
-              uri: ${CAMPUSLINK_API_HTTP_URI:http://127.0.0.1:8080}
+              uri: ${CAMPUSLINK_API_HTTP_URI:lb://campuslink-api}
               predicates:
                 - Path=/api/**
             - id: campuslink-chat-websocket
-              uri: ${CAMPUSLINK_API_WS_URI:ws://127.0.0.1:8080}
+              uri: ${CAMPUSLINK_API_WS_URI:lb:ws://campuslink-api}
               predicates:
                 - Path=/ws/**
 
@@ -30,10 +52,33 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: never
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  tracing:
+    sampling:
+      probability: ${MANAGEMENT_TRACING_SAMPLING_PROBABILITY:1.0}
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://127.0.0.1:4318/v1/traces}
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      activity-api:
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+      notification-api:
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
 
 campuslink:
   security:
