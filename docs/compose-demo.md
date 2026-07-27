@@ -18,6 +18,8 @@ Jaeger、Prometheus、Grafana。Nacos 首次使用嵌入式存储初始化可能
 readiness 就绪后，`nacos-config` 一次性发布版本化的 `CAMPUSLINK_DEV` 配置，再启动业务
 服务。浏览器打开 `http://127.0.0.1:5179`，然后使用 **快速进入** 或演示账号登录。Nginx
 为 Vue 构建代理 `/api` 和 `/ws` 到网关，网关再按路径转发，并处理 Vue 路由刷新。
+所有需要映射到宿主机的 Compose 端口都绑定 `127.0.0.1`，因此开发模式关闭认证的 Nacos
+控制台、Kafka 和观测工具不会对局域网开放。
 
 网关在主机端口 `8081` 提供公开的 API 和 WebSocket 入口。所有服务向 Nacos 注册，Gateway
 从版本化集中配置读取 `lb://` 路由：活动与审核、报名、候补和签到路径转发给
@@ -59,15 +61,17 @@ curl -fsS http://127.0.0.1:8081/api/database/health
 成功响应包含 `"status":"UP"`、当前数据库名和演示用户数量。完整 API 路径清单
 见仓库根目录 [`README.md`](../README.md)。
 
-Compose 还公开网关状态摘要 `http://127.0.0.1:8081/actuator/health`，但不会公开
-数据库细节。API 的 `/actuator/info` 和 `/actuator/metrics/**` 仍需要管理员 JWT；使用
-管理员登录得到的 bearer token 查询这些诊断端点。核心业务指标包括用户、当日消息、动态
-和待审核内容总数，`campuslink.http.requests` 按路由模板记录 API 耗时。
+Compose 不会把任一服务的 Actuator 管理端口映射到宿主机。Gateway、活动和通知服务的
+管理端口默认绑定本机回环，Compose 仅在内部网络为 Prometheus 开放它们。API 的
+`/actuator/info` 和 `/actuator/metrics/**` 仍需要管理员 JWT；使用管理员登录得到的 bearer
+token 查询这些诊断端点。核心业务指标包括用户、当日消息、动态和待审核内容总数，
+`campuslink.http.requests` 按路由模板记录 API 耗时。
 
 Nacos 状态页在 `http://127.0.0.1:8088`，Prometheus 在 `http://127.0.0.1:9090`，
 Grafana 在 `http://127.0.0.1:3000`（本地演示账号 `admin` / `campuslink-dev-only`），
-Jaeger 在 `http://127.0.0.1:16686`。Prometheus 抓取 API 的隔离管理端口 `8085`，该端口
-没有映射到宿主机；其余服务与 Nacos 的 Prometheus 端点只由 Compose 网络访问。
+Jaeger 在 `http://127.0.0.1:16686`。Prometheus 抓取 Gateway、API、活动和通知的隔离
+管理端口 `8084` 至 `8087`，这些端口都没有映射到宿主机；Nacos 的 Prometheus 端点也只由
+Compose 网络访问。
 
 ## 停止演示
 

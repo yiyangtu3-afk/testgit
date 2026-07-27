@@ -52,7 +52,7 @@ class SecurityConfigIntegrationTest {
   }
 
   @Test
-  void actuatorHealthIsPublicButMetricsRequireAnAdministratorSession() throws Exception {
+  void actuatorHealthIsPublicButMetricsAndPrometheusRequireAnAdministratorSession() throws Exception {
     String studentToken = authTokens.issueToken("u-1001");
 
     mockMvc.perform(get("/actuator/health"))
@@ -62,6 +62,9 @@ class SecurityConfigIntegrationTest {
             .header("Authorization", "Bearer " + studentToken))
         .andExpect(status().isForbidden())
         .andExpect(jsonPath("$.message").value("需要管理员账号"));
+    mockMvc.perform(get("/actuator/prometheus"))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.message").value("请先登录"));
   }
 
   @Test

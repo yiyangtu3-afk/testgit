@@ -354,9 +354,30 @@ routes.
 Compose now also starts Jaeger, Prometheus, and Grafana. Micrometer publishes
 HTTP, Kafka, Outbox, retry, and dead-letter metrics; the core API management
 endpoint is isolated on its internal `8085` port for Prometheus. The normal
-API port does not expose those metrics. OpenTelemetry tracing is enabled in
-all four applications and Kafka producer/listener observation is enabled for
-the eventing services.
+API port does not expose those metrics without an administrator JWT. The
+Prometheus endpoint is public only when the request reaches a separate
+management port, and it remains `ROLE_ADMIN`-protected when management shares
+the local API port. Gateway, activity-service and notification-service now use
+their own loopback-by-default management ports (`8084`, `8086`, `8087`); Compose
+opens them only on its private network for Prometheus. HTTP timer histograms are
+enabled for dashboard P95 latency.
+OpenTelemetry tracing is enabled in all four applications and Kafka
+producer/listener observation is enabled for the eventing services.
+The extracted service Maven builds now declare the Byte Buddy agent explicitly
+for Surefire, so Mockito inline mocks don't rely on a JDK self-attachment
+capability that newer JVMs can disable.
+
+The July 26 full eight-step audit corrected three operational defects: CI now
+unwraps Nacos configuration JSON before checking the config version; the core
+API keeps Prometheus administrator-protected when it shares the application
+port; and all four applications publish standard HTTP histograms for the
+Grafana request-rate and P95 panels. The audit also separated Gateway, activity,
+and notification Actuator ports from their business ports, bound Compose host
+ports to `127.0.0.1`, and confirmed the five Prometheus targets, P95 query,
+Nacos configuration, Gateway health, and internal-only management endpoints.
+The full explicit-Byte-Buddy core suite still passed 168 tests; activity,
+notification, and Gateway passed 4, 3, and 6 tests; Vue passed 48 tests,
+built successfully, and the legacy smoke check passed.
 
 Host-capable verification used isolated API/Gateway mappings `18080`/`18084`
 to avoid an existing host API. Nacos readiness, the four healthy registrations,

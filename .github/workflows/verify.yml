@@ -98,12 +98,17 @@ jobs:
           done
           curl --fail --silent \
             'http://127.0.0.1:8848/nacos/v3/client/cs/config?dataId=campuslink-gateway.yaml&groupName=CAMPUSLINK_DEV' \
+            | jq -r '.data.content' \
             | grep --fixed-strings 'config-version: "2026.07.26.1"'
 
       - name: Check Prometheus operational targets
         run: |
           curl --fail --silent http://127.0.0.1:9090/api/v1/targets \
             | jq -e '[.data.activeTargets[] | select(.health == "up")] | length >= 5'
+          curl --fail --silent --get \
+            --data-urlencode 'query=count(http_server_requests_seconds_bucket)' \
+            http://127.0.0.1:9090/api/v1/query \
+            | jq -e '.data.result[0].value[1] | tonumber > 0'
 
       - name: Stop the Compose demo
         if: always()

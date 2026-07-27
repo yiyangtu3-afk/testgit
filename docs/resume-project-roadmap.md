@@ -217,8 +217,10 @@ Compose 的 KRaft broker 已切换到可用的 `apache/kafka:3.9.0` 官方镜像
 Spring Cloud Alibaba 2025.0.0.0 与 Nacos 3.0.3：核心 API、活动、通知和 Gateway 使用
 `CAMPUSLINK_DEV` 集中配置并注册发现；Gateway 使用 `lb://` 路由和 Resilience4j 有界熔断。
 Compose 同时提供 Jaeger、Prometheus 和 Grafana，Micrometer 输出 HTTP、Kafka、Outbox、重试和
-死信指标；核心 API 的 Prometheus 端点仅在 Compose 内部 `8085` 管理端口暴露。完整 Maven
-168 项、Vue 48 项、三个独立服务测试、Vue 构建和旧版回归检查均已通过。
+死信指标；核心 API 的 Prometheus 端点仅在 Compose 内部 `8085` 管理端口匿名暴露，同端口本地
+启动时仍要求管理员 JWT；Gateway、活动和通知服务的管理端口也分别隔离为 `8084`、`8086`、
+`8087`，默认仅监听本机回环。HTTP 直方图用于 Grafana 的 P95 延迟面板。完整 Maven 168 项、
+Vue 48 项、三个独立服务测试、Vue 构建和旧版回归检查均已通过。
 
 ## 下一步
 

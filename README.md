@@ -61,7 +61,12 @@ Gateway now uses `lb://` routes rather than fixed downstream hosts and applies
 bounded Resilience4j circuit breakers to activity and notification routes.
 Compose also starts Jaeger, Prometheus, and Grafana. It exports Micrometer HTTP,
 Kafka, Outbox, retry, and dead-letter signals without exposing the core API's
-management port on the host.
+management port on the host. Prometheus can scrape the separate internal
+management ports without a bearer token. Gateway, activity-service, and
+notification-service bind their separate management ports to loopback by
+default, and Compose only makes them reachable on its internal network. If you
+run the core API's management and API on the same local port,
+`/actuator/prometheus` still requires an administrator JWT.
 
 The Vue 3 migration is complete in the separate `frontend-vue/` application.
 The completed slices cover authentication, the application shell, contacts and
@@ -225,9 +230,11 @@ as a stateless API boundary: `/api/auth/**` and the database health endpoint
 remain public, other `/api/**` routes require a verified JWT session, and
 `/api/admin/**` requires `ROLE_ADMIN`. Actuator exposes the status-only
 `/actuator/health` endpoint publicly, while `/actuator/info` and
-`/actuator/metrics/**` require `ROLE_ADMIN`. Authentication and authorization errors
-return the existing JSON `message` shape, so live API failures don't fall back
-to Mock. Student and teacher tokens receive `403 Forbidden` for admin-only APIs.
+`/actuator/metrics/**` require `ROLE_ADMIN`. `/actuator/prometheus` also requires
+`ROLE_ADMIN` unless Compose receives the scrape on its separate internal
+management port. Authentication and authorization errors return the existing JSON
+`message` shape, so live API failures don't fall back to Mock. Student and teacher
+tokens receive `403 Forbidden` for admin-only APIs.
 
 The Java API prints one request log line when each `/api/**` request starts and
 one line when it finishes. In IntelliJ IDEA, open the **Run** tool window for
@@ -242,6 +249,9 @@ business gauges `campuslink.users.total`, `campuslink.messages.today`,
 `campuslink.posts.total`, and `campuslink.moderation.pending`. The
 `campuslink.http.requests` timer uses method, route template, and status tags,
 so it records API latency without adding user IDs or resource IDs as metric tags.
+All four applications enable HTTP timer histograms, so the operations dashboard
+can calculate P95 latency from the shared Prometheus `http_server_requests`
+buckets.
 
 For the local demo, the verification code is returned by the API response and
 filled into the login form so the flow can be tested without SMS delivery.

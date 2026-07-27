@@ -6,7 +6,7 @@ scrape_configs:
   - job_name: campuslink-gateway
     metrics_path: /actuator/prometheus
     static_configs:
-      - targets: ["gateway:8081"]
+      - targets: ["gateway:8084"]
   - job_name: campuslink-api
     metrics_path: /actuator/prometheus
     static_configs:
@@ -14,11 +14,11 @@ scrape_configs:
   - job_name: campuslink-activity-service
     metrics_path: /actuator/prometheus
     static_configs:
-      - targets: ["activity-service:8083"]
+      - targets: ["activity-service:8086"]
   - job_name: campuslink-notification-service
     metrics_path: /actuator/prometheus
     static_configs:
-      - targets: ["notification-service:8082"]
+      - targets: ["notification-service:8087"]
   - job_name: nacos
     metrics_path: /nacos/actuator/prometheus
     static_configs:

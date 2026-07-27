@@ -4,17 +4,22 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -48,7 +53,9 @@ public class SecurityConfig {
   SecurityFilterChain apiSecurityFilterChain(
       HttpSecurity http,
       JwtAuthenticationFilter jwtAuthenticationFilter,
-      ObjectMapper objectMapper) throws Exception {
+      ObjectMapper objectMapper,
+      @Value("${server.port:8080}") int applicationPort,
+      @Value("${management.server.port:8080}") int managementPort) throws Exception {
     return http
         .csrf(csrf -> csrf.disable())
         .cors(Customizer.withDefaults())
@@ -58,9 +65,11 @@ public class SecurityConfig {
             .requestMatchers(
                 "/api/auth/**",
                 "/api/database/health",
-                "/actuator/health",
-                "/actuator/prometheus")
+                "/actuator/health")
             .permitAll()
+            .requestMatchers("/actuator/prometheus")
+            .access((authentication, context) -> prometheusEndpointAccess(
+                authentication, context, applicationPort, managementPort))
             .requestMatchers("/api/admin/**").hasRole("ADMIN")
             .requestMatchers("/actuator/**").hasRole("ADMIN")
             .requestMatchers("/api/**").authenticated()
@@ -72,6 +81,23 @@ public class SecurityConfig {
                 writeError(response, objectMapper, 403, "需要管理员账号")))
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
         .build();
+  }
+
+  private static AuthorizationDecision prometheusEndpointAccess(
+      Supplier<Authentication> authentication,
+      RequestAuthorizationContext context,
+      int applicationPort,
+      int managementPort) {
+    boolean isSeparateManagementPort = applicationPort != managementPort
+        && context.getRequest().getLocalPort() == managementPort;
+    if (isSeparateManagementPort) {
+      return new AuthorizationDecision(true);
+    }
+    Authentication currentAuthentication = authentication.get();
+    boolean isAdministrator = currentAuthentication != null
+        && currentAuthentication.getAuthorities().stream()
+            .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority()));
+    return new AuthorizationDecision(isAdministrator);
   }
 
   private static void writeError(
