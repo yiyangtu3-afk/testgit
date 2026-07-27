@@ -387,6 +387,34 @@ confirmed. The full explicit-Byte-Buddy core suite passed 168 tests; activity,
 notification, and Gateway suites passed 4, 3, and 6 tests; Vue passed 48 tests
 and built successfully; the legacy smoke check passed.
 
+## July 26, 2026 final handoff snapshot
+
+The latest verified commit is `317a5c0` (`Audit and harden microservice
+operations`) on `main`. It follows the phase-eight Nacos and observability
+commit `4f5d7dc`. The worktree was clean immediately after the push.
+
+The intended primary development page remains the Vue Vite entry at
+`http://127.0.0.1:5180`. It uses the host-native development chain and the
+local MySQL history at `127.0.0.1:3306`. The Docker Compose page at
+`http://127.0.0.1:5179` is a separate, production-style microservice demo;
+it uses the `campuslink-mysql` Docker named volume, so its content can differ
+from the host-native page. It is not a replacement for the primary entry. The
+legacy regression page is `http://127.0.0.1:5179/legacy/` when Compose runs.
+
+At handoff time, the isolated Compose stack was running with API and Gateway
+mapped to `127.0.0.1:18080` and `127.0.0.1:18084` to avoid host services. Its
+Vue page, Nacos, Kafka, Jaeger, Prometheus, and Grafana were all bound only to
+`127.0.0.1`; do not assume this runtime snapshot persists in a later session.
+The Compose MySQL container and Docker named volumes were retained, and the
+host MySQL database was never deleted, reset, reseeded, or cleaned.
+
+Before any new work, read the three `AGENTS.md` files and the handoff records,
+then run `git status --short --branch`. Confirm MySQL availability before
+starting the native backend. For the complete core Maven suite, use the
+explicit Byte Buddy command in `backend/AGENTS.md`. All eight authorized
+migration steps are complete, so obtain the user's product-priority approval
+before implementing another feature.
+
 ## Required boundaries
 
 - Use Mock only when the Java API is completely unreachable. Show real API
