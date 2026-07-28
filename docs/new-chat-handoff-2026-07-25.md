@@ -494,6 +494,13 @@ intentionally has no Alertmanager, so the rules only appear in Prometheus or
 Grafana alert views and cannot send an external notification or mutate any
 retained data.
 
+## Redis alert runtime CI verification
+
+The Compose workflow now checks the current Gateway Nacos config version, six
+healthy Prometheus targets, and the Prometheus Rules API for all three Redis
+alerts. It catches stale Nacos-version assertions and a mounted rule file that
+does not load, without changing or deleting any retained Compose volume.
+
 ## July 26, 2026 final handoff snapshot
 
 The latest verified commit is `317a5c0` (`Audit and harden microservice

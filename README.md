@@ -427,11 +427,12 @@ manually. The workflow starts a disposable MySQL 8.4 service, runs
 `./script/run_frontend_check.sh` through Bash for GitHub's Linux runner, then
 imports the UTF-8 `schema.sql` and `data.sql` files into the disposable CI
 MySQL service, then runs the complete Maven suite with the explicit Byte Buddy
-agent. This makes rollback-safe MyBatis tests reproducible without enabling
-initialization against a developer's local history. It also builds and starts
-the Compose demo, waits for its health checks, and calls the public health
-endpoint. It never connects to, resets, or seeds a developer's local MySQL
-history.
+agent. Its Compose job also verifies the current Nacos configuration version,
+six healthy Prometheus targets, and the loaded Redis alert rules. This makes
+rollback-safe MyBatis tests reproducible without enabling initialization against
+a developer's local history. It also builds and starts the Compose demo, waits
+for its health checks, and calls the public health endpoint. It never connects
+to, resets, or seeds a developer's local MySQL history.
 
 ## Local live API acceptance
 

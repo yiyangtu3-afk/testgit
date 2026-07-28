@@ -304,6 +304,12 @@ Prometheus 使用版本化规则文件记录每分钟的应用 Redis 错误，�
 该 Compose 演示未引入 Alertmanager，告警只在 Prometheus 和 Grafana 视图中评估，不会对外发送
 消息，也不会改变 Redis、MySQL 或 Kafka 数据。
 
+## 阶段十五：Redis 告警运行时 CI 验证
+
+Compose CI 现在确认 Gateway 的当前 Nacos 配置版本、六个健康的 Prometheus 抓取目标，并调用
+Prometheus Rules API 验证 Redis Exporter 不可达、Redis 服务不可达和持续应用错误三条告警已加载。
+该验证不停止、删除或重建任何本机 Compose 命名卷。
+
 ## July 25, 2026 handoff update
 
 The current repository and local-runtime snapshot is recorded in

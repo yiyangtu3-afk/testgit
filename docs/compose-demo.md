@@ -30,6 +30,9 @@ Prometheus 还会评估内部 Redis 规则：Exporter 连续 2 分钟不可达�
 Compose 没有配置 Alertmanager，因此规则仅显示在 Prometheus 或 Grafana 告警视图，
 不会向外部系统发送消息。
 
+GitHub Actions 的 Compose 演示会请求 Prometheus Rules API，确认三条 Redis
+告警已被实际加载；它还要求六个 Prometheus 抓取目标均为健康状态。
+
 Redis 只在 Compose 内部网络提供给 `activity-service`，不会映射宿主机端口，也不使用命名卷。
 活动公开目录会使用带短 TTL 抖动的版本化缓存键；活动审核、报名或取消只有在 MySQL 事务提交
 成功后才递增版本，因而不会在回滚时提前失效。Redis 读取、解析或写入失败时会记录 Micrometer
