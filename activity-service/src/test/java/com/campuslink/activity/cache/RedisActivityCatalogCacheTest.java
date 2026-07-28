@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -81,13 +82,47 @@ class RedisActivityCatalogCacheTest {
     verify(values).increment("campuslink:activities:catalog:version");
   }
 
+  @Test
+  void waitsForTheLockOwnerToPopulateTheCatalogInsteadOfLoadingMySqlAgain() throws Exception {
+    var redis = mock(StringRedisTemplate.class);
+    ValueOperations<String, String> values = mock(ValueOperations.class);
+    when(redis.opsForValue()).thenReturn(values);
+    String payload = new ObjectMapper().findAndRegisterModules().writeValueAsString(List.of(activity()));
+    AtomicInteger catalogReads = new AtomicInteger();
+    when(values.get(anyString())).thenAnswer(invocation -> {
+      String key = invocation.getArgument(0);
+      if ("campuslink:activities:catalog:version".equals(key)) {
+        return null;
+      }
+      return catalogReads.incrementAndGet() == 1 ? null : payload;
+    });
+    var registry = new SimpleMeterRegistry();
+    var cache = cache(redis, registry, Duration.ZERO, 1);
+    when(values.setIfAbsent(anyString(), anyString(), any(Duration.class))).thenReturn(false);
+
+    assertThat(cache.load(null, null, null, () -> {
+      throw new AssertionError("a waiting request must not load MySQL");
+    })).containsExactly(activity());
+
+    verify(values, never()).set(anyString(), anyString(), any(Duration.class));
+    assertThat(registry.get("campuslink.redis.activity_catalog.cache.lock.wait_hit").counter().count())
+        .isEqualTo(1);
+  }
+
   private RedisActivityCatalogCache cache(StringRedisTemplate redis) {
     return cache(redis, new SimpleMeterRegistry());
   }
 
   private RedisActivityCatalogCache cache(StringRedisTemplate redis, SimpleMeterRegistry registry) {
+    return cache(redis, registry, Duration.ofMillis(25), 4);
+  }
+
+  private RedisActivityCatalogCache cache(
+      StringRedisTemplate redis, SimpleMeterRegistry registry, Duration retryDelay, int retries) {
+    ValueOperations<String, String> values = redis.opsForValue();
+    when(values.setIfAbsent(anyString(), anyString(), any(Duration.class))).thenReturn(true);
     return new RedisActivityCatalogCache(redis, new ObjectMapper().findAndRegisterModules(),
-        registry, Duration.ofMinutes(2), Duration.ZERO);
+        registry, Duration.ofMinutes(2), Duration.ZERO, Duration.ofSeconds(5), retryDelay, retries);
   }
 
   private ActivityView activity() {

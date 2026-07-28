@@ -272,6 +272,15 @@ Compose 让 Gateway 等待内部 Redis 健康、只绑定回环并应用 Nginx �
 Gateway 路由展示 429 和 5xx。Gateway 测试
 覆盖了主体与匿名客户端的无明文键解析，并继续验证 JWT 鉴权边界。
 
+## 阶段十一：Redis 目录缓存击穿防护
+
+活动公开目录在缓存键失效后使用短期 Redis 租约和双重读取，避免多实例并发请求同时回源 MySQL。
+第一个请求以 5 秒租约成为加载者；其他请求最多等待 4 次、每次 25 毫秒以读取新缓存，超时后安全
+回源 MySQL，从而不会让 Redis 故障或长等待影响可用性。释放操作使用“仅持有者可删”的 Lua 脚本，
+防止过期租约误删其他实例的新锁。该机制严格只用于无用户状态的公开目录缓存，不替代 MySQL 对
+名额、报名、签到或认证的事实与事务。Micrometer/Grafana 记录租约获取、等待命中和超时；真实
+`redis:7.4.2-alpine` 并发测试确认 6 个并发读取只执行一次数据库加载。
+
 ## July 25, 2026 handoff update
 
 The current repository and local-runtime snapshot is recorded in

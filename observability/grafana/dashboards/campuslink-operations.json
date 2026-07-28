@@ -47,7 +47,10 @@
         {"expr": "sum(increase(campuslink_redis_activity_catalog_cache_hit_total[5m]))", "legendFormat": "hit", "refId": "A"},
         {"expr": "sum(increase(campuslink_redis_activity_catalog_cache_miss_total[5m]))", "legendFormat": "miss", "refId": "B"},
         {"expr": "sum(increase(campuslink_redis_activity_catalog_cache_error_total[5m]))", "legendFormat": "error", "refId": "C"},
-        {"expr": "sum(increase(campuslink_redis_activity_catalog_cache_invalidate_total[5m]))", "legendFormat": "invalidate", "refId": "D"}
+        {"expr": "sum(increase(campuslink_redis_activity_catalog_cache_invalidate_total[5m]))", "legendFormat": "invalidate", "refId": "D"},
+        {"expr": "sum(increase(campuslink_redis_activity_catalog_cache_lock_acquired_total[5m]))", "legendFormat": "load lock acquired", "refId": "E"},
+        {"expr": "sum(increase(campuslink_redis_activity_catalog_cache_lock_wait_hit_total[5m]))", "legendFormat": "load lock wait hit", "refId": "F"},
+        {"expr": "sum(increase(campuslink_redis_activity_catalog_cache_lock_timeout_total[5m]))", "legendFormat": "load lock timeout", "refId": "G"}
       ],
       "title": "Redis activity catalog cache events (5m)",
       "type": "timeseries"
@@ -82,5 +85,5 @@
   "tags": ["campuslink", "operations"],
   "title": "CampusLink operations",
   "uid": "campuslink-operations",
-  "version": 4
+  "version": 5
 }

@@ -443,6 +443,19 @@ loopback-bound Compose topology, so anonymous browsers do not share one bucket.
 Gateway starts after Redis in Compose, and Grafana dashboard version 4 shows
 Gateway 429 and 5xx events by route.
 
+## Redis catalog cache stampede protection
+
+The public activity catalog cache now uses a five-second Redis lease when it
+misses. The owner double-checks the cache after it acquires the lease, loads
+MySQL only if it remains empty, and releases only its own lease through a Lua
+compare-and-delete script. Other instances retry the cache four times at
+25-millisecond intervals, then safely fall back to MySQL rather than waiting
+indefinitely. This protection is limited to the user-independent public catalog;
+it never locks registration, capacity, check-in, notifications, or authentication.
+Micrometer exposes lease-acquired, wait-hit, and timeout counters, and Grafana
+dashboard version 5 charts them with the existing cache signals. A real Redis
+concurrency test verifies six simultaneous reads produce one database load.
+
 ## July 26, 2026 final handoff snapshot
 
 The latest verified commit is `317a5c0` (`Audit and harden microservice

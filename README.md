@@ -78,6 +78,13 @@ version only after their database transaction commits. Native development keeps
 this integration disabled unless you explicitly enable it and provide a local
 Redis server.
 
+When a catalog key expires, the activity service uses a five-second Redis lease
+and a double cache read so only one instance normally reloads MySQL. Other
+instances wait for at most four 25-millisecond intervals, then safely query
+MySQL if the cache still isn't ready. The lease is conditionally released by its
+owner and never protects registration, capacity, check-in, or any other business
+transaction.
+
 The same optional Redis service also applies an atomic, per-user and per-activity
 rate limit to check-in credential issuance (5 requests per minute) and organizer
 credential verification (10 requests per minute). Requests beyond those limits
