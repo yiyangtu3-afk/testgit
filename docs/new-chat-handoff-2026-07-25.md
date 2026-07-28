@@ -486,12 +486,13 @@ cache, rate-limit, and idempotency counters.
 ## Redis Prometheus alert rules
 
 Prometheus now mounts `observability/alerts.yml` as an internal rules file. It
-records Redis application errors over five minutes and evaluates warning alerts
+records Redis application errors per minute and evaluates warning alerts
 when the Redis Exporter stays unavailable for two minutes, when Redis stays
 unavailable behind a reachable Exporter for two minutes, or when application
-Redis errors persist for five minutes. Compose intentionally has no
-Alertmanager, so the rules only appear in Prometheus or Grafana alert views and
-cannot send an external notification or mutate any retained data.
+Redis errors continue across every one-minute window for five minutes. Compose
+intentionally has no Alertmanager, so the rules only appear in Prometheus or
+Grafana alert views and cannot send an external notification or mutate any
+retained data.
 
 ## July 26, 2026 final handoff snapshot
 

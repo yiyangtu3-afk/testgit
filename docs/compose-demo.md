@@ -25,9 +25,10 @@ Redis Exporter 同样只在 Compose 内部网络运行，Prometheus 通过 `redi
 INFO 指标，不映射新的宿主端口。Grafana 会显示 Redis 内存、连接客户端、键空间命中率和命令吞吐，
 用于把应用层缓存、限流和幂等指标与 Redis 运行状态关联起来。
 
-Prometheus 还会评估内部 Redis 规则：Exporter 连续 2 分钟不可达、Exporter 可抓取但 Redis 连续
-2 分钟不可达，以及缓存、签到限流或报名幂等错误持续 5 分钟。Compose 没有配置 Alertmanager，
-因此规则仅显示在 Prometheus 或 Grafana 告警视图，不会向外部系统发送消息。
+Prometheus 还会评估内部 Redis 规则：Exporter 连续 2 分钟不可达、Exporter 可抓取但 Redis
+连续 2 分钟不可达，以及缓存、签到限流或报名幂等错误在每个 1 分钟窗口连续出现 5 分钟。
+Compose 没有配置 Alertmanager，因此规则仅显示在 Prometheus 或 Grafana 告警视图，
+不会向外部系统发送消息。
 
 Redis 只在 Compose 内部网络提供给 `activity-service`，不会映射宿主机端口，也不使用命名卷。
 活动公开目录会使用带短 TTL 抖动的版本化缓存键；活动审核、报名或取消只有在 MySQL 事务提交
