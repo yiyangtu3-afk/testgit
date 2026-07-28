@@ -19,6 +19,8 @@ import reactor.core.publisher.Mono;
 @Component
 public class GatewayJwtAuthenticationWebFilter implements WebFilter {
 
+  public static final String AUTHENTICATED_SUBJECT =
+      GatewayJwtAuthenticationWebFilter.class.getName() + ".authenticatedSubject";
   private static final String GATEWAY_HEADER = "X-CampusLink-Gateway";
   private static final String GATEWAY_NAME = "campuslink-gateway";
   private final GatewayJwtTokenValidator jwtTokens;
@@ -38,7 +40,7 @@ public class GatewayJwtAuthenticationWebFilter implements WebFilter {
       return chain.filter(exchange);
     }
     try {
-      jwtTokens.requireSubject(token(exchange));
+      exchange.getAttributes().put(AUTHENTICATED_SUBJECT, jwtTokens.requireSubject(token(exchange)));
       return chain.filter(exchange);
     } catch (SecurityException exception) {
       return writeUnauthorized(exchange, exception.getMessage());

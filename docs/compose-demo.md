@@ -40,6 +40,14 @@ Redis 只在 Compose 内部网络提供给 `activity-service`，不会映射宿�
 仍会再次校验 MySQL 会话和角色。活动与通知路径还配置了有界熔断；下游不可用时返回明确的
 `503` JSON 错误，而不会把失败隐藏为 Mock 成功。
 
+Gateway 还使用 Redis 令牌桶在请求到达下游服务前保护 HTTP API。`/api/auth/**` 对匿名客户端
+限制为每分钟 5 次；其他 HTTP API 对每个已验签用户或匿名客户端、每条路由限制为每分钟 30 次。
+Gateway 只把 JWT subject 或远端地址的 HMAC-SHA-256 指纹放入 Redis 键，不转发身份信任头。超限由
+Gateway 返回真实 `429`；Redis 不可用时入口层会保留真实失败，不会回退 Mock。WebSocket 和
+内部 Actuator 管理端口不使用此限流。Nacos 的 `campuslink-gateway.yaml` 提供 Redis 连接和
+`RequestRateLimiter` 路由策略。Compose Gateway 宿主端口仅绑定回环，并使用前端 Nginx 传递的
+客户端地址，因此不同浏览器不会共享同一个匿名限流桶。
+
 Compose 会为 API 启用 `eventing` profile。活动报名、候补、取消、递补和签到
 在现有 MySQL 事务中额外写入 Outbox 事件；发布器将事件发送到 Kafka 的
 `campuslink.activity.events.v1` topic，回执消费者以 `(consumer_name, event_id)`
@@ -80,6 +88,7 @@ token 查询这些诊断端点。核心业务指标包括用户、当日消息�
 `campuslink.http.requests` 按路由模板记录 API 耗时。活动服务还发布
 `campuslink.redis.activity_catalog.cache` 的命中、未命中、异常和失效计数。
 Grafana 还展示 `campuslink.redis.check_in_rate_limit` 按操作维度的放行、拒绝和 Redis 异常计数。
+Gateway 面板额外按路由展示 Redis 限流 `429` 与下游 `5xx` 数量。
 
 Nacos 状态页在 `http://127.0.0.1:8088`，Prometheus 在 `http://127.0.0.1:9090`，
 Grafana 在 `http://127.0.0.1:3000`（本地演示账号 `admin` / `campuslink-dev-only`），

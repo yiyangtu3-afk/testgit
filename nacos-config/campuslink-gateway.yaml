@@ -1,18 +1,44 @@
 campuslink:
   operational:
-    config-version: "2026.07.26.1"
+    config-version: "2026.07.27.1"
+  redis:
+    gateway-rate-limit:
+      enabled: true
 
 spring:
+  data:
+    redis:
+      host: redis
+      port: 6379
+      connect-timeout: 200ms
+      timeout: 200ms
   cloud:
     gateway:
       server:
         webflux:
           routes:
+            - id: campuslink-auth-api
+              uri: lb://campuslink-api
+              predicates:
+                - Path=/api/auth/**
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    key-resolver: "#{@gatewayRateLimitKeyResolver}"
+                    redis-rate-limiter.replenishRate: 1
+                    redis-rate-limiter.burstCapacity: 60
+                    redis-rate-limiter.requestedTokens: 12
             - id: campuslink-notification-api
               uri: lb://campuslink-notification-service
               predicates:
                 - Path=/api/activity-notifications/**
               filters:
+                - name: RequestRateLimiter
+                  args:
+                    key-resolver: "#{@gatewayRateLimitKeyResolver}"
+                    redis-rate-limiter.replenishRate: 1
+                    redis-rate-limiter.burstCapacity: 60
+                    redis-rate-limiter.requestedTokens: 2
                 - name: CircuitBreaker
                   args:
                     name: notification-api
@@ -22,6 +48,12 @@ spring:
               predicates:
                 - Path=/api/activities/**,/api/admin/activities/**,/api/admin/activity-metrics
               filters:
+                - name: RequestRateLimiter
+                  args:
+                    key-resolver: "#{@gatewayRateLimitKeyResolver}"
+                    redis-rate-limiter.replenishRate: 1
+                    redis-rate-limiter.burstCapacity: 60
+                    redis-rate-limiter.requestedTokens: 2
                 - name: CircuitBreaker
                   args:
                     name: activity-api
@@ -30,6 +62,13 @@ spring:
               uri: lb://campuslink-api
               predicates:
                 - Path=/api/**
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    key-resolver: "#{@gatewayRateLimitKeyResolver}"
+                    redis-rate-limiter.replenishRate: 1
+                    redis-rate-limiter.burstCapacity: 60
+                    redis-rate-limiter.requestedTokens: 2
             - id: campuslink-chat-websocket
               uri: lb:ws://campuslink-api
               predicates:

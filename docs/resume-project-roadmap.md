@@ -261,6 +261,17 @@ Mock。Compose Redis 仅在内部网络运行且不使用命名卷；本机原�
 阈值。活动服务测试覆盖模拟 Redis 的 429、故障放行以及 `redis:7.4.2-alpine` Testcontainers
 的真实原子计数。
 
+## 阶段十：Gateway Redis 入口限流
+
+Gateway 使用 Spring Cloud Gateway 的 Redis 令牌桶在 HTTP 请求进入微服务前实施分布式限流。
+`/api/auth/**` 对匿名客户端每分钟最多 5 次，其余 HTTP API 按“已验签用户或匿名客户端 + 路由”
+每分钟最多 30 次。Gateway 把已验证 JWT subject 或远端地址做 HMAC-SHA-256 指纹后才作为 Redis 键，
+不会新增可被下游信任的身份头，也不对 WebSocket 或内部管理端口限流。超限返回真实 HTTP 429；
+入口 Redis 异常保留真实 Gateway 错误，不会伪造成功或回退 Mock。Nacos 集中配置路由限流参数，
+Compose 让 Gateway 等待内部 Redis 健康、只绑定回环并应用 Nginx 转发的客户端地址，Grafana 按
+Gateway 路由展示 429 和 5xx。Gateway 测试
+覆盖了主体与匿名客户端的无明文键解析，并继续验证 JWT 鉴权边界。
+
 ## July 25, 2026 handoff update
 
 The current repository and local-runtime snapshot is recorded in

@@ -427,6 +427,22 @@ in MySQL. Grafana dashboard version 3 charts allowed, rejected, and Redis-error
 counts by action. Activity-service tests cover the 429 boundary, Redis outage
 policy, and an actual temporary `redis:7.4.2-alpine` counter.
 
+## Gateway Redis rate limit
+
+The next Redis slice moves protection to the public Gateway boundary. Compose
+enables Spring Cloud Gateway `RequestRateLimiter` filters from Nacos for every
+HTTP API route, with a five-per-minute anonymous token bucket for `/api/auth/**`
+and a 30-per-minute bucket for the other API routes. WebSocket and internal
+management traffic are deliberately excluded. The key resolver uses the subject
+already verified by the existing JWT filter, or the remote address for public
+requests, and stores only an HMAC-SHA-256 fingerprint in Redis. No identity header is
+added or trusted downstream. A rejected request remains a real HTTP 429; a
+Redis outage at the ingress remains a real failure rather than a Mock fallback.
+Gateway accepts the frontend Nginx forwarded client address only in the
+loopback-bound Compose topology, so anonymous browsers do not share one bucket.
+Gateway starts after Redis in Compose, and Grafana dashboard version 4 shows
+Gateway 429 and 5xx events by route.
+
 ## July 26, 2026 final handoff snapshot
 
 The latest verified commit is `317a5c0` (`Audit and harden microservice

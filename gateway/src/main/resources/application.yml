@@ -1,5 +1,6 @@
 server:
   port: 8081
+  forward-headers-strategy: framework
 
 spring:
   application:
@@ -47,8 +48,17 @@ spring:
               uri: ${CAMPUSLINK_API_WS_URI:lb:ws://campuslink-api}
               predicates:
                 - Path=/ws/**
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:127.0.0.1}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      connect-timeout: ${SPRING_DATA_REDIS_CONNECT_TIMEOUT:200ms}
+      timeout: ${SPRING_DATA_REDIS_TIMEOUT:200ms}
 
 management:
+  health:
+    redis:
+      enabled: ${campuslink.redis.gateway-rate-limit.enabled:false}
   server:
     port: ${MANAGEMENT_SERVER_PORT:8084}
     address: ${MANAGEMENT_SERVER_ADDRESS:127.0.0.1}
@@ -87,6 +97,9 @@ resilience4j:
         wait-duration-in-open-state: 10s
 
 campuslink:
+  redis:
+    gateway-rate-limit:
+      enabled: ${CAMPUSLINK_REDIS_GATEWAY_RATE_LIMIT_ENABLED:false}
   security:
     jwt:
       secret: ${CAMPUSLINK_JWT_SECRET:campuslink-demo-signing-secret-change-in-production-2026}

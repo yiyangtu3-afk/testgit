@@ -205,6 +205,8 @@ services:
       MANAGEMENT_SERVER_PORT: 8084
       MANAGEMENT_SERVER_ADDRESS: 0.0.0.0
       OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+      SPRING_DATA_REDIS_HOST: redis
+      CAMPUSLINK_REDIS_GATEWAY_RATE_LIMIT_ENABLED: "true"
     depends_on:
       nacos-config:
         condition: service_completed_successfully
@@ -213,6 +215,8 @@ services:
       notification-service:
         condition: service_healthy
       activity-service:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     ports:
       - "127.0.0.1:${CAMPUSLINK_GATEWAY_HOST_PORT:-8081}:8081"

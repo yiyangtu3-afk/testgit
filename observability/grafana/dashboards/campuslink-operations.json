@@ -64,11 +64,23 @@
       ],
       "title": "Redis check-in credential rate limit events (5m)",
       "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": ""},
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 32},
+      "id": 7,
+      "targets": [
+        {"expr": "sum(increase(spring_cloud_gateway_requests_seconds_count{status=\"429\"}[5m])) by (routeId)", "legendFormat": "{{routeId}} rejected", "refId": "A"},
+        {"expr": "sum(increase(spring_cloud_gateway_requests_seconds_count{outcome=\"SERVER_ERROR\"}[5m])) by (routeId)", "legendFormat": "{{routeId}} 5xx", "refId": "B"}
+      ],
+      "title": "Gateway rate-limit and downstream failures (5m)",
+      "type": "timeseries"
     }
   ],
   "schemaVersion": 39,
   "tags": ["campuslink", "operations"],
   "title": "CampusLink operations",
   "uid": "campuslink-operations",
-  "version": 3
+  "version": 4
 }

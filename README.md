@@ -86,6 +86,18 @@ open for these already-authenticated check-in operations so an optional cache
 infrastructure outage cannot stop an on-site event; MySQL remains the source of
 truth for credential hashes and check-in state.
 
+In the Compose deployment, Gateway also uses Redis token buckets before HTTP
+requests reach any downstream service. The public login route is limited to five
+requests per minute per anonymous client, while other HTTP API routes are limited
+to 30 requests per minute per authenticated user or anonymous client, per route.
+Gateway derives an HMAC-SHA-256 fingerprint of its validated JWT subject or
+remote address before it becomes a Redis key, and it never forwards that identity
+as a trust header. A Redis outage at this public boundary remains a real Gateway
+failure instead of a Mock success;
+the WebSocket and internal management ports are not rate-limited. Compose's
+loopback-only Gateway accepts the front Nginx forwarded client address so public
+clients do not share one anonymous bucket.
+
 The Vue 3 migration is complete in the separate `frontend-vue/` application.
 The completed slices cover authentication, the application shell, contacts and
 chat, the campus feed, activities, and the unified notification desk. The
