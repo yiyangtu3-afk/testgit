@@ -18,6 +18,7 @@ import com.campuslink.activity.mapper.UserDirectoryMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
 
 class ActivityRegistrationApplicationServiceTest {
 
@@ -72,7 +73,7 @@ class ActivityRegistrationApplicationServiceTest {
     UserDirectoryMapper users = id -> new UserDirectoryEntry(id, id, "学生");
     return new ActivityRegistrationApplicationService(activities, registrations,
         mock(CheckInCredentialMapper.class), users, outbox,
-        new ObjectMapper().findAndRegisterModules());
+        new ObjectMapper().findAndRegisterModules(), (ApplicationEventPublisher) event -> {});
   }
 
   private UserDirectoryEntry student() {

@@ -68,12 +68,15 @@ default, and Compose only makes them reachable on its internal network. If you
 run the core API's management and API on the same local port,
 `/actuator/prometheus` still requires an administrator JWT.
 
-The Compose stack also includes an internal Redis instance prepared for the
-activity-service catalog-cache rollout. Redis has no host port or persistent
+The Compose stack also includes an internal Redis instance for the
+activity-service public catalog cache. Redis has no host port or persistent
 volume: it is an optional, replaceable cache layer, never the source of truth
-for activity capacity, registration, check-in, or notifications. Native
-development keeps this integration disabled unless you explicitly enable it
-and provide a local Redis server.
+for activity capacity, registration, check-in, or notifications. The cache
+uses versioned keys with a short, jittered TTL and falls back to MySQL if Redis
+is unavailable. Activity review, registration, and cancellation invalidate the
+version only after their database transaction commits. Native development keeps
+this integration disabled unless you explicitly enable it and provide a local
+Redis server.
 
 The Vue 3 migration is complete in the separate `frontend-vue/` application.
 The completed slices cover authentication, the application shell, contacts and

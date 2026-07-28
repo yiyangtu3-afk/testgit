@@ -241,6 +241,15 @@ agent）168 项通过；Vue 测试 48 项（16 个测试文件）、生产构建
 两份管理员审核文档。开始实际功能前先执行 `git status --short --branch`。签到凭证阶段完成
 后，当前没有已授权的下一项功能；应先向用户确认新的产品优先级，再开展下一阶段。
 
+## 阶段八：Redis 活动目录缓存
+
+用户在 2026 年 7 月 27 日授权此独立工程切片。Redis 仅缓存活动服务的公开目录查询，不能替代
+MySQL 对活动名额、报名、候补、签到或认证会话的事实来源。缓存键按筛选条件和目录版本生成，使用
+短 TTL 与抖动；活动审核、报名与取消只会在对应 MySQL 事务提交后使版本失效。Redis 不可用时服务
+继续查询 MySQL，并通过 Micrometer 记录命中、未命中、异常与失效指标，绝不将真实 API 失败降级为
+Mock。Compose Redis 仅在内部网络运行且不使用命名卷；本机原生开发默认关闭此缓存。活动服务
+测试同时覆盖模拟 Redis 的命中与降级，以及临时 `redis:7.4.2-alpine` 容器的真实缓存读写。
+
 ## July 25, 2026 handoff update
 
 The current repository and local-runtime snapshot is recorded in

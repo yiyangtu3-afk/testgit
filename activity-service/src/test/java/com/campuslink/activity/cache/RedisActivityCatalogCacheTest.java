@@ -1,0 +1,99 @@
+package com.campuslink.activity.cache;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import com.campuslink.activity.api.ActivityDtos.ActivityView;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.data.redis.RedisConnectionFailureException;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
+
+@SuppressWarnings("unchecked")
+class RedisActivityCatalogCacheTest {
+
+  @Test
+  void cachesThePublicCatalogByNormalizedFilterKey() {
+    var redis = mock(StringRedisTemplate.class);
+    ValueOperations<String, String> values = mock(ValueOperations.class);
+    when(redis.opsForValue()).thenReturn(values);
+    var registry = new SimpleMeterRegistry();
+    var cache = cache(redis, registry);
+    var databaseCalls = new AtomicInteger();
+    List<ActivityView> expected = List.of(activity());
+
+    assertThat(cache.load("技术", LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 31), () -> {
+      databaseCalls.incrementAndGet();
+      return expected;
+    })).isEqualTo(expected);
+
+    ArgumentCaptor<String> key = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<String> payload = ArgumentCaptor.forClass(String.class);
+    verify(values).set(key.capture(), payload.capture(), any(Duration.class));
+    when(values.get(key.getValue())).thenReturn(payload.getValue());
+
+    assertThat(cache.load("技术", LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 31), () -> {
+      throw new AssertionError("a cache hit must not load MySQL");
+    })).isEqualTo(expected);
+    assertThat(databaseCalls).hasValue(1);
+    assertThat(key.getValue()).contains("campuslink:activities:catalog:v0:");
+    assertThat(registry.get("campuslink.redis.activity_catalog.cache.miss").counter().count())
+        .isEqualTo(1);
+    assertThat(registry.get("campuslink.redis.activity_catalog.cache.hit").counter().count())
+        .isEqualTo(1);
+  }
+
+  @Test
+  void fallsBackToMySqlWhenRedisIsUnavailable() {
+    var redis = mock(StringRedisTemplate.class);
+    ValueOperations<String, String> values = mock(ValueOperations.class);
+    when(redis.opsForValue()).thenReturn(values);
+    when(values.get(anyString())).thenThrow(new RedisConnectionFailureException("Redis unavailable"));
+    var registry = new SimpleMeterRegistry();
+    var cache = cache(redis, registry);
+    List<ActivityView> expected = List.of(activity());
+
+    assertThat(cache.load(null, null, null, () -> expected)).isEqualTo(expected);
+    assertThat(registry.get("campuslink.redis.activity_catalog.cache.error").counter().count())
+        .isEqualTo(1);
+  }
+
+  @Test
+  void invalidationAdvancesTheCatalogVersionInsteadOfScanningKeys() {
+    var redis = mock(StringRedisTemplate.class);
+    ValueOperations<String, String> values = mock(ValueOperations.class);
+    when(redis.opsForValue()).thenReturn(values);
+
+    cache(redis).invalidate();
+
+    verify(values).increment("campuslink:activities:catalog:version");
+  }
+
+  private RedisActivityCatalogCache cache(StringRedisTemplate redis) {
+    return cache(redis, new SimpleMeterRegistry());
+  }
+
+  private RedisActivityCatalogCache cache(StringRedisTemplate redis, SimpleMeterRegistry registry) {
+    return new RedisActivityCatalogCache(redis, new ObjectMapper().findAndRegisterModules(),
+        registry, Duration.ofMinutes(2), Duration.ZERO);
+  }
+
+  private ActivityView activity() {
+    return new ActivityView("activity-1", "校园编程赛", "描述", "技术", "创新中心",
+        LocalDateTime.of(2026, 8, 1, 9, 0), LocalDateTime.of(2026, 8, 1, 11, 0), 30,
+        "teacher-1", "李老师", "published", "approved", null, "admin-1", "管理员",
+        LocalDateTime.of(2026, 7, 1, 9, 0), LocalDateTime.of(2026, 6, 1, 9, 0));
+  }
+}

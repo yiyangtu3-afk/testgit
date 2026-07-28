@@ -5,8 +5,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.campuslink.activity.api.ActivityDtos.CreateActivityRequest;
 import com.campuslink.activity.api.ActivityDtos.ReviewActivityRequest;
+import com.campuslink.activity.cache.NoopActivityCatalogCache;
 import com.campuslink.activity.domain.ActivityRecord;
 import com.campuslink.activity.domain.UserDirectoryEntry;
+import com.campuslink.activity.eventing.ActivityCatalogChangedEvent;
 import com.campuslink.activity.eventing.ActivityReviewEventPublisher;
 import com.campuslink.activity.mapper.ActivityMapper;
 import com.campuslink.activity.mapper.OutboxEventMapper;
@@ -18,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.server.ResponseStatusException;
 
 class ActivityApplicationServiceTest {
@@ -41,7 +44,8 @@ class ActivityApplicationServiceTest {
   void reviewsOnceAndPublishesReviewEventAfterTheTransactionalWork() {
     var store = new RecordingActivities();
     var outbox = new RecordingOutbox();
-    var service = service(store, outbox);
+    var events = new ArrayList<Object>();
+    var service = service(store, outbox, events::add);
     var created = service.create(new UserDirectoryEntry("teacher-1", "李老师", "教师"), request());
 
     var reviewed = service.review(new UserDirectoryEntry("admin-1", "管理员", "教务管理员"),
@@ -53,16 +57,25 @@ class ActivityApplicationServiceTest {
       assertThat(event.type).isEqualTo("activity.review.rejected.v1");
       assertThat(event.payload).contains("时间信息不完整");
     });
+    assertThat(events).singleElement().isInstanceOf(ActivityCatalogChangedEvent.class)
+        .extracting(event -> ((ActivityCatalogChangedEvent) event).activityId())
+        .isEqualTo(created.id());
     assertThatThrownBy(() -> service.review(new UserDirectoryEntry("admin-1", "管理员", "教务管理员"),
         created.id(), new ReviewActivityRequest("approve", null))).isInstanceOf(IllegalArgumentException.class);
   }
 
   private ActivityApplicationService service(RecordingActivities store, RecordingOutbox outbox) {
+    return service(store, outbox, event -> {});
+  }
+
+  private ActivityApplicationService service(
+      RecordingActivities store, RecordingOutbox outbox, ApplicationEventPublisher events) {
     UserDirectoryMapper users = id -> Map.of(
         "teacher-1", new UserDirectoryEntry("teacher-1", "李老师", "教师"),
         "admin-1", new UserDirectoryEntry("admin-1", "管理员", "教务管理员")).get(id);
     return new ActivityApplicationService(store, users,
-        new ActivityReviewEventPublisher(outbox, new ObjectMapper().findAndRegisterModules()));
+        new ActivityReviewEventPublisher(outbox, new ObjectMapper().findAndRegisterModules()),
+        new NoopActivityCatalogCache(), events);
   }
 
   private CreateActivityRequest request() {

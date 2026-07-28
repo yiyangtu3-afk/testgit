@@ -2,6 +2,7 @@ package com.campuslink.activity.service;
 
 import com.campuslink.activity.api.ActivityDtos.*;
 import com.campuslink.activity.domain.*;
+import com.campuslink.activity.eventing.ActivityCatalogChangedEvent;
 import com.campuslink.activity.eventing.ActivityReviewMessage;
 import com.campuslink.activity.mapper.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -11,6 +12,7 @@ import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.*;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,17 +23,18 @@ public class ActivityRegistrationApplicationService {
   private final ActivityMapper activities; private final RegistrationMapper registrations;
   private final CheckInCredentialMapper credentials; private final UserDirectoryMapper users;
   private final OutboxEventMapper outbox; private final ObjectMapper json;
-  public ActivityRegistrationApplicationService(ActivityMapper activities, RegistrationMapper registrations, CheckInCredentialMapper credentials, UserDirectoryMapper users, OutboxEventMapper outbox, ObjectMapper json) { this.activities=activities; this.registrations=registrations; this.credentials=credentials; this.users=users; this.outbox=outbox; this.json=json; }
+  private final ApplicationEventPublisher events;
+  public ActivityRegistrationApplicationService(ActivityMapper activities, RegistrationMapper registrations, CheckInCredentialMapper credentials, UserDirectoryMapper users, OutboxEventMapper outbox, ObjectMapper json, ApplicationEventPublisher events) { this.activities=activities; this.registrations=registrations; this.credentials=credentials; this.users=users; this.outbox=outbox; this.json=json; this.events=events; }
   @Transactional public RegistrationView register(UserDirectoryEntry user,String activityId) {
     student(user); ActivityRecord activity=activity(activityId,true); open(activity); if(activity.organizerId().equals(user.id())) forbidden("组织者不能报名自己的活动");
     RegistrationRecord current=registrations.findForUpdate(activityId,user.id()); if(current!=null && ("registered".equals(current.status())||"waitlisted".equals(current.status()))) conflict("你已报名该活动");
     String status=registrations.occupied(activityId)<activity.capacity()?"registered":"waitlisted"; RegistrationRecord saved;
     if(current==null){String id=id();registrations.insert(id,activityId,user.id(),status);saved=registrations.findForUpdate(activityId,user.id());} else {registrations.status(current.id(),status);saved=registrations.findForUpdate(activityId,user.id());}
     if("registered".equals(status)&&registrations.occupied(activityId)==activity.capacity()) activities.updateRegistrationStatus(activityId,"full");
-    int position="waitlisted".equals(status)?registrations.queuePosition(saved.id()):0; event(saved,activity,user.id(),status,current==null?null:current.status(),position); return view(saved,position);
+    int position="waitlisted".equals(status)?registrations.queuePosition(saved.id()):0; event(saved,activity,user.id(),status,current==null?null:current.status(),position); events.publishEvent(new ActivityCatalogChangedEvent(activityId)); return view(saved,position);
   }
   public RegistrationView current(UserDirectoryEntry user,String activityId){student(user);RegistrationRecord r=registrations.find(activityId,user.id());return r==null?null:view(r,"waitlisted".equals(r.status())?registrations.queuePosition(r.id()):0);}
-  @Transactional public RegistrationView cancel(UserDirectoryEntry user,String activityId){student(user);ActivityRecord a=activity(activityId,true);RegistrationRecord r=registrations.findForUpdate(activityId,user.id());if(r==null||"cancelled".equals(r.status())) conflict("没有可取消的报名记录");if("checked_in".equals(r.status())) conflict("已签到的报名不能取消");String prior=r.status();registrations.status(r.id(),"cancelled");event(r,a,user.id(),"cancelled",prior,null);if("registered".equals(prior)){RegistrationRecord next=registrations.firstWaitlisted(activityId);if(next==null)activities.updateRegistrationStatus(activityId,"published");else{registrations.status(next.id(),"registered");event(next,a,user.id(),"promoted","waitlisted",null);}}return new RegistrationView(r.id(),activityId,"cancelled",0,r.registeredAt(),r.waitlistedAt());}
+  @Transactional public RegistrationView cancel(UserDirectoryEntry user,String activityId){student(user);ActivityRecord a=activity(activityId,true);RegistrationRecord r=registrations.findForUpdate(activityId,user.id());if(r==null||"cancelled".equals(r.status())) conflict("没有可取消的报名记录");if("checked_in".equals(r.status())) conflict("已签到的报名不能取消");String prior=r.status();registrations.status(r.id(),"cancelled");event(r,a,user.id(),"cancelled",prior,null);if("registered".equals(prior)){RegistrationRecord next=registrations.firstWaitlisted(activityId);if(next==null)activities.updateRegistrationStatus(activityId,"published");else{registrations.status(next.id(),"registered");event(next,a,user.id(),"promoted","waitlisted",null);}}events.publishEvent(new ActivityCatalogChangedEvent(activityId));return new RegistrationView(r.id(),activityId,"cancelled",0,r.registeredAt(),r.waitlistedAt());}
   public RosterView roster(UserDirectoryEntry user,String activityId){organizer(user);ActivityRecord a=owned(user,activityId,false);List<RosterEntryView> entries=new ArrayList<>();int registered=0,waitlisted=0,checked=0;for(RegistrationRecord r:registrations.roster(activityId)){int q=0;if("waitlisted".equals(r.status())){q=++waitlisted;}else if("registered".equals(r.status()))registered++;else if("checked_in".equals(r.status()))checked++;UserDirectoryEntry attendee=users.find(r.attendeeId());entries.add(new RosterEntryView(r.id(),r.attendeeId(),attendee==null?null:attendee.name(),r.status(),q,r.registeredAt(),r.waitlistedAt(),r.checkedInAt()));}return new RosterView(a.id(),a.title(),a.capacity(),registered,waitlisted,checked,entries);}
   public ActivityMetricsView metrics(UserDirectoryEntry user){admin(user);return new ActivityMetricsView(registrations.allOccupied(),registrations.allCheckedIn());}
   @Transactional public CheckInCredentialView credential(UserDirectoryEntry user,String activityId){student(user);RegistrationRecord r=registrations.findForUpdate(activityId,user.id());if(r==null||!"registered".equals(r.status()))conflict("只有已报名且未签到的参与者可以领取签到凭证");String code=code();CheckInCredentialRecord c=credentials.byRegistration(r.id());if(c==null)credentials.insert(id(),r.id(),hash(code));else credentials.replace(c.id(),hash(code));return new CheckInCredentialView(activityId,code);}

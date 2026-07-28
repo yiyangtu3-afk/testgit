@@ -1,9 +1,11 @@
 campuslink:
   operational:
-    config-version: "2026.07.27.1"
+    config-version: "2026.07.27.2"
   redis:
     activity-catalog:
       enabled: true
+      ttl: 2m
+      ttl-jitter: 15s
 
 spring:
   data:

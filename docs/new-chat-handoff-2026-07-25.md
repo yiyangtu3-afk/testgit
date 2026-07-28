@@ -387,6 +387,31 @@ confirmed. The full explicit-Byte-Buddy core suite passed 168 tests; activity,
 notification, and Gateway suites passed 4, 3, and 6 tests; Vue passed 48 tests
 and built successfully; the legacy smoke check passed.
 
+## Redis activity catalog cache
+
+After the user approved a post-migration Redis slice on July 27, 2026, the
+activity service added an optional public-catalog cache. It only caches the
+shared `GET /api/activities` response, whose payload contains no current-user
+registration state. The current-registration, roster, credential, notification,
+and session routes remain uncached.
+
+- Compose runs Redis only on its internal network, without a host port or
+  persistent volume. Native development keeps the cache disabled by default.
+- The cache uses a versioned key plus a short TTL with jitter. It stores no
+  capacity, registration, check-in, notification, or authentication truth.
+- Activity review, registration, and cancellation publish a local cache-change
+  event. A transactional listener advances the cache version only after the
+  MySQL transaction commits, so a rollback cannot invalidate early.
+- Redis errors increment Micrometer cache-error metrics and return the MySQL
+  result; they never trigger a Mock fallback or alter the existing transaction.
+
+The activity-service test suite now covers cache hits, MySQL fallback, version
+invalidation, and the after-commit invalidation listener. A host-capable run
+also verified the adapter against a temporary `redis:7.4.2-alpine`
+Testcontainers instance. Docker CLI is unavailable in this restricted shell, so
+full Compose runtime validation must still run on a Docker-capable host without
+removing its retained named volumes.
+
 ## July 26, 2026 final handoff snapshot
 
 The latest verified commit is `317a5c0` (`Audit and harden microservice

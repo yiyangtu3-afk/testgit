@@ -22,8 +22,10 @@ readiness 就绪后，`nacos-config` 一次性发布版本化的 `CAMPUSLINK_DEV
 控制台、Kafka 和观测工具不会对局域网开放。
 
 Redis 只在 Compose 内部网络提供给 `activity-service`，不会映射宿主机端口，也不使用命名卷。
-当前提交先建立活动目录缓存所需的 Redis 连接和健康检查基础；后续缓存逻辑不会保存活动名额、
-报名、候补、签到、通知或认证事实。这些状态继续由 MySQL 事务、行锁和既有 Outbox 流程负责。
+活动公开目录会使用带短 TTL 抖动的版本化缓存键；活动审核、报名或取消只有在 MySQL 事务提交
+成功后才递增版本，因而不会在回滚时提前失效。Redis 读取、解析或写入失败时会记录 Micrometer
+指标并回源 MySQL，不会降级到 Mock。缓存不会保存活动名额、报名、候补、签到、通知或认证事实；
+这些状态继续由 MySQL 事务、行锁和既有 Outbox 流程负责。
 
 网关在主机端口 `8081` 提供公开的 API 和 WebSocket 入口。所有服务向 Nacos 注册，Gateway
 从版本化集中配置读取 `lb://` 路由：活动与审核、报名、候补和签到路径转发给
@@ -69,7 +71,8 @@ Compose 不会把任一服务的 Actuator 管理端口映射到宿主机。Gatew
 管理端口默认绑定本机回环，Compose 仅在内部网络为 Prometheus 开放它们。API 的
 `/actuator/info` 和 `/actuator/metrics/**` 仍需要管理员 JWT；使用管理员登录得到的 bearer
 token 查询这些诊断端点。核心业务指标包括用户、当日消息、动态和待审核内容总数，
-`campuslink.http.requests` 按路由模板记录 API 耗时。
+`campuslink.http.requests` 按路由模板记录 API 耗时。活动服务还发布
+`campuslink.redis.activity_catalog.cache` 的命中、未命中、异常和失效计数。
 
 Nacos 状态页在 `http://127.0.0.1:8088`，Prometheus 在 `http://127.0.0.1:9090`，
 Grafana 在 `http://127.0.0.1:3000`（本地演示账号 `admin` / `campuslink-dev-only`），

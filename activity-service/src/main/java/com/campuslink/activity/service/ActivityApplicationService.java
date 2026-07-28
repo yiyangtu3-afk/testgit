@@ -3,8 +3,10 @@ package com.campuslink.activity.service;
 import com.campuslink.activity.api.ActivityDtos.ActivityView;
 import com.campuslink.activity.api.ActivityDtos.CreateActivityRequest;
 import com.campuslink.activity.api.ActivityDtos.ReviewActivityRequest;
+import com.campuslink.activity.cache.ActivityCatalogCache;
 import com.campuslink.activity.domain.ActivityRecord;
 import com.campuslink.activity.domain.UserDirectoryEntry;
+import com.campuslink.activity.eventing.ActivityCatalogChangedEvent;
 import com.campuslink.activity.eventing.ActivityReviewEvent;
 import com.campuslink.activity.eventing.ActivityReviewEventPublisher;
 import com.campuslink.activity.mapper.ActivityMapper;
@@ -13,6 +15,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,11 +26,18 @@ public class ActivityApplicationService {
   private final ActivityMapper activities;
   private final UserDirectoryMapper users;
   private final ActivityReviewEventPublisher reviewEvents;
-  public ActivityApplicationService(ActivityMapper activities, UserDirectoryMapper users, ActivityReviewEventPublisher reviewEvents) { this.activities = activities; this.users = users; this.reviewEvents = reviewEvents; }
+  private final ActivityCatalogCache catalogCache;
+  private final ApplicationEventPublisher events;
+  public ActivityApplicationService(ActivityMapper activities, UserDirectoryMapper users,
+      ActivityReviewEventPublisher reviewEvents, ActivityCatalogCache catalogCache,
+      ApplicationEventPublisher events) { this.activities = activities; this.users = users; this.reviewEvents = reviewEvents; this.catalogCache = catalogCache; this.events = events; }
 
   public List<ActivityView> published(String category, LocalDate from, LocalDate to) {
     if (from != null && to != null && to.isBefore(from)) throw new IllegalArgumentException("活动筛选结束日期不能早于开始日期");
-    return activities.published(blankToNull(category), from == null ? null : from.atStartOfDay(), to == null ? null : to.plusDays(1).atStartOfDay()).stream().map(this::view).toList();
+    String normalizedCategory = blankToNull(category);
+    return catalogCache.load(normalizedCategory, from, to, () -> activities.published(normalizedCategory,
+        from == null ? null : from.atStartOfDay(),
+        to == null ? null : to.plusDays(1).atStartOfDay()).stream().map(this::view).toList());
   }
   @Transactional
   public ActivityView create(UserDirectoryEntry organizer, CreateActivityRequest request) {
@@ -53,6 +63,7 @@ public class ActivityApplicationService {
     activities.insertReview(id(), id, reviewer.id(), stored, reason);
     ActivityRecord reviewed = required(id);
     reviewEvents.publish(new ActivityReviewEvent(reviewed, reviewer.id(), LocalDateTime.now()));
+    events.publishEvent(new ActivityCatalogChangedEvent(id));
     return view(reviewed);
   }
   private ActivityRecord required(String id) { ActivityRecord result = activities.find(id); if (result == null) throw new IllegalArgumentException("活动不存在"); return result; }

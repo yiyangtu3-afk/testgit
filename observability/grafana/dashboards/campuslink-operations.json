@@ -37,11 +37,25 @@
       "targets": [{"expr": "sum(kafka_consumer_fetch_manager_records_lag) by (client_id)", "refId": "A"}],
       "title": "Kafka consumer lag",
       "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": ""},
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 16},
+      "id": 5,
+      "targets": [
+        {"expr": "sum(increase(campuslink_redis_activity_catalog_cache_hit_total[5m]))", "legendFormat": "hit", "refId": "A"},
+        {"expr": "sum(increase(campuslink_redis_activity_catalog_cache_miss_total[5m]))", "legendFormat": "miss", "refId": "B"},
+        {"expr": "sum(increase(campuslink_redis_activity_catalog_cache_error_total[5m]))", "legendFormat": "error", "refId": "C"},
+        {"expr": "sum(increase(campuslink_redis_activity_catalog_cache_invalidate_total[5m]))", "legendFormat": "invalidate", "refId": "D"}
+      ],
+      "title": "Redis activity catalog cache events (5m)",
+      "type": "timeseries"
     }
   ],
   "schemaVersion": 39,
   "tags": ["campuslink", "operations"],
   "title": "CampusLink operations",
   "uid": "campuslink-operations",
-  "version": 1
+  "version": 2
 }
