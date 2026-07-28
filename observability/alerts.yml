@@ -30,4 +30,4 @@ groups:
           severity: warning
         annotations:
           summary: Redis operations are failing in CampusLink
-          description: Cache, check-in rate-limit, or registration idempotency errors continued for five minutes.
+          description: Cache, check-in or authentication rate-limit, or registration idempotency errors continued for five minutes.

@@ -4,8 +4,10 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.Base64;
+import java.util.HexFormat;
 import java.util.List;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,6 +30,7 @@ public class RedisCheckInRateLimiter implements CheckInRateLimiter {
       Long.class);
 
   private final StringRedisTemplate redis;
+  private final byte[] signingSecret;
   private final Duration window;
   private final Limit credentialIssue;
   private final Limit credentialVerification;
@@ -35,6 +38,7 @@ public class RedisCheckInRateLimiter implements CheckInRateLimiter {
   public RedisCheckInRateLimiter(
       StringRedisTemplate redis,
       MeterRegistry metrics,
+      @Value("${campuslink.security.jwt.secret}") String signingSecret,
       @Value("${campuslink.redis.check-in-rate-limit.credential-limit:5}") int credentialLimit,
       @Value("${campuslink.redis.check-in-rate-limit.verification-limit:10}") int verificationLimit,
       @Value("${campuslink.redis.check-in-rate-limit.window:1m}") Duration window) {
@@ -42,6 +46,7 @@ public class RedisCheckInRateLimiter implements CheckInRateLimiter {
       throw new IllegalArgumentException("Redis 签到限流配置必须为正数");
     }
     this.redis = redis;
+    this.signingSecret = signingSecret.getBytes(StandardCharsets.UTF_8);
     this.window = window;
     this.credentialIssue = limit(metrics, "credential_issue", credentialLimit);
     this.credentialVerification = limit(metrics, "credential_verification", verificationLimit);
@@ -95,8 +100,17 @@ public class RedisCheckInRateLimiter implements CheckInRateLimiter {
 
   private String key(String action, String userId, String activityId) {
     String value = action + "\u001f" + userId + "\u001f" + activityId;
-    return KEY_PREFIX + Base64.getUrlEncoder().withoutPadding()
-        .encodeToString(value.getBytes(StandardCharsets.UTF_8));
+    return KEY_PREFIX + fingerprint(value);
+  }
+
+  private String fingerprint(String value) {
+    try {
+      Mac mac = Mac.getInstance("HmacSHA256");
+      mac.init(new SecretKeySpec(signingSecret, "HmacSHA256"));
+      return HexFormat.of().formatHex(mac.doFinal(value.getBytes(StandardCharsets.UTF_8)));
+    } catch (java.security.GeneralSecurityException exception) {
+      throw new IllegalStateException("无法生成签到限流键", exception);
+    }
   }
 
   private record Limit(String action, int maximum, Counter allowed, Counter rejected, Counter errors) {}

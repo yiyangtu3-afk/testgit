@@ -416,8 +416,9 @@ removing its retained named volumes.
 
 The follow-up Redis slice adds a narrowly scoped rate limiter in `activity-service`.
 It protects only authenticated credential issuance/rotation and organizer
-credential verification, with separate, encoded keys for the action, user, and
-activity. A Redis Lua script performs `INCR` and the first `PEXPIRE` atomically;
+credential verification, with separate key namespaces for each action. Redis
+stores only an HMAC-SHA-256 fingerprint of the user and activity combination. A
+Redis Lua script performs `INCR` and the first `PEXPIRE` atomically;
 Compose/Nacos configures a one-minute window with limits of 5 credential issues
 and 10 credential verifications. Over-limit requests return the real HTTP 429
 response, while Redis outages increment `campuslink.redis.check_in_rate_limit`
@@ -496,10 +497,12 @@ retained data.
 
 ## Redis alert runtime CI verification
 
-The Compose workflow now checks the current Gateway Nacos config version, six
-healthy Prometheus targets, and the Prometheus Rules API for all three Redis
-alerts. It catches stale Nacos-version assertions and a mounted rule file that
-does not load, without changing or deleting any retained Compose volume.
+The Compose workflow now checks the current Gateway and core API Nacos config
+versions, the API verification-code threshold, six healthy Prometheus targets,
+and the Prometheus Rules API for all three Redis alerts. It catches stale
+Nacos-version assertions, inactive authentication limits, and a mounted rule
+file that does not load, without changing or deleting any retained Compose
+volume.
 
 ## Redis authentication rate limits
 

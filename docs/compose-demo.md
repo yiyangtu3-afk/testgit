@@ -48,7 +48,8 @@ Redis 只在 Compose 内部网络提供给 `activity-service`，不会映射宿�
 轮换凭证每分钟最多 5 次，组织者按“用户 + 活动”校验凭证每分钟最多 10 次。超限返回真实 HTTP
 429，不会回退 Mock。Redis 暂时不可用时，为避免可选基础设施故障阻断现场签到，服务会记录错误
 指标后放行请求；凭证摘要和签到状态仍由 MySQL 事务维护。限流开关和阈值由
-`campuslink-activity-service.yaml` 的 `campuslink.redis.check-in-rate-limit` 管理。
+`campuslink-activity-service.yaml` 的 `campuslink.redis.check-in-rate-limit` 管理。Redis
+键只保存“操作、用户和活动”组合的 HMAC 指纹，不保存可逆标识。
 
 网关在主机端口 `8081` 提供公开的 API 和 WebSocket 入口。所有服务向 Nacos 注册，Gateway
 从版本化集中配置读取 `lb://` 路由：活动与审核、报名、候补和签到路径转发给

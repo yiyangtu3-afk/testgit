@@ -17,6 +17,8 @@ import org.testcontainers.utility.DockerImageName;
 
 @Testcontainers(disabledWithoutDocker = true)
 class RedisCheckInRateLimiterIntegrationTest {
+  private static final String SECRET = "campuslink-test-signing-secret-must-have-32-bytes";
+
   @Container
   static final GenericContainer<?> redis = new GenericContainer<>(
       DockerImageName.parse("redis:7.4.2-alpine")).withExposedPorts(6379);
@@ -30,7 +32,7 @@ class RedisCheckInRateLimiterIntegrationTest {
       StringRedisTemplate template = new StringRedisTemplate(connection);
       template.afterPropertiesSet();
       RedisCheckInRateLimiter limiter = new RedisCheckInRateLimiter(template,
-          new SimpleMeterRegistry(), 2, 2, Duration.ofMinutes(1));
+          new SimpleMeterRegistry(), SECRET, 2, 2, Duration.ofMinutes(1));
 
       limiter.acquireCredentialIssue("student-1", "activity-1");
       limiter.acquireCredentialIssue("student-1", "activity-1");

@@ -317,6 +317,12 @@ Prometheus Rules API 验证 Redis Exporter 不可达、Redis 服务不可达和�
 `503`，不会放行或回退 Mock；签到限流的 fail-open 策略不适用于公开认证边界。指标按
 `verification_code` 与 `login_failure` 区分，并纳入 Grafana 和 Redis 应用异常告警。
 
+## 阶段十七：Redis 审计加固
+
+签到限流的 Redis 键改为“操作、用户和活动”的 HMAC-SHA-256 指纹，避免内部缓存层保存可逆
+标识；不改变原有分桶、Lua 原子计数或 Redis 故障时的签到放行策略。Compose CI 同时验证核心
+API 的 Nacos 版本和验证码阈值，防止认证限流配置失效仍被演示环境误判为正常。
+
 ## July 25, 2026 handoff update
 
 The current repository and local-runtime snapshot is recorded in

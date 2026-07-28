@@ -98,7 +98,8 @@ credential verification (10 requests per minute). Requests beyond those limits
 receive HTTP 429 instead of a Mock response. Redis errors are metered and fail
 open for these already-authenticated check-in operations so an optional cache
 infrastructure outage cannot stop an on-site event; MySQL remains the source of
-truth for credential hashes and check-in state.
+truth for credential hashes and check-in state. Redis keys contain an HMAC
+fingerprint of the action, user, and activity, rather than reversible identifiers.
 
 In Compose, the core API also limits verification-code requests to three per
 minute per HMAC-fingerprinted phone number, and locks further login attempts
