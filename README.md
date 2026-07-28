@@ -110,7 +110,9 @@ as a trust header. A Redis outage at this public boundary remains a real Gateway
 failure instead of a Mock success;
 the WebSocket and internal management ports are not rate-limited. Compose's
 loopback-only Gateway accepts the front Nginx forwarded client address so public
-clients do not share one anonymous bucket.
+clients do not share one anonymous bucket. Nginx replaces any client-supplied
+`X-Forwarded-For` value before it reaches the Gateway, so the rate-limit key
+uses only the address observed by the trusted Compose proxy.
 
 Compose also runs an internal Redis Exporter that Prometheus scrapes without a
 host port. Grafana shows Redis memory, clients, keyspace hit ratio, and command

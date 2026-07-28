@@ -443,6 +443,12 @@ loopback-bound Compose topology, so anonymous browsers do not share one bucket.
 Gateway starts after Redis in Compose, and Grafana dashboard version 4 shows
 Gateway 429 and 5xx events by route.
 
+The July 27 Redis audit also corrected the Compose proxy boundary. Nginx now
+replaces, rather than appends, a client-provided `X-Forwarded-For` value before
+the Gateway derives an anonymous rate-limit key. This prevents a caller from
+choosing the first forwarded address that Spring WebFlux uses for the request's
+remote address.
+
 ## Redis catalog cache stampede protection
 
 The public activity catalog cache now uses a five-second Redis lease when it

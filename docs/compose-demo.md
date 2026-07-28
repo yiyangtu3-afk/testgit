@@ -59,7 +59,8 @@ Gateway 只把 JWT subject 或远端地址的 HMAC-SHA-256 指纹放入 Redis �
 Gateway 返回真实 `429`；Redis 不可用时入口层会保留真实失败，不会回退 Mock。WebSocket 和
 内部 Actuator 管理端口不使用此限流。Nacos 的 `campuslink-gateway.yaml` 提供 Redis 连接和
 `RequestRateLimiter` 路由策略。Compose Gateway 宿主端口仅绑定回环，并使用前端 Nginx 传递的
-客户端地址，因此不同浏览器不会共享同一个匿名限流桶。
+客户端地址，因此不同浏览器不会共享同一个匿名限流桶。Nginx 会覆盖客户端自行提交的
+`X-Forwarded-For`，避免 Gateway 从可伪造的地址生成匿名限流键。
 
 活动报名 `POST /api/activities/{activityId}/registrations` 可以带可选 `Idempotency-Key`。
 同一用户、活动和有效键的首次成功响应会在 Redis 保留 24 小时，重试会重放相同的 `201` 报名结果；
