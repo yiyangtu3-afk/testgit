@@ -477,6 +477,15 @@ adds memory, connected-client, keyspace-hit-ratio, and command-rate panels so
 the Redis infrastructure can be correlated with the existing application-level
 cache, rate-limit, and idempotency counters.
 
+## Redis Prometheus alert rules
+
+Prometheus now mounts `observability/alerts.yml` as an internal rules file. It
+records Redis application errors over five minutes and evaluates warning alerts
+when the Redis Exporter stays unavailable for two minutes or application Redis
+errors persist for five minutes. Compose intentionally has no Alertmanager, so
+the rules only appear in Prometheus or Grafana alert views and cannot send an
+external notification or mutate any retained data.
+
 ## July 26, 2026 final handoff snapshot
 
 The latest verified commit is `317a5c0` (`Audit and harden microservice

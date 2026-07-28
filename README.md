@@ -115,6 +115,9 @@ clients do not share one anonymous bucket.
 Compose also runs an internal Redis Exporter that Prometheus scrapes without a
 host port. Grafana shows Redis memory, clients, keyspace hit ratio, and command
 rate alongside the application-level cache, rate-limit, and idempotency metrics.
+Prometheus also evaluates internal-only Redis rules for an unavailable exporter
+and sustained application Redis errors; without Alertmanager, the rules appear
+in Prometheus and Grafana but don't send external notifications.
 
 The Vue 3 migration is complete in the separate `frontend-vue/` application.
 The completed slices cover authentication, the application shell, contacts and

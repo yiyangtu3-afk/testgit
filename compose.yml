@@ -257,6 +257,7 @@ services:
     image: prom/prometheus:v3.2.1
     volumes:
       - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./observability/alerts.yml:/etc/prometheus/alerts.yml:ro
       - campuslink-prometheus:/prometheus
     command:
       - --config.file=/etc/prometheus/prometheus.yml
