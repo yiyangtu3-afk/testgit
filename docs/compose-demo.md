@@ -12,7 +12,7 @@
 docker compose up --build
 ```
 
-Compose 会启动 Kafka、未发布到主机的 MySQL 8.4、Nacos 3、Spring Boot API、独立
+Compose 会启动 Kafka、未发布到主机的 MySQL 8.4、内部 Redis、Nacos 3、Spring Boot API、独立
 `activity-service` 与 `notification-service`、Spring Cloud Gateway、Vue 前端，以及
 Jaeger、Prometheus、Grafana。Nacos 首次使用嵌入式存储初始化可能需要约三分钟；其
 readiness 就绪后，`nacos-config` 一次性发布版本化的 `CAMPUSLINK_DEV` 配置，再启动业务
@@ -20,6 +20,10 @@ readiness 就绪后，`nacos-config` 一次性发布版本化的 `CAMPUSLINK_DEV
 为 Vue 构建代理 `/api` 和 `/ws` 到网关，网关再按路径转发，并处理 Vue 路由刷新。
 所有需要映射到宿主机的 Compose 端口都绑定 `127.0.0.1`，因此开发模式关闭认证的 Nacos
 控制台、Kafka 和观测工具不会对局域网开放。
+
+Redis 只在 Compose 内部网络提供给 `activity-service`，不会映射宿主机端口，也不使用命名卷。
+当前提交先建立活动目录缓存所需的 Redis 连接和健康检查基础；后续缓存逻辑不会保存活动名额、
+报名、候补、签到、通知或认证事实。这些状态继续由 MySQL 事务、行锁和既有 Outbox 流程负责。
 
 网关在主机端口 `8081` 提供公开的 API 和 WebSocket 入口。所有服务向 Nacos 注册，Gateway
 从版本化集中配置读取 `lb://` 路由：活动与审核、报名、候补和签到路径转发给

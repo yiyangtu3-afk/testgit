@@ -81,6 +81,16 @@ services:
       retries: 12
       start_period: 20s
 
+  redis:
+    image: redis:7.4.2-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+
   api:
     build:
       context: ./backend
@@ -163,12 +173,15 @@ services:
       MANAGEMENT_SERVER_PORT: 8086
       MANAGEMENT_SERVER_ADDRESS: 0.0.0.0
       OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+      CAMPUSLINK_REDIS_ACTIVITY_CATALOG_ENABLED: "true"
     depends_on:
       nacos-config:
         condition: service_completed_successfully
       kafka:
         condition: service_healthy
       mysql:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     ports:
       - "127.0.0.1:8083:8083"

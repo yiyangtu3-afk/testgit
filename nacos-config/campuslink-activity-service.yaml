@@ -1,6 +1,17 @@
 campuslink:
   operational:
-    config-version: "2026.07.26.1"
+    config-version: "2026.07.27.1"
+  redis:
+    activity-catalog:
+      enabled: true
+
+spring:
+  data:
+    redis:
+      host: redis
+      port: 6379
+      connect-timeout: 200ms
+      timeout: 200ms
 
 management:
   endpoint:
