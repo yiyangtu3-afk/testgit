@@ -4,6 +4,7 @@ import com.campuslink.dto.DemoDtos.CodeResponse;
 import com.campuslink.dto.DemoDtos.CurrentUser;
 import com.campuslink.dto.DemoDtos.LoginResponse;
 import com.campuslink.entity.DemoEntities.UserEntity;
+import com.campuslink.ratelimit.AuthRateLimiter;
 import com.campuslink.repository.UserRepository;
 import com.campuslink.repository.VerificationCodeRepository;
 import java.util.UUID;
@@ -17,33 +18,43 @@ public class AuthService {
   private final UserRepository userRepository;
   private final AuditService auditService;
   private final AuthTokenService authTokenService;
+  private final AuthRateLimiter authRateLimiter;
 
   public AuthService(
       VerificationCodeRepository verificationCodeRepository,
       UserRepository userRepository,
       AuditService auditService,
-      AuthTokenService authTokenService) {
+      AuthTokenService authTokenService,
+      AuthRateLimiter authRateLimiter) {
     this.verificationCodeRepository = verificationCodeRepository;
     this.userRepository = userRepository;
     this.auditService = auditService;
     this.authTokenService = authTokenService;
+    this.authRateLimiter = authRateLimiter;
   }
 
   public CodeResponse createCode(String phone) {
+    authRateLimiter.acquireVerificationCode(phone);
     String code = String.valueOf((int) (Math.random() * 900000) + 100000);
     verificationCodeRepository.save(phone, code);
     return new CodeResponse(phone, code);
   }
 
   public LoginResponse login(String phone, String code) {
+    authRateLimiter.checkLoginAllowed(phone);
     boolean matched = verificationCodeRepository.findByPhone(phone)
         .filter(code::equals)
         .isPresent();
     if (!matched) {
+      authRateLimiter.recordLoginFailure(phone);
       throw new IllegalArgumentException("验证码不正确");
     }
-    UserEntity user = userRepository.findByPhone(phone)
-        .orElseThrow(() -> new IllegalArgumentException("手机号未注册演示账号"));
+    UserEntity user = userRepository.findByPhone(phone).orElse(null);
+    if (user == null) {
+      authRateLimiter.recordLoginFailure(phone);
+      throw new IllegalArgumentException("手机号未注册演示账号");
+    }
+    authRateLimiter.clearLoginFailures(phone);
     auditService.addAudit("用户", phone + " 登录成功");
     return loginResponseFor(user);
   }

@@ -63,9 +63,12 @@
       "targets": [
         {"expr": "sum(increase(campuslink_redis_check_in_rate_limit_allowed_total[5m])) by (action)", "legendFormat": "{{action}} allowed", "refId": "A"},
         {"expr": "sum(increase(campuslink_redis_check_in_rate_limit_rejected_total[5m])) by (action)", "legendFormat": "{{action}} rejected", "refId": "B"},
-        {"expr": "sum(increase(campuslink_redis_check_in_rate_limit_error_total[5m])) by (action)", "legendFormat": "{{action}} Redis error", "refId": "C"}
+        {"expr": "sum(increase(campuslink_redis_check_in_rate_limit_error_total[5m])) by (action)", "legendFormat": "check-in {{action}} Redis error", "refId": "C"},
+        {"expr": "sum(increase(campuslink_redis_auth_rate_limit_allowed_total[5m])) by (action)", "legendFormat": "auth {{action}} allowed", "refId": "D"},
+        {"expr": "sum(increase(campuslink_redis_auth_rate_limit_rejected_total[5m])) by (action)", "legendFormat": "auth {{action}} rejected", "refId": "E"},
+        {"expr": "sum(increase(campuslink_redis_auth_rate_limit_error_total[5m])) by (action)", "legendFormat": "auth {{action}} Redis error", "refId": "F"}
       ],
-      "title": "Redis check-in credential rate limit events (5m)",
+      "title": "Redis rate-limit events (5m)",
       "type": "timeseries"
     },
     {

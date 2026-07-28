@@ -100,6 +100,12 @@ open for these already-authenticated check-in operations so an optional cache
 infrastructure outage cannot stop an on-site event; MySQL remains the source of
 truth for credential hashes and check-in state.
 
+In Compose, the core API also limits verification-code requests to three per
+minute per HMAC-fingerprinted phone number, and locks further login attempts
+after five failed attempts in five minutes. A successful login clears its failed
+attempt counter. Redis failures at this public authentication boundary return a
+real `503`, rather than allowing an unprotected request or falling back to Mock.
+
 In the Compose deployment, Gateway also uses Redis token buckets before HTTP
 requests reach any downstream service. The public login route is limited to five
 requests per minute per anonymous client, while other HTTP API routes are limited

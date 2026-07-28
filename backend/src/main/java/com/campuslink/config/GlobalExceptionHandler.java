@@ -2,6 +2,8 @@ package com.campuslink.config;
 
 import com.campuslink.service.ForbiddenException;
 import com.campuslink.service.ConflictException;
+import com.campuslink.ratelimit.RateLimitExceededException;
+import com.campuslink.ratelimit.RateLimitUnavailableException;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -50,6 +52,18 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(ConflictException.class)
   @ResponseStatus(HttpStatus.CONFLICT)
   public Map<String, String> conflict(ConflictException error) {
+    return Map.of("message", error.getMessage());
+  }
+
+  @ExceptionHandler(RateLimitExceededException.class)
+  @ResponseStatus(HttpStatus.TOO_MANY_REQUESTS)
+  public Map<String, String> rateLimited(RateLimitExceededException error) {
+    return Map.of("message", error.getMessage());
+  }
+
+  @ExceptionHandler(RateLimitUnavailableException.class)
+  @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+  public Map<String, String> rateLimitUnavailable(RateLimitUnavailableException error) {
     return Map.of("message", error.getMessage());
   }
 }

@@ -501,6 +501,14 @@ healthy Prometheus targets, and the Prometheus Rules API for all three Redis
 alerts. It catches stale Nacos-version assertions and a mounted rule file that
 does not load, without changing or deleting any retained Compose volume.
 
+## Redis authentication rate limits
+
+The core API now uses Redis Lua counters for public authentication. A
+HMAC-fingerprinted phone can request three verification codes per minute, and
+five failed logins block later attempts for five minutes; a successful login
+clears that failure counter. Redis failures return a real `503` at this public
+boundary, while the native profile keeps the limiter disabled by default.
+
 ## July 26, 2026 final handoff snapshot
 
 The latest verified commit is `317a5c0` (`Audit and harden microservice

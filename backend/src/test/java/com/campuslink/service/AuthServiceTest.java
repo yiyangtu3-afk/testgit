@@ -9,6 +9,7 @@ import com.campuslink.entity.DemoEntities.UserEntity;
 import com.campuslink.repository.AuthSessionRepository;
 import com.campuslink.repository.UserRepository;
 import com.campuslink.repository.VerificationCodeRepository;
+import com.campuslink.ratelimit.NoopAuthRateLimiter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,7 +27,8 @@ class AuthServiceTest {
       verificationCodes,
       users,
       new AuditService(new TestAuditRepository()),
-      new AuthTokenService(authSessions, users));
+      new AuthTokenService(authSessions, users),
+      new NoopAuthRateLimiter());
 
   @Test
   void createCodePersistsVerificationCode() {

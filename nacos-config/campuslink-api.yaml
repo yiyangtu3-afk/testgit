@@ -1,8 +1,21 @@
 campuslink:
   operational:
-    config-version: "2026.07.26.1"
+    config-version: "2026.07.27.2"
+  redis:
+    auth-rate-limit:
+      enabled: true
+      verification-code-limit: 3
+      verification-code-window: 1m
+      login-failure-limit: 5
+      login-failure-window: 5m
 
 spring:
+  data:
+    redis:
+      host: redis
+      port: 6379
+      connect-timeout: 200ms
+      timeout: 200ms
   kafka:
     listener:
       observation-enabled: true

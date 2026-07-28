@@ -6,6 +6,7 @@ groups:
           sum(increase(campuslink_redis_activity_catalog_cache_error_total[1m]))
           + sum(increase(campuslink_redis_check_in_rate_limit_error_total[1m]))
           + sum(increase(campuslink_redis_registration_idempotency_error_total[1m]))
+          + sum(increase(campuslink_redis_auth_rate_limit_error_total[1m]))
       - alert: CampusLinkRedisExporterDown
         expr: up{job="redis"} == 0
         for: 2m

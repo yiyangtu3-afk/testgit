@@ -66,6 +66,11 @@ Gateway 返回真实 `429`；Redis 不可用时入口层会保留真实失败，
 客户端地址，因此不同浏览器不会共享同一个匿名限流桶。Nginx 会覆盖客户端自行提交的
 `X-Forwarded-For`，避免 Gateway 从可伪造的地址生成匿名限流键。
 
+核心 API 还对认证接口执行 Redis Lua 限流。每个 HMAC 指纹手机号每分钟最多请求 3 次验证码；
+连续 5 次登录失败会在 5 分钟窗口内阻止后续登录。成功登录会清除失败计数。认证 Redis 不可用时
+返回真实 `503`，不会放行未受保护请求或回退 Mock。Grafana 会按 `verification_code` 和
+`login_failure` 显示认证限流的放行、拒绝和 Redis 异常指标。
+
 活动报名 `POST /api/activities/{activityId}/registrations` 可以带可选 `Idempotency-Key`。
 同一用户、活动和有效键的首次成功响应会在 Redis 保留 24 小时，重试会重放相同的 `201` 报名结果；
 仍在执行的重复请求返回真实 `409`。Redis 连接异常时服务保留已有 MySQL 行锁和冲突语义，不回退

@@ -310,6 +310,13 @@ Compose CI 现在确认 Gateway 的当前 Nacos 配置版本、六个健康的 P
 Prometheus Rules API 验证 Redis Exporter 不可达、Redis 服务不可达和持续应用错误三条告警已加载。
 该验证不停止、删除或重建任何本机 Compose 命名卷。
 
+## 阶段十六：Redis 认证限流
+
+核心 API 使用 Redis Lua 原子计数限制每个 HMAC 指纹手机号每分钟 3 次验证码请求，并在同一手机号
+连续 5 次登录失败后的 5 分钟内拒绝继续登录。成功登录会清除失败计数。认证 Redis 故障返回真实
+`503`，不会放行或回退 Mock；签到限流的 fail-open 策略不适用于公开认证边界。指标按
+`verification_code` 与 `login_failure` 区分，并纳入 Grafana 和 Redis 应用异常告警。
+
 ## July 25, 2026 handoff update
 
 The current repository and local-runtime snapshot is recorded in

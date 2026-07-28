@@ -9,6 +9,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.campuslink.dto.DemoDtos.CodeResponse;
 import com.campuslink.dto.DemoDtos.CurrentUser;
 import com.campuslink.dto.DemoDtos.LoginResponse;
+import com.campuslink.config.GlobalExceptionHandler;
+import com.campuslink.ratelimit.RateLimitExceededException;
+import com.campuslink.ratelimit.RateLimitUnavailableException;
 import com.campuslink.service.AuthService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,7 +31,9 @@ class AuthControllerTest {
 
   @BeforeEach
   void setUp() {
-    mockMvc = MockMvcBuilders.standaloneSetup(new AuthController(authService)).build();
+    mockMvc = MockMvcBuilders.standaloneSetup(new AuthController(authService))
+        .setControllerAdvice(new GlobalExceptionHandler())
+        .build();
   }
 
   @Test
@@ -41,6 +46,31 @@ class AuthControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.phone").value("13800000001"))
         .andExpect(jsonPath("$.code").value("123456"));
+  }
+
+  @Test
+  void createCodeKeepsTheRealRateLimitFailure() throws Exception {
+    when(authService.createCode("13800000001"))
+        .thenThrow(new RateLimitExceededException("验证码请求过于频繁，请稍后再试"));
+
+    mockMvc.perform(post("/api/auth/code")
+            .contentType("application/json")
+            .content("{\"phone\":\"13800000001\"}"))
+        .andExpect(status().isTooManyRequests())
+        .andExpect(jsonPath("$.message").value("验证码请求过于频繁，请稍后再试"));
+  }
+
+  @Test
+  void createCodeKeepsTheRealRateLimitInfrastructureFailure() throws Exception {
+    when(authService.createCode("13800000001"))
+        .thenThrow(new RateLimitUnavailableException("认证限流服务暂不可用，请稍后重试",
+            new IllegalStateException("Redis unavailable")));
+
+    mockMvc.perform(post("/api/auth/code")
+            .contentType("application/json")
+            .content("{\"phone\":\"13800000001\"}"))
+        .andExpect(status().isServiceUnavailable())
+        .andExpect(jsonPath("$.message").value("认证限流服务暂不可用，请稍后重试"));
   }
 
   @Test
