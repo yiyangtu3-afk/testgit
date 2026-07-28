@@ -14,6 +14,14 @@ groups:
         annotations:
           summary: Redis Exporter is unavailable
           description: Prometheus has not scraped the internal Redis Exporter for two minutes.
+      - alert: CampusLinkRedisServerDown
+        expr: redis_up{job="redis"} == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: Redis is unavailable behind the Exporter
+          description: The Redis Exporter can be scraped but has not reached Redis for two minutes.
       - alert: CampusLinkRedisApplicationErrors
         expr: campuslink:redis:application_errors:increase5m > 0
         for: 5m

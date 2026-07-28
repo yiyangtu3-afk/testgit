@@ -298,9 +298,10 @@ Compose 在内部网络运行固定版本的 Redis Exporter，Prometheus 抓取�
 
 ## 阶段十四：Redis Prometheus 告警规则
 
-Prometheus 使用版本化规则文件记录 5 分钟内的应用 Redis 错误，并在 Redis Exporter 连续 2 分钟不可达
-或应用错误持续 5 分钟时产生 warning 告警。该 Compose 演示未引入 Alertmanager，告警只在 Prometheus
-和 Grafana 视图中评估，不会对外发送消息，也不会改变 Redis、MySQL 或 Kafka 数据。
+Prometheus 使用版本化规则文件记录 5 分钟内的应用 Redis 错误，并在 Redis Exporter 连续 2 分钟
+不可达、Exporter 可抓取但 Redis 连续 2 分钟不可达，或应用错误持续 5 分钟时产生 warning 告警。
+该 Compose 演示未引入 Alertmanager，告警只在 Prometheus 和 Grafana 视图中评估，不会对外发送
+消息，也不会改变 Redis、MySQL 或 Kafka 数据。
 
 ## July 25, 2026 handoff update
 
