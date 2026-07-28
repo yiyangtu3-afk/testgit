@@ -59,6 +59,8 @@ campuslink:
       enabled: ${CAMPUSLINK_REDIS_ACTIVITY_CATALOG_ENABLED:false}
     check-in-rate-limit:
       enabled: ${CAMPUSLINK_REDIS_CHECK_IN_RATE_LIMIT_ENABLED:false}
+    registration-idempotency:
+      enabled: ${CAMPUSLINK_REDIS_REGISTRATION_IDEMPOTENCY_ENABLED:false}
   security:
     jwt:
       secret: ${CAMPUSLINK_JWT_SECRET:campuslink-demo-signing-secret-change-in-production-2026}

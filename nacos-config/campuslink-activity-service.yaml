@@ -1,6 +1,6 @@
 campuslink:
   operational:
-    config-version: "2026.07.27.4"
+    config-version: "2026.07.27.5"
   redis:
     enabled: true
     activity-catalog:
@@ -15,6 +15,10 @@ campuslink:
       credential-limit: 5
       verification-limit: 10
       window: 1m
+    registration-idempotency:
+      enabled: true
+      processing-ttl: 30s
+      result-ttl: 24h
 
 spring:
   data:

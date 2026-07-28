@@ -53,6 +53,11 @@ Gateway 返回真实 `429`；Redis 不可用时入口层会保留真实失败，
 `RequestRateLimiter` 路由策略。Compose Gateway 宿主端口仅绑定回环，并使用前端 Nginx 传递的
 客户端地址，因此不同浏览器不会共享同一个匿名限流桶。
 
+活动报名 `POST /api/activities/{activityId}/registrations` 可以带可选 `Idempotency-Key`。
+同一用户、活动和有效键的首次成功响应会在 Redis 保留 24 小时，重试会重放相同的 `201` 报名结果；
+仍在执行的重复请求返回真实 `409`。Redis 连接异常时服务保留已有 MySQL 行锁和冲突语义，不回退
+Mock。Redis 中只保存该组合的 HMAC 指纹和响应，不保存原始用户 ID 或客户端键。
+
 Compose 会为 API 启用 `eventing` profile。活动报名、候补、取消、递补和签到
 在现有 MySQL 事务中额外写入 Outbox 事件；发布器将事件发送到 Kafka 的
 `campuslink.activity.events.v1` topic，回执消费者以 `(consumer_name, event_id)`
@@ -94,6 +99,7 @@ token 查询这些诊断端点。核心业务指标包括用户、当日消息�
 `campuslink.redis.activity_catalog.cache` 的命中、未命中、异常和失效计数。
 Grafana 还展示 `campuslink.redis.check_in_rate_limit` 按操作维度的放行、拒绝和 Redis 异常计数。
 Gateway 面板额外按路由展示 Redis 限流 `429` 与下游 `5xx` 数量。
+Grafana 还展示报名幂等键的首次声明、响应重放、处理中冲突和 Redis 异常。
 
 Nacos 状态页在 `http://127.0.0.1:8088`，Prometheus 在 `http://127.0.0.1:9090`，
 Grafana 在 `http://127.0.0.1:3000`（本地演示账号 `admin` / `campuslink-dev-only`），

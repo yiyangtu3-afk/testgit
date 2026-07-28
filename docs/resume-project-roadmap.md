@@ -281,6 +281,14 @@ Gateway 路由展示 429 和 5xx。Gateway 测试
 名额、报名、签到或认证的事实与事务。Micrometer/Grafana 记录租约获取、等待命中和超时；真实
 `redis:7.4.2-alpine` 并发测试确认 6 个并发读取只执行一次数据库加载。
 
+## 阶段十二：Redis 报名幂等响应重放
+
+活动报名 POST 支持可选 `Idempotency-Key`。服务以“用户、活动、客户端键”的 HMAC 指纹作为 Redis
+键，先写入 30 秒处理中标记；业务 MySQL 事务成功后保存 24 小时 `RegistrationView` 响应。同一键的
+重试直接返回原始 `201` 结果，处理中重复请求返回真实 `409`，不会重复执行报名 Outbox 事务。Redis
+不可用时显式回退到既有 MySQL 行锁和冲突语义，保证数据正确性而不伪造响应。Micrometer/Grafana
+记录声明、重放、处理中和异常；真实 `redis:7.4.2-alpine` 测试确认重放不会二次执行报名动作。
+
 ## July 25, 2026 handoff update
 
 The current repository and local-runtime snapshot is recorded in

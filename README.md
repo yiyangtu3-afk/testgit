@@ -85,6 +85,13 @@ MySQL if the cache still isn't ready. The lease is conditionally released by its
 owner and never protects registration, capacity, check-in, or any other business
 transaction.
 
+`POST /api/activities/{activityId}/registrations` also accepts an optional
+`Idempotency-Key` header. With a valid key, the activity service stores the
+first successful registration response for 24 hours and returns that same `201`
+result for a retry from the same user and activity. A concurrent matching request
+returns a real `409`; Redis outages retain the existing MySQL-backed behavior.
+The Redis key contains an HMAC fingerprint, not the user ID or client key.
+
 The same optional Redis service also applies an atomic, per-user and per-activity
 rate limit to check-in credential issuance (5 requests per minute) and organizer
 credential verification (10 requests per minute). Requests beyond those limits

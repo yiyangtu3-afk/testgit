@@ -79,11 +79,25 @@
       ],
       "title": "Gateway rate-limit and downstream failures (5m)",
       "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": ""},
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 40},
+      "id": 8,
+      "targets": [
+        {"expr": "sum(increase(campuslink_redis_registration_idempotency_claimed_total[5m]))", "legendFormat": "claimed", "refId": "A"},
+        {"expr": "sum(increase(campuslink_redis_registration_idempotency_replayed_total[5m]))", "legendFormat": "replayed", "refId": "B"},
+        {"expr": "sum(increase(campuslink_redis_registration_idempotency_in_flight_total[5m]))", "legendFormat": "in flight", "refId": "C"},
+        {"expr": "sum(increase(campuslink_redis_registration_idempotency_error_total[5m]))", "legendFormat": "Redis error", "refId": "D"}
+      ],
+      "title": "Redis activity registration idempotency (5m)",
+      "type": "timeseries"
     }
   ],
   "schemaVersion": 39,
   "tags": ["campuslink", "operations"],
   "title": "CampusLink operations",
   "uid": "campuslink-operations",
-  "version": 5
+  "version": 6
 }

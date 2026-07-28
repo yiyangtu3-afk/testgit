@@ -456,6 +456,18 @@ Micrometer exposes lease-acquired, wait-hit, and timeout counters, and Grafana
 dashboard version 5 charts them with the existing cache signals. A real Redis
 concurrency test verifies six simultaneous reads produce one database load.
 
+## Redis registration idempotency
+
+`POST /api/activities/{activityId}/registrations` now accepts an optional
+`Idempotency-Key`. For a valid key, activity-service HMAC-fingerprints the user,
+activity, and client key, claims a 30-second Redis processing marker, and stores
+the successful `RegistrationView` for 24 hours after the MySQL transaction
+returns. A retry replays the same `201` result without creating another Outbox
+event; a concurrent request receives a real `409`. Redis failures retain the
+existing MySQL row-lock behavior. Grafana dashboard version 6 reports claims,
+replays, in-flight conflicts, and Redis errors. The real Redis test confirms a
+replay invokes the registration action only once.
+
 ## July 26, 2026 final handoff snapshot
 
 The latest verified commit is `317a5c0` (`Audit and harden microservice

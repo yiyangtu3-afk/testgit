@@ -176,6 +176,7 @@ services:
       CAMPUSLINK_REDIS_ENABLED: "true"
       CAMPUSLINK_REDIS_ACTIVITY_CATALOG_ENABLED: "true"
       CAMPUSLINK_REDIS_CHECK_IN_RATE_LIMIT_ENABLED: "true"
+      CAMPUSLINK_REDIS_REGISTRATION_IDEMPOTENCY_ENABLED: "true"
     depends_on:
       nacos-config:
         condition: service_completed_successfully
