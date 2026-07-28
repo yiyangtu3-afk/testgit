@@ -78,6 +78,14 @@ version only after their database transaction commits. Native development keeps
 this integration disabled unless you explicitly enable it and provide a local
 Redis server.
 
+The same optional Redis service also applies an atomic, per-user and per-activity
+rate limit to check-in credential issuance (5 requests per minute) and organizer
+credential verification (10 requests per minute). Requests beyond those limits
+receive HTTP 429 instead of a Mock response. Redis errors are metered and fail
+open for these already-authenticated check-in operations so an optional cache
+infrastructure outage cannot stop an on-site event; MySQL remains the source of
+truth for credential hashes and check-in state.
+
 The Vue 3 migration is complete in the separate `frontend-vue/` application.
 The completed slices cover authentication, the application shell, contacts and
 chat, the campus feed, activities, and the unified notification desk. The

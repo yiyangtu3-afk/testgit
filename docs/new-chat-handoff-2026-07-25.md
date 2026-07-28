@@ -412,6 +412,21 @@ Testcontainers instance. Docker CLI is unavailable in this restricted shell, so
 full Compose runtime validation must still run on a Docker-capable host without
 removing its retained named volumes.
 
+## Redis check-in credential rate limit
+
+The follow-up Redis slice adds a narrowly scoped rate limiter in `activity-service`.
+It protects only authenticated credential issuance/rotation and organizer
+credential verification, with separate, encoded keys for the action, user, and
+activity. A Redis Lua script performs `INCR` and the first `PEXPIRE` atomically;
+Compose/Nacos configures a one-minute window with limits of 5 credential issues
+and 10 credential verifications. Over-limit requests return the real HTTP 429
+response, while Redis outages increment `campuslink.redis.check_in_rate_limit`
+error metrics and deliberately fail open so a replaceable Redis service cannot
+block an in-person check-in. The credential digest and check-in transaction stay
+in MySQL. Grafana dashboard version 3 charts allowed, rejected, and Redis-error
+counts by action. Activity-service tests cover the 429 boundary, Redis outage
+policy, and an actual temporary `redis:7.4.2-alpine` counter.
+
 ## July 26, 2026 final handoff snapshot
 
 The latest verified commit is `317a5c0` (`Audit and harden microservice

@@ -27,6 +27,12 @@ Redis 只在 Compose 内部网络提供给 `activity-service`，不会映射宿�
 指标并回源 MySQL，不会降级到 Mock。缓存不会保存活动名额、报名、候补、签到、通知或认证事实；
 这些状态继续由 MySQL 事务、行锁和既有 Outbox 流程负责。
 
+同一个内部 Redis 还对已鉴权的签到凭证操作执行 Lua 原子计数限流：学生按“用户 + 活动”领取或
+轮换凭证每分钟最多 5 次，组织者按“用户 + 活动”校验凭证每分钟最多 10 次。超限返回真实 HTTP
+429，不会回退 Mock。Redis 暂时不可用时，为避免可选基础设施故障阻断现场签到，服务会记录错误
+指标后放行请求；凭证摘要和签到状态仍由 MySQL 事务维护。限流开关和阈值由
+`campuslink-activity-service.yaml` 的 `campuslink.redis.check-in-rate-limit` 管理。
+
 网关在主机端口 `8081` 提供公开的 API 和 WebSocket 入口。所有服务向 Nacos 注册，Gateway
 从版本化集中配置读取 `lb://` 路由：活动与审核、报名、候补和签到路径转发给
 `activity-service`，活动通知路径转发给 `notification-service`，其他 API 与 WebSocket
@@ -73,6 +79,7 @@ Compose 不会把任一服务的 Actuator 管理端口映射到宿主机。Gatew
 token 查询这些诊断端点。核心业务指标包括用户、当日消息、动态和待审核内容总数，
 `campuslink.http.requests` 按路由模板记录 API 耗时。活动服务还发布
 `campuslink.redis.activity_catalog.cache` 的命中、未命中、异常和失效计数。
+Grafana 还展示 `campuslink.redis.check_in_rate_limit` 按操作维度的放行、拒绝和 Redis 异常计数。
 
 Nacos 状态页在 `http://127.0.0.1:8088`，Prometheus 在 `http://127.0.0.1:9090`，
 Grafana 在 `http://127.0.0.1:3000`（本地演示账号 `admin` / `campuslink-dev-only`），

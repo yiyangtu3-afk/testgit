@@ -250,6 +250,17 @@ MySQL 对活动名额、报名、候补、签到或认证会话的事实来源�
 Mock。Compose Redis 仅在内部网络运行且不使用命名卷；本机原生开发默认关闭此缓存。活动服务
 测试同时覆盖模拟 Redis 的命中与降级，以及临时 `redis:7.4.2-alpine` 容器的真实缓存读写。
 
+## 阶段九：Redis 核销凭证限流
+
+在缓存切片完成后，活动服务为已经鉴权的核销凭证请求增加 Redis Lua 原子计数器。学生领取或轮换
+签到凭证按“用户 + 活动”每分钟限制 5 次，组织者校验凭证按同一范围每分钟限制 10 次；超限会
+保留真实 HTTP 429 和中文错误信息。限流键不包含明文凭证或 JWT，Grafana 和 Micrometer 分别按
+`credential_issue`、`credential_verification` 记录放行、拒绝和 Redis 异常。Redis 不可用时采用
+显式的 fail-open 可用性策略并记录错误，以免可选 Redis 阻断现场签到；MySQL 中的凭证摘要、行锁
+与签到事务仍是最终事实来源。本机原生运行默认关闭，Compose/Nacos 启用并提供 1 分钟窗口和上述
+阈值。活动服务测试覆盖模拟 Redis 的 429、故障放行以及 `redis:7.4.2-alpine` Testcontainers
+的真实原子计数。
+
 ## July 25, 2026 handoff update
 
 The current repository and local-runtime snapshot is recorded in

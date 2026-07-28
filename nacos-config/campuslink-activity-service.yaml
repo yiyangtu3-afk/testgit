@@ -1,11 +1,17 @@
 campuslink:
   operational:
-    config-version: "2026.07.27.2"
+    config-version: "2026.07.27.3"
   redis:
+    enabled: true
     activity-catalog:
       enabled: true
       ttl: 2m
       ttl-jitter: 15s
+    check-in-rate-limit:
+      enabled: true
+      credential-limit: 5
+      verification-limit: 10
+      window: 1m
 
 spring:
   data:

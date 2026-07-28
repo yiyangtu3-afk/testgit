@@ -51,11 +51,24 @@
       ],
       "title": "Redis activity catalog cache events (5m)",
       "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": ""},
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 24},
+      "id": 6,
+      "targets": [
+        {"expr": "sum(increase(campuslink_redis_check_in_rate_limit_allowed_total[5m])) by (action)", "legendFormat": "{{action}} allowed", "refId": "A"},
+        {"expr": "sum(increase(campuslink_redis_check_in_rate_limit_rejected_total[5m])) by (action)", "legendFormat": "{{action}} rejected", "refId": "B"},
+        {"expr": "sum(increase(campuslink_redis_check_in_rate_limit_error_total[5m])) by (action)", "legendFormat": "{{action}} Redis error", "refId": "C"}
+      ],
+      "title": "Redis check-in credential rate limit events (5m)",
+      "type": "timeseries"
     }
   ],
   "schemaVersion": 39,
   "tags": ["campuslink", "operations"],
   "title": "CampusLink operations",
   "uid": "campuslink-operations",
-  "version": 2
+  "version": 3
 }

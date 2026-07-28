@@ -32,7 +32,7 @@ mybatis:
 management:
   health:
     redis:
-      enabled: ${campuslink.redis.activity-catalog.enabled:false}
+      enabled: ${campuslink.redis.enabled:false}
   server:
     port: ${MANAGEMENT_SERVER_PORT:8086}
     address: ${MANAGEMENT_SERVER_ADDRESS:127.0.0.1}
@@ -54,8 +54,11 @@ management:
       endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://127.0.0.1:4318/v1/traces}
 campuslink:
   redis:
+    enabled: ${CAMPUSLINK_REDIS_ENABLED:false}
     activity-catalog:
       enabled: ${CAMPUSLINK_REDIS_ACTIVITY_CATALOG_ENABLED:false}
+    check-in-rate-limit:
+      enabled: ${CAMPUSLINK_REDIS_CHECK_IN_RATE_LIMIT_ENABLED:false}
   security:
     jwt:
       secret: ${CAMPUSLINK_JWT_SECRET:campuslink-demo-signing-secret-change-in-production-2026}
