@@ -93,11 +93,55 @@
       ],
       "title": "Redis activity registration idempotency (5m)",
       "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": ""},
+      "fieldConfig": {"defaults": {"unit": "bytes"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 48},
+      "id": 9,
+      "targets": [
+        {"expr": "redis_memory_used_bytes", "legendFormat": "memory used", "refId": "A"}
+      ],
+      "title": "Redis memory used",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": ""},
+      "fieldConfig": {"defaults": {"unit": "percentunit"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 48},
+      "id": 10,
+      "targets": [
+        {"expr": "sum(rate(redis_keyspace_hits_total[5m])) / clamp_min(sum(rate(redis_keyspace_hits_total[5m])) + sum(rate(redis_keyspace_misses_total[5m])), 1)", "legendFormat": "keyspace hit ratio", "refId": "A"}
+      ],
+      "title": "Redis keyspace hit ratio",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": ""},
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 56},
+      "id": 12,
+      "targets": [
+        {"expr": "redis_connected_clients", "legendFormat": "connected clients", "refId": "A"}
+      ],
+      "title": "Redis connected clients",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": ""},
+      "fieldConfig": {"defaults": {"unit": "reqps"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 56},
+      "id": 11,
+      "targets": [
+        {"expr": "sum(rate(redis_commands_processed_total[1m]))", "legendFormat": "commands per second", "refId": "A"}
+      ],
+      "title": "Redis command rate",
+      "type": "timeseries"
     }
   ],
   "schemaVersion": 39,
   "tags": ["campuslink", "operations"],
   "title": "CampusLink operations",
   "uid": "campuslink-operations",
-  "version": 6
+  "version": 7
 }

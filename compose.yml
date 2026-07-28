@@ -91,6 +91,13 @@ services:
       retries: 12
       start_period: 5s
 
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.84.0
+    command: ["--redis.addr=redis:6379"]
+    depends_on:
+      redis:
+        condition: service_healthy
+
   api:
     build:
       context: ./backend

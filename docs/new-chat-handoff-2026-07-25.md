@@ -468,6 +468,15 @@ existing MySQL row-lock behavior. Grafana dashboard version 6 reports claims,
 replays, in-flight conflicts, and Redis errors. The real Redis test confirms a
 replay invokes the registration action only once.
 
+## Redis infrastructure observability
+
+Compose now runs the internal-only `oliver006/redis_exporter:v1.84.0` service.
+Prometheus adds a sixth `redis` target at `redis-exporter:9121`; neither Redis
+nor the exporter receives a host port or a volume. Grafana dashboard version 7
+adds memory, connected-client, keyspace-hit-ratio, and command-rate panels so
+the Redis infrastructure can be correlated with the existing application-level
+cache, rate-limit, and idempotency counters.
+
 ## July 26, 2026 final handoff snapshot
 
 The latest verified commit is `317a5c0` (`Audit and harden microservice

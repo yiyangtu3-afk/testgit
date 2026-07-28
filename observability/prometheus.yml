@@ -23,3 +23,6 @@ scrape_configs:
     metrics_path: /nacos/actuator/prometheus
     static_configs:
       - targets: ["nacos:8848"]
+  - job_name: redis
+    static_configs:
+      - targets: ["redis-exporter:9121"]

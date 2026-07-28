@@ -289,6 +289,13 @@ Gateway 路由展示 429 和 5xx。Gateway 测试
 不可用时显式回退到既有 MySQL 行锁和冲突语义，保证数据正确性而不伪造响应。Micrometer/Grafana
 记录声明、重放、处理中和异常；真实 `redis:7.4.2-alpine` 测试确认重放不会二次执行报名动作。
 
+## 阶段十三：Redis 基础设施可观测性
+
+Compose 在内部网络运行固定版本的 Redis Exporter，Prometheus 抓取其 `:9121` 指标而不映射新的
+宿主端口。Grafana 同时展示 Redis 内存、连接客户端、键空间命中率与命令吞吐，关联已有的缓存、
+限流和幂等业务指标。该切片不增加 Redis 数据卷、不暴露 Redis 或 Exporter，也不改变 MySQL
+事实来源。
+
 ## July 25, 2026 handoff update
 
 The current repository and local-runtime snapshot is recorded in

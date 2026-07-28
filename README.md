@@ -112,6 +112,10 @@ the WebSocket and internal management ports are not rate-limited. Compose's
 loopback-only Gateway accepts the front Nginx forwarded client address so public
 clients do not share one anonymous bucket.
 
+Compose also runs an internal Redis Exporter that Prometheus scrapes without a
+host port. Grafana shows Redis memory, clients, keyspace hit ratio, and command
+rate alongside the application-level cache, rate-limit, and idempotency metrics.
+
 The Vue 3 migration is complete in the separate `frontend-vue/` application.
 The completed slices cover authentication, the application shell, contacts and
 chat, the campus feed, activities, and the unified notification desk. The

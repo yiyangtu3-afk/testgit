@@ -21,6 +21,10 @@ readiness 就绪后，`nacos-config` 一次性发布版本化的 `CAMPUSLINK_DEV
 所有需要映射到宿主机的 Compose 端口都绑定 `127.0.0.1`，因此开发模式关闭认证的 Nacos
 控制台、Kafka 和观测工具不会对局域网开放。
 
+Redis Exporter 同样只在 Compose 内部网络运行，Prometheus 通过 `redis-exporter:9121` 抓取 Redis
+INFO 指标，不映射新的宿主端口。Grafana 会显示 Redis 内存、连接客户端、键空间命中率和命令吞吐，
+用于把应用层缓存、限流和幂等指标与 Redis 运行状态关联起来。
+
 Redis 只在 Compose 内部网络提供给 `activity-service`，不会映射宿主机端口，也不使用命名卷。
 活动公开目录会使用带短 TTL 抖动的版本化缓存键；活动审核、报名或取消只有在 MySQL 事务提交
 成功后才递增版本，因而不会在回滚时提前失效。Redis 读取、解析或写入失败时会记录 Micrometer
@@ -100,6 +104,7 @@ token 查询这些诊断端点。核心业务指标包括用户、当日消息�
 Grafana 还展示 `campuslink.redis.check_in_rate_limit` 按操作维度的放行、拒绝和 Redis 异常计数。
 Gateway 面板额外按路由展示 Redis 限流 `429` 与下游 `5xx` 数量。
 Grafana 还展示报名幂等键的首次声明、响应重放、处理中冲突和 Redis 异常。
+Prometheus 还会显示 `redis` 目标，用于确认 Redis Exporter 抓取成功。
 
 Nacos 状态页在 `http://127.0.0.1:8088`，Prometheus 在 `http://127.0.0.1:9090`，
 Grafana 在 `http://127.0.0.1:3000`（本地演示账号 `admin` / `campuslink-dev-only`），
