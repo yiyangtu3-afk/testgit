@@ -12,6 +12,7 @@ const nginx = read("nginx.frontend.conf");
 const defaultScript = read("script/run_frontend_demo.sh");
 const legacyScript = read("script/run_legacy_frontend_demo.sh");
 const login = read("frontend-vue/src/features/auth/LoginView.vue");
+const viteConfig = read("frontend-vue/vite.config.js");
 
 assert.match(dockerfile, /FROM node:22-alpine AS build/);
 assert.match(dockerfile, /COPY --from=build \/app\/dist \/usr\/share\/nginx\/html/);
@@ -24,6 +25,8 @@ assert.match(nginx, /location \/ \{[\s\S]*try_files \$uri \$uri\/ \/index\.html;
 assert.match(nginx, /location \/legacy\/ \{/);
 assert.match(defaultScript, /cd "\$PROJECT_DIR\/frontend-vue"/);
 assert.match(defaultScript, /npm run dev/);
+assert.match(viteConfig, /CAMPUSLINK_VITE_API_TARGET \|\| "http:\/\/127\.0\.0\.1:8080"/);
+assert.match(viteConfig, /CAMPUSLINK_VITE_WS_TARGET \|\| "ws:\/\/127\.0\.0\.1:8080"/);
 assert.match(legacyScript, /python3 -m http\.server 5179/);
 assert.match(login, /legacyHref/);
 

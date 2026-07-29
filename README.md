@@ -261,14 +261,15 @@ The demo supports these flows:
   **注册用户**、**今日消息**、**动态总数** and **待审内容** cards also read
   current MySQL counts.
 
-The Vue client uses relative `/api` and `/ws` paths. During local development,
-Vite proxies them to Spring Cloud Gateway at `http://127.0.0.1:8081`; Compose
-uses the same gateway behind Nginx. The gateway forwards the original bearer
-token to the Java API on port `8080` or, for activity-notification paths, to
-`notification-service` on port `8082`. If the gateway can't be reached,
-the client falls back to built-in mock data and shows **Mock** in the sidebar.
-Any `4xx` or `5xx` response from the gateway or a downstream service remains a
-visible live failure and never becomes browser-only data.
+The Vue client uses relative `/api` and `/ws` paths. The host-native Vite entry
+at `5180` proxies them to the local core API on `8080`, so it uses the preserved
+host MySQL history without requiring the Compose microservice stack. Compose
+continues to route the production-style `5179` preview through Nginx and
+Gateway. Set `CAMPUSLINK_VITE_API_TARGET` and `CAMPUSLINK_VITE_WS_TARGET` only
+when you intentionally run a fully compatible native Gateway stack. If the
+selected live API can't be reached, the client falls back to built-in mock data
+and shows **Mock** in the sidebar. Any live `4xx` or `5xx` response remains a
+visible failure and never becomes browser-only data.
 
 After login, the Java API returns a signed, time-limited JWT bearer token. The
 frontend sends that token in the `Authorization` header. The gateway first
@@ -336,14 +337,14 @@ npm run dev
 ```
 
 The default local demo starts Vite on `http://127.0.0.1:5180` and proxies
-`/api` and `/ws` to the local gateway on `8081`. To use the extracted activity
-notification path, start Kafka, run the backend with `SPRING_PROFILES_ACTIVE=eventing`
-on `8080`, run `./script/run_notification_service_idea.sh` on `8082`, and then
-run `./script/run_gateway_idea.sh`. Confirm
-`curl -fsS http://127.0.0.1:8081/api/database/health`, and start Vite. The
-Vue client uses relative proxy paths. It shows Java API mode when the gateway
-responds and uses Mock only when the gateway cannot be reached; HTTP `4xx` and
-`5xx` responses remain visible failures.
+`/api` and `/ws` to the core API on `8080`. Start
+`./script/run_backend_idea.sh`, confirm
+`curl -fsS http://127.0.0.1:8080/api/database/health`, then run
+`./script/run_frontend_demo.sh`. This native path uses the preserved host MySQL
+history. Use the `5179` Compose preview when you need the full Gateway, Nacos,
+Kafka, activity-service, and notification-service topology; it has a separate
+Docker MySQL dataset. The Vue client uses relative proxy paths, shows Java API
+mode when the selected service responds, and retains real HTTP failures.
 
 Run the backend JUnit suite from the backend directory:
 

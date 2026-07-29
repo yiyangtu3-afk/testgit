@@ -1,6 +1,9 @@
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 
+const apiTarget = process.env.CAMPUSLINK_VITE_API_TARGET || "http://127.0.0.1:8080";
+const websocketTarget = process.env.CAMPUSLINK_VITE_WS_TARGET || "ws://127.0.0.1:8080";
+
 export default defineConfig({
   plugins: [vue()],
   server: {
@@ -8,9 +11,9 @@ export default defineConfig({
     port: 5180,
     strictPort: true,
     proxy: {
-      "/api": "http://127.0.0.1:8081",
+      "/api": apiTarget,
       "/ws": {
-        target: "ws://127.0.0.1:8081",
+        target: websocketTarget,
         ws: true
       }
     }

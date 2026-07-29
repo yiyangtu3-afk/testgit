@@ -526,6 +526,12 @@ it uses the `campuslink-mysql` Docker named volume, so its content can differ
 from the host-native page. It is not a replacement for the primary entry. The
 legacy regression page is `http://127.0.0.1:5179/legacy/` when Compose runs.
 
+The Vite proxy defaults to the host-native core API on `127.0.0.1:8080`. This
+keeps the primary page independent from the separately running Compose Gateway
+and its Docker MySQL data. The Compose preview continues to use Nginx and
+Gateway; a developer can override the Vite API and WebSocket targets explicitly
+only when running a compatible native Gateway stack.
+
 At handoff time, the isolated Compose stack was running with API and Gateway
 mapped to `127.0.0.1:18080` and `127.0.0.1:18084` to avoid host services. Its
 Vue page, Nacos, Kafka, Jaeger, Prometheus, and Grafana were all bound only to
