@@ -509,6 +509,24 @@ the actual `SELECT ... FOR UPDATE` activity lock and the MySQL unique
 disposable MySQL container. It never starts against local MySQL or the retained
 Compose database volume.
 
+## Java 21 controlled registration load tool
+
+`script/ActivityRegistrationLoadTest.java` is a dependency-free Java 21
+source-file-mode tool for a controlled HTTP registration burst. It uses virtual
+threads, a start barrier, and a configurable semaphore to send one registration
+per supplied student JWT to an explicit API base URL. Its output reports HTTP
+outcomes, `registered` and `waitlisted` `201` responses, and P50/P95 latency.
+Only `201`, `409`, and `429` are accepted outcomes; another status produces exit
+code `2`.
+
+The caller must pass an activity ID and a token file outside the repository with
+one test-student JWT per line. The tool never creates accounts, starts or stops
+services, or manages database data beyond the registration requests themselves.
+Use it only with an isolated Compose activity and accounts. It has no default
+target and requires an explicit `--allow-remote` acknowledgement for a
+non-loopback URL, so it cannot accidentally target the preserved native MySQL
+history.
+
 ## Redis infrastructure observability
 
 Compose now runs the internal-only `oliver006/redis_exporter:v1.84.0` service.

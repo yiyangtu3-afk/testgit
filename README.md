@@ -116,6 +116,25 @@ records. Concurrent retries by one student create one registration and return
 real `409` conflicts for the others. This verification never uses local MySQL
 history or the retained Compose database volume.
 
+For a controlled HTTP load run, Java 21 can execute the dependency-free source
+file `script/ActivityRegistrationLoadTest.java` with virtual threads. You must
+provide an isolated Compose activity and a local token file containing one
+student JWT per line. The tool sends real registration requests, so do not point
+it at the primary native page or its preserved MySQL history.
+
+```bash
+java script/ActivityRegistrationLoadTest.java \
+  --base-url http://127.0.0.1:18084 \
+  --activity-id YOUR_COMPOSE_ACTIVITY_ID \
+  --tokens-file /absolute/path/test-student-tokens.txt \
+  --concurrency 6
+```
+
+It reports HTTP outcomes, `registered` or `waitlisted` results for `201`
+responses, and P50/P95 latency. A controlled run accepts only `201`, `409`,
+and `429`; any other response exits with status `2`. It never starts or stops
+services, and it requires `--allow-remote` for a non-loopback target.
+
 In Compose, the core API also limits verification-code requests to three per
 minute per HMAC-fingerprinted phone number, and locks further login attempts
 after five failed attempts in five minutes. A successful login clears its failed
