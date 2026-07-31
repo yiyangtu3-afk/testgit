@@ -1,6 +1,7 @@
 package com.campuslink.activity.ratelimit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -68,5 +69,14 @@ class RedisActivityRegistrationRateLimiterTest {
         new SimpleMeterRegistry(), SECRET, 2, Duration.ofMinutes(1));
 
     limiter.acquireRegistration("activity-1");
+  }
+
+  @Test
+  void rejectsAWindowTooShortForRedisMillisecondExpiry() {
+    StringRedisTemplate redis = org.mockito.Mockito.mock(StringRedisTemplate.class);
+
+    assertThatIllegalArgumentException().isThrownBy(() ->
+        new RedisActivityRegistrationRateLimiter(redis, new SimpleMeterRegistry(), SECRET, 1,
+            Duration.ofNanos(1)));
   }
 }

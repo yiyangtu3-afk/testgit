@@ -536,7 +536,8 @@ defaults at `18080` and `18084`, matching the load-tool example and avoiding
 the native development ports. Runtime verification confirmed both health
 endpoints, Nacos configuration version `2026.07.30.1` with the 60-per-minute
 limit enabled, and six healthy Prometheus targets. No Compose volume or host
-MySQL data was removed or reset.
+MySQL data was removed or reset. The Compose CI health check uses the same
+`18084` Gateway host port, so it remains aligned with the Compose default.
 
 ## Redis infrastructure observability
 

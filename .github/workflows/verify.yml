@@ -87,7 +87,7 @@ jobs:
         run: docker compose up --build --wait
 
       - name: Check the gateway API health endpoint
-        run: curl --fail --silent http://127.0.0.1:8081/api/database/health
+        run: curl --fail --silent http://127.0.0.1:18084/api/database/health
 
       - name: Check Nacos registration and centralized configuration
         run: |

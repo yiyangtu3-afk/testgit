@@ -24,9 +24,12 @@ import org.springframework.web.server.ResponseStatusException;
  * capacity and waitlist order.
  */
 @Component
-@ConditionalOnProperty(name = "campuslink.redis.registration-rate-limit.enabled", havingValue = "true")
+@ConditionalOnProperty(
+    name = "campuslink.redis.registration-rate-limit.enabled",
+    havingValue = "true")
 public class RedisActivityRegistrationRateLimiter implements ActivityRegistrationRateLimiter {
-  private static final Logger log = LoggerFactory.getLogger(RedisActivityRegistrationRateLimiter.class);
+  private static final Logger log =
+      LoggerFactory.getLogger(RedisActivityRegistrationRateLimiter.class);
   private static final String KEY_PREFIX = "campuslink:activities:registration-rate-limit:";
   private static final DefaultRedisScript<Long> INCREMENT_WITH_EXPIRY = new DefaultRedisScript<>(
       "local count = redis.call('incr', KEYS[1]); "
@@ -48,7 +51,7 @@ public class RedisActivityRegistrationRateLimiter implements ActivityRegistratio
       @Value("${campuslink.security.jwt.secret}") String signingSecret,
       @Value("${campuslink.redis.registration-rate-limit.activity-limit:60}") int maximum,
       @Value("${campuslink.redis.registration-rate-limit.window:1m}") Duration window) {
-    if (maximum < 1 || window.isZero() || window.isNegative()) {
+    if (maximum < 1 || window.isZero() || window.isNegative() || window.toMillis() < 1) {
       throw new IllegalArgumentException("Redis 活动报名限流配置必须为正数");
     }
     this.redis = redis;
