@@ -51,7 +51,7 @@ Redis 只在 Compose 内部网络提供给 `activity-service`，不会映射宿�
 `campuslink-activity-service.yaml` 的 `campuslink.redis.check-in-rate-limit` 管理。Redis
 键只保存“操作、用户和活动”组合的 HMAC 指纹，不保存可逆标识。
 
-网关在主机端口 `8081` 提供公开的 API 和 WebSocket 入口。所有服务向 Nacos 注册，Gateway
+网关在主机端口 `18084` 提供公开的 API 和 WebSocket 入口。所有服务向 Nacos 注册，Gateway
 从版本化集中配置读取 `lb://` 路由：活动与审核、报名、候补和签到路径转发给
 `activity-service`，活动通知路径转发给 `notification-service`，其他 API 与 WebSocket
 转发给核心 API。Gateway 校验现有 JWT 的签名与过期时间，并原样转发 bearer token；下游服务
@@ -92,9 +92,10 @@ Kafka 补齐通知。消费者在达到三次处理尝试后会把事件发送�
 Compose 使用 `apache/kafka:3.9.0` 的单节点 KRaft 模式。Kafka 监听组件与 Kafka Bean
 配置分离，因此 `eventing` profile 不依赖 Spring 的循环注入。
 
-如果本机开发 API 或 Gateway 已占用 `8080`、`8081`，可以在启动 Compose 时使用
-`CAMPUSLINK_API_HOST_PORT=18080 CAMPUSLINK_GATEWAY_HOST_PORT=18084 docker compose up --build`。
-这只改变容器 API 与 Gateway 的宿主映射；服务之间仍通过 Compose 网络和 Nacos 通信。
+Compose 默认把 API 与 Gateway 分别映射到 `18080`、`18084`，以避免占用本机原生开发的
+`8080`、`8081`。如有需要，可在启动时用 `CAMPUSLINK_API_HOST_PORT` 和
+`CAMPUSLINK_GATEWAY_HOST_PORT` 覆盖这两个宿主端口；服务之间仍通过 Compose 网络和 Nacos
+通信。
 
 根目录的静态前端文件仍完整保留，在 Compose 中可通过
 `http://127.0.0.1:5179/legacy/` 打开，供回退演示和旧版回归检查使用。
@@ -104,7 +105,7 @@ Compose 使用 `apache/kafka:3.9.0` 的单节点 KRaft 模式。Kafka 监听组�
 服务启动后，在另一终端查询公开的数据库健康接口。
 
 ```bash
-curl -fsS http://127.0.0.1:8081/api/database/health
+curl -fsS http://127.0.0.1:18084/api/database/health
 ```
 
 成功响应包含 `"status":"UP"`、当前数据库名和演示用户数量。完整 API 路径清单
@@ -142,4 +143,4 @@ docker compose down
 ## 浏览器演示边界
 
 此仓库提供本地浏览器演示，不会在未获授权时发布公共在线地址。Vue 默认使用同源的
-`/api` 和 `/ws`，由前端 Nginx 转发到 Compose 网关；因此端口 `8081` 和 `5179` 必须可用。
+`/api` 和 `/ws`，由前端 Nginx 转发到 Compose 网关；因此端口 `18084` 和 `5179` 必须可用。

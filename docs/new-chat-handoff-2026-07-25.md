@@ -527,6 +527,17 @@ target and requires an explicit `--allow-remote` acknowledgement for a
 non-loopback URL, so it cannot accidentally target the preserved native MySQL
 history.
 
+## July 30, 2026 high-concurrency delivery
+
+The hot-activity admission limit, isolated MySQL concurrency proof, and Java
+21 load tool were delivered in `9efbd3f`, `522ed64`, and `3f11c6f` on `main`.
+The subsequent Compose host-port correction keeps the isolated API and Gateway
+defaults at `18080` and `18084`, matching the load-tool example and avoiding
+the native development ports. Runtime verification confirmed both health
+endpoints, Nacos configuration version `2026.07.30.1` with the 60-per-minute
+limit enabled, and six healthy Prometheus targets. No Compose volume or host
+MySQL data was removed or reset.
+
 ## Redis infrastructure observability
 
 Compose now runs the internal-only `oliver006/redis_exporter:v1.84.0` service.
@@ -584,10 +595,11 @@ and its Docker MySQL data. The Compose preview continues to use Nginx and
 Gateway; a developer can override the Vite API and WebSocket targets explicitly
 only when running a compatible native Gateway stack.
 
-At handoff time, the isolated Compose stack was running with API and Gateway
-mapped to `127.0.0.1:18080` and `127.0.0.1:18084` to avoid host services. Its
-Vue page, Nacos, Kafka, Jaeger, Prometheus, and Grafana were all bound only to
-`127.0.0.1`; do not assume this runtime snapshot persists in a later session.
+Compose now uses API and Gateway host-port defaults of `127.0.0.1:18080` and
+`127.0.0.1:18084`, respectively, to avoid host-native services on `8080` and
+`8081`. Its Vue page, Nacos, Kafka, Jaeger, Prometheus, and Grafana are all
+bound only to `127.0.0.1`; do not assume this runtime snapshot persists in a
+later session.
 The Compose MySQL container and Docker named volumes were retained, and the
 host MySQL database was never deleted, reset, reseeded, or cleaned.
 

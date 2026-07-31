@@ -453,7 +453,7 @@ docker compose up --build
 ```
 
 Open `http://127.0.0.1:5179`, then confirm the public API with
-`curl -fsS http://127.0.0.1:8081/api/database/health`. Compose serves the Vue
+`curl -fsS http://127.0.0.1:18084/api/database/health`. Compose serves the Vue
 build by default, proxies `/api` and `/ws` through the gateway service, and
 retains the static fallback at `http://127.0.0.1:5179/legacy/`. The Compose guide explains
 startup, Nacos configuration, Kafka eventing, health checks, observability,
