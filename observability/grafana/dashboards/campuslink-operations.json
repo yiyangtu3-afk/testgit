@@ -66,7 +66,10 @@
         {"expr": "sum(increase(campuslink_redis_check_in_rate_limit_error_total[5m])) by (action)", "legendFormat": "check-in {{action}} Redis error", "refId": "C"},
         {"expr": "sum(increase(campuslink_redis_auth_rate_limit_allowed_total[5m])) by (action)", "legendFormat": "auth {{action}} allowed", "refId": "D"},
         {"expr": "sum(increase(campuslink_redis_auth_rate_limit_rejected_total[5m])) by (action)", "legendFormat": "auth {{action}} rejected", "refId": "E"},
-        {"expr": "sum(increase(campuslink_redis_auth_rate_limit_error_total[5m])) by (action)", "legendFormat": "auth {{action}} Redis error", "refId": "F"}
+        {"expr": "sum(increase(campuslink_redis_auth_rate_limit_error_total[5m])) by (action)", "legendFormat": "auth {{action}} Redis error", "refId": "F"},
+        {"expr": "sum(increase(campuslink_redis_activity_registration_rate_limit_allowed_total[5m]))", "legendFormat": "activity registration allowed", "refId": "G"},
+        {"expr": "sum(increase(campuslink_redis_activity_registration_rate_limit_rejected_total[5m]))", "legendFormat": "activity registration rejected", "refId": "H"},
+        {"expr": "sum(increase(campuslink_redis_activity_registration_rate_limit_error_total[5m]))", "legendFormat": "activity registration Redis error", "refId": "I"}
       ],
       "title": "Redis rate-limit events (5m)",
       "type": "timeseries"
@@ -146,5 +149,5 @@
   "tags": ["campuslink", "operations"],
   "title": "CampusLink operations",
   "uid": "campuslink-operations",
-  "version": 7
+  "version": 8
 }

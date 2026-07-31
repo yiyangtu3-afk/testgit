@@ -475,6 +475,25 @@ existing MySQL row-lock behavior. Grafana dashboard version 6 reports claims,
 replays, in-flight conflicts, and Redis errors. The real Redis test confirms a
 replay invokes the registration action only once.
 
+## Redis hot-activity registration admission limit
+
+The activity service applies a shared fixed-window Redis admission limit before
+a student's registration request reaches the MySQL capacity transaction. Nacos
+enables a limit of 60 attempts per activity per minute in Compose. The atomic
+Lua `INCR` and first `PEXPIRE` operation returns the real HTTP `429` when the
+limit is exceeded. Its Redis key contains an HMAC-SHA-256 fingerprint of the
+activity ID, rather than the raw identifier.
+
+This is only load shedding. The activity row lock, the unique `(activity_id,
+attendee_id)` constraint, and the transaction that assigns `registered` or
+`waitlisted` remain the source of correctness. Redis failure increments
+`campuslink.redis.activity_registration_rate_limit.error` and deliberately
+falls back to that MySQL flow. Grafana dashboard version 8 shows allowed,
+rejected, and Redis-error counts; the Redis application-error alert includes
+this signal. Activity-service tests cover the `429` boundary, failure fallback,
+the service boundary, and six concurrent attempts against a temporary
+`redis:7.4.2-alpine` counter.
+
 ## Redis infrastructure observability
 
 Compose now runs the internal-only `oliver006/redis_exporter:v1.84.0` service.

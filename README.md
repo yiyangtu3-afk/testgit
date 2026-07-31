@@ -101,6 +101,14 @@ infrastructure outage cannot stop an on-site event; MySQL remains the source of
 truth for credential hashes and check-in state. Redis keys contain an HMAC
 fingerprint of the action, user, and activity, rather than reversible identifiers.
 
+For a hot published activity, the activity service also applies a shared Redis
+admission limit of 60 registration attempts per minute before the MySQL capacity
+transaction starts. The Lua counter returns a real HTTP `429` after the limit.
+If Redis is unavailable, the service records an error and falls back to the
+existing MySQL activity row lock, unique registration constraint, and waitlist
+transaction; Redis never decides a seat or queue position. Native development
+keeps this optional protection disabled by default.
+
 In Compose, the core API also limits verification-code requests to three per
 minute per HMAC-fingerprinted phone number, and locks further login attempts
 after five failed attempts in five minutes. A successful login clears its failed

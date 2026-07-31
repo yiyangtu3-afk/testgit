@@ -16,6 +16,7 @@ import com.campuslink.activity.mapper.OutboxEventMapper;
 import com.campuslink.activity.mapper.RegistrationMapper;
 import com.campuslink.activity.mapper.UserDirectoryMapper;
 import com.campuslink.activity.ratelimit.CheckInRateLimiter;
+import com.campuslink.activity.ratelimit.ActivityRegistrationRateLimiter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.Test;
@@ -76,10 +77,11 @@ class ActivityRegistrationApplicationServiceTest {
     var outbox = mock(OutboxEventMapper.class);
     var credentials = mock(CheckInCredentialMapper.class);
     var rateLimiter = mock(CheckInRateLimiter.class);
+    var registrationRateLimiter = mock(ActivityRegistrationRateLimiter.class);
     UserDirectoryMapper users = id -> new UserDirectoryEntry(id, id, "学生");
     var service = new ActivityRegistrationApplicationService(activities, registrations, credentials,
         users, outbox, new ObjectMapper().findAndRegisterModules(),
-        (ApplicationEventPublisher) event -> {}, rateLimiter);
+        (ApplicationEventPublisher) event -> {}, rateLimiter, registrationRateLimiter);
     var registered = registration("registration-1", "registered");
     when(registrations.findForUpdate("activity-1", "student-1")).thenReturn(registered);
     when(credentials.byRegistration("registration-1")).thenReturn(null);
@@ -89,19 +91,45 @@ class ActivityRegistrationApplicationServiceTest {
     verify(rateLimiter).acquireCredentialIssue("student-1", "activity-1");
   }
 
+  @Test
+  void registrationAcquiresTheSharedActivityAdmissionLimitBeforeLockingCapacity() {
+    var activities = mock(ActivityMapper.class);
+    var registrations = mock(RegistrationMapper.class);
+    var outbox = mock(OutboxEventMapper.class);
+    var registrationRateLimiter = mock(ActivityRegistrationRateLimiter.class);
+    var service = service(activities, registrations, outbox, mock(CheckInRateLimiter.class),
+        registrationRateLimiter);
+    when(activities.findForUpdate("activity-1")).thenReturn(activity("published"));
+    when(registrations.occupied("activity-1")).thenReturn(0, 1);
+    when(registrations.findForUpdate("activity-1", "student-1"))
+        .thenReturn(null, registration("registration-1", "registered"));
+
+    service.register(student(), "activity-1");
+
+    verify(registrationRateLimiter).acquireRegistration("activity-1");
+  }
+
   private ActivityRegistrationApplicationService service(
       ActivityMapper activities, RegistrationMapper registrations, OutboxEventMapper outbox) {
-    return service(activities, registrations, outbox, mock(CheckInRateLimiter.class));
+    return service(activities, registrations, outbox, mock(CheckInRateLimiter.class),
+        mock(ActivityRegistrationRateLimiter.class));
   }
 
   private ActivityRegistrationApplicationService service(
       ActivityMapper activities, RegistrationMapper registrations, OutboxEventMapper outbox,
       CheckInRateLimiter rateLimiter) {
+    return service(activities, registrations, outbox, rateLimiter,
+        mock(ActivityRegistrationRateLimiter.class));
+  }
+
+  private ActivityRegistrationApplicationService service(
+      ActivityMapper activities, RegistrationMapper registrations, OutboxEventMapper outbox,
+      CheckInRateLimiter rateLimiter, ActivityRegistrationRateLimiter registrationRateLimiter) {
     UserDirectoryMapper users = id -> new UserDirectoryEntry(id, id, "学生");
     return new ActivityRegistrationApplicationService(activities, registrations,
         mock(CheckInCredentialMapper.class), users, outbox,
         new ObjectMapper().findAndRegisterModules(), (ApplicationEventPublisher) event -> {},
-        rateLimiter);
+        rateLimiter, registrationRateLimiter);
   }
 
   private UserDirectoryEntry student() {

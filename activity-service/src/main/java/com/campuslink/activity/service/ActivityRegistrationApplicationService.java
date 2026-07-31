@@ -6,6 +6,7 @@ import com.campuslink.activity.eventing.ActivityCatalogChangedEvent;
 import com.campuslink.activity.eventing.ActivityReviewMessage;
 import com.campuslink.activity.mapper.*;
 import com.campuslink.activity.ratelimit.CheckInRateLimiter;
+import com.campuslink.activity.ratelimit.ActivityRegistrationRateLimiter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
@@ -26,9 +27,10 @@ public class ActivityRegistrationApplicationService {
   private final OutboxEventMapper outbox; private final ObjectMapper json;
   private final ApplicationEventPublisher events;
   private final CheckInRateLimiter checkInRateLimiter;
-  public ActivityRegistrationApplicationService(ActivityMapper activities, RegistrationMapper registrations, CheckInCredentialMapper credentials, UserDirectoryMapper users, OutboxEventMapper outbox, ObjectMapper json, ApplicationEventPublisher events, CheckInRateLimiter checkInRateLimiter) { this.activities=activities; this.registrations=registrations; this.credentials=credentials; this.users=users; this.outbox=outbox; this.json=json; this.events=events; this.checkInRateLimiter=checkInRateLimiter; }
+  private final ActivityRegistrationRateLimiter registrationRateLimiter;
+  public ActivityRegistrationApplicationService(ActivityMapper activities, RegistrationMapper registrations, CheckInCredentialMapper credentials, UserDirectoryMapper users, OutboxEventMapper outbox, ObjectMapper json, ApplicationEventPublisher events, CheckInRateLimiter checkInRateLimiter, ActivityRegistrationRateLimiter registrationRateLimiter) { this.activities=activities; this.registrations=registrations; this.credentials=credentials; this.users=users; this.outbox=outbox; this.json=json; this.events=events; this.checkInRateLimiter=checkInRateLimiter; this.registrationRateLimiter=registrationRateLimiter; }
   @Transactional public RegistrationView register(UserDirectoryEntry user,String activityId) {
-    student(user); ActivityRecord activity=activity(activityId,true); open(activity); if(activity.organizerId().equals(user.id())) forbidden("组织者不能报名自己的活动");
+    student(user); registrationRateLimiter.acquireRegistration(activityId); ActivityRecord activity=activity(activityId,true); open(activity); if(activity.organizerId().equals(user.id())) forbidden("组织者不能报名自己的活动");
     RegistrationRecord current=registrations.findForUpdate(activityId,user.id()); if(current!=null && ("registered".equals(current.status())||"waitlisted".equals(current.status()))) conflict("你已报名该活动");
     String status=registrations.occupied(activityId)<activity.capacity()?"registered":"waitlisted"; RegistrationRecord saved;
     if(current==null){String id=id();registrations.insert(id,activityId,user.id(),status);saved=registrations.findForUpdate(activityId,user.id());} else {registrations.status(current.id(),status);saved=registrations.findForUpdate(activityId,user.id());}
