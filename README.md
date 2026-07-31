@@ -109,6 +109,13 @@ existing MySQL activity row lock, unique registration constraint, and waitlist
 transaction; Redis never decides a seat or queue position. Native development
 keeps this optional protection disabled by default.
 
+The activity-service test suite also starts an isolated MySQL 8.4 container for
+a concurrent-registration proof. Six students competing for two seats produce
+two `registered` rows and four `waitlisted` rows, with matching event and Outbox
+records. Concurrent retries by one student create one registration and return
+real `409` conflicts for the others. This verification never uses local MySQL
+history or the retained Compose database volume.
+
 In Compose, the core API also limits verification-code requests to three per
 minute per HMAC-fingerprinted phone number, and locks further login attempts
 after five failed attempts in five minutes. A successful login clears its failed

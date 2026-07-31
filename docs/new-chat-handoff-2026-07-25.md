@@ -494,6 +494,21 @@ this signal. Activity-service tests cover the `429` boundary, failure fallback,
 the service boundary, and six concurrent attempts against a temporary
 `redis:7.4.2-alpine` counter.
 
+## Isolated MySQL concurrent-registration proof
+
+The activity-service suite now starts an isolated MySQL 8.4 Testcontainers
+database for the capacity-sensitive transaction itself. Six student threads
+concurrently register for an activity with capacity two and produce exactly two
+`registered` rows, four `waitlisted` rows, six registration events, and six
+Outbox records. A separate four-request same-student race produces one
+registration, one event, one Outbox record, and three real `409` conflicts.
+
+The test calls the Spring transactional service through its proxy, so it uses
+the actual `SELECT ... FOR UPDATE` activity lock and the MySQL unique
+`(activity_id, attendee_id)` constraint. It has its own minimal test schema and
+disposable MySQL container. It never starts against local MySQL or the retained
+Compose database volume.
+
 ## Redis infrastructure observability
 
 Compose now runs the internal-only `oliver006/redis_exporter:v1.84.0` service.
