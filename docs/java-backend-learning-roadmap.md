@@ -9,7 +9,7 @@ and making one small safe change.
 
 - Started: July 31, 2026.
 - Background: Java fundamentals and basic Spring Boot only.
-- Current lesson: Week 1, lesson 6 — HTTP 401 and 403 authorization errors.
+- Current lesson: Week 1, lesson 7 — observe an HTTP 401 response safely.
 - Native learning environment: host MySQL is reachable on `127.0.0.1:3306`;
   backend is healthy on `127.0.0.1:8080`, and Vue is running on
   `127.0.0.1:5180`.
@@ -20,7 +20,8 @@ and making one small safe change.
   interfaces, `@Select`, and SQL result mapping; Week 1, lesson 4 — explained
   `Map`, `LinkedHashMap`, key-value pairs, and JSON serialization; Week 1,
   lesson 5 — explained public health checks, `permitAll`, `authenticated`, and
-  JWT-protected API boundaries.
+  JWT-protected API boundaries; Week 1, lesson 6 — distinguished HTTP 401
+  authentication failures from HTTP 403 authorization failures.
 
 ## Learning sequence
 
