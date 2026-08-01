@@ -9,7 +9,7 @@ and making one small safe change.
 
 - Started: July 31, 2026.
 - Background: Java fundamentals and basic Spring Boot only.
-- Current lesson: Week 1, lesson 8 — JWT request headers and token parsing.
+- Current lesson: Week 2, lesson 1 — authenticated activity-list request flow.
 - Native learning environment: host MySQL is reachable on `127.0.0.1:3306`;
   backend is healthy on `127.0.0.1:8080`, and Vue is running on
   `127.0.0.1:5180`.
@@ -22,7 +22,9 @@ and making one small safe change.
   lesson 5 — explained public health checks, `permitAll`, `authenticated`, and
   JWT-protected API boundaries; Week 1, lesson 6 — distinguished HTTP 401
   authentication failures from HTTP 403 authorization failures; Week 1, lesson
-  7 — observed a real unauthenticated API response with HTTP 401.
+  7 — observed a real unauthenticated API response with HTTP 401; Week 1,
+  lesson 8 — explained the `Authorization: Bearer <JWT>` request header and
+  filter-based token parsing.
 
 ## Learning sequence
 
