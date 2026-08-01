@@ -630,6 +630,14 @@ before implementing another feature.
 All eight authorized migration phases are complete. Do not start another
 feature without the user's product-priority approval.
 
+## Java learning progress
+
+The user began the guided Java backend learning path on July 31, 2026. The
+current lesson, completed topics, and code-first sequence are tracked in
+[`java-backend-learning-roadmap.md`](java-backend-learning-roadmap.md). Keep
+this record current after each guided lesson without treating learning progress
+as product-feature authorization.
+
 ## Related records
 
 Use the following documents for detailed historical context:
