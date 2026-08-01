@@ -9,14 +9,15 @@ and making one small safe change.
 
 - Started: July 31, 2026.
 - Background: Java fundamentals and basic Spring Boot only.
-- Current lesson: Week 1, lesson 3 — MyBatis Mapper methods and SQL results.
+- Current lesson: Week 1, lesson 4 — Java `Map` responses and JSON.
 - Native learning environment: host MySQL is reachable on `127.0.0.1:3306`;
   backend is healthy on `127.0.0.1:8080`, and Vue is running on
   `127.0.0.1:5180`.
 - Completed topics: Week 1, lesson 1 — followed `GET /api/database/health`
   from the Controller through Service and MyBatis Mapper to host MySQL; Week 1,
   lesson 2 — explained Spring beans, constructor injection, `final`, and Mock
-  replacement in unit tests.
+  replacement in unit tests; Week 1, lesson 3 — explained MyBatis Mapper
+  interfaces, `@Select`, and SQL result mapping.
 
 ## Learning sequence
 
