@@ -638,6 +638,10 @@ current lesson, completed topics, and code-first sequence are tracked in
 this record current after each guided lesson without treating learning progress
 as product-feature authorization.
 
+The current session handoff, exact next code path, verified runtime snapshot,
+and native startup order are in
+[`java-learning-handoff-2026-08-01.md`](java-learning-handoff-2026-08-01.md).
+
 ## Related records
 
 Use the following documents for detailed historical context:

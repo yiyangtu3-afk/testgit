@@ -10,6 +10,8 @@ and making one small safe change.
 - Started: July 31, 2026.
 - Background: Java fundamentals and basic Spring Boot only.
 - Current lesson: Week 2, lesson 1 — authenticated activity-list request flow.
+  Paused before answering the first question: explain the role of
+  `authTokenService.requireUser(authorization)` in `ActivityController`.
 - Native learning environment: host MySQL is reachable on `127.0.0.1:3306`;
   backend is healthy on `127.0.0.1:8080`, and Vue is running on
   `127.0.0.1:5180`.
